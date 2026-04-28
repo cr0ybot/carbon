@@ -1,28 +1,33 @@
 {
-  "name": "carbon",
-  "author": "MakeAwesomeHappen",
-  "version": "1.0.0",
-  "keywords": ["pebble-app"],
-  "private": true,
-  "dependencies": {},
-  "pebble": {
-    "displayName": "carbon",
-    "uuid": "4a34b9c0-93b3-43ff-b1ba-a19d00cbcc60",
-    "projectType": "moddable",
-    "sdkVersion": "3",
-    "enableMultiJS": true,
-    "targetPlatforms": [
-      "emery",
-      "gabbro"
-    ],
-    "watchapp": {
-      "watchface": true
-    },
-    "messageKeys": [
-      "dummy"
-    ],
-    "resources": {
-      "media": []
-    }
-  }
+	"name": "carbon",
+	"author": {
+		"name": "Cory Hughart",
+		"url": "https://coryhughart.com"
+	},
+	"version": "0.0.1",
+	"keywords": [
+		"pebble-app"
+	],
+	"private": true,
+	"dependencies": {},
+	"pebble": {
+		"displayName": "Carbon",
+		"uuid": "4a34b9c0-93b3-43ff-b1ba-a19d00cbcc60",
+		"projectType": "moddable",
+		"sdkVersion": "3",
+		"enableMultiJS": true,
+		"targetPlatforms": [
+			"emery",
+			"gabbro"
+		],
+		"watchapp": {
+			"watchface": true
+		},
+		"messageKeys": [
+			"dummy"
+		],
+		"resources": {
+			"media": []
+		}
+	}
 }
