@@ -7,19 +7,20 @@
 		"modules/*": "./modules/*",
 		"*": [
 			"./main",
-			"./assets",
-			"./layout"
+			"./assets"
 		]
 	},
 	"platforms": {
 		"*/emery": {
 			"modules": {
-				"modules/*": "./emery/widgets/*"
+				"modules/*": "./emery/widgets/*",
+				"layout": "./emery/layout"
 			}
 		},
 		"*/gabbro": {
 			"modules": {
-				"modules/*": "./gabbro/widgets/*"
+				"modules/*": "./gabbro/widgets/*",
+				"layout": "./gabbro/layout"
 			}
 		}
 	},

@@ -60,7 +60,7 @@ class ArcProgressBehavior extends Behavior {
 	}
 
 	onDraw(port, dirtyX, dirtyY, dirtyW, dirtyH) {
-		const R  = screen.width / 2;  // outer radius — 90 on gabbro
+		const R  = screen.width / 2;  // outer radius — 130 on gabbro (260×260)
 		const cx = R, cy = R;
 		const { render, trackColor, fillColor, bgColor, progress } = this;
 

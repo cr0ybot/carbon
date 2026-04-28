@@ -8,12 +8,7 @@
  */
 
 import assets from "assets";
-import layout from "layout";
-import ClockLabel from "modules/clock";
-import DateLabel from "modules/date-label";
-import { TopWidgetBar, BottomWidgetBar } from "modules/widget-bar";
-import PrecipGraph from "modules/precip-graph";
-import ProgressBar from "modules/progress-bar";
+import { getContents } from "layout";
 
 const backgroundSkin = new Skin(assets.skins.background);
 
@@ -33,49 +28,10 @@ class CarbonBehavior extends Behavior {
 	}
 }
 
-//
-// Layout
-//
-// 5-section column (top → bottom):
-//   TopWidgetBar  — fixed height, colored background
-//   PrecipGraph   — fixed height, custom-drawn 24 h precipitation bars
-//   Center        — flexible height, large time + date labels
-//   BottomWidgetBar — fixed height, no background
-//   ProgressBar   — fixed height, thin filled bar
-//
-
 const CarbonApplication = Application.template($ => ({
 	skin: backgroundSkin,
 	Behavior: CarbonBehavior,
-	contents: [
-		// Progress bar: absolute overlay drawn FIRST so all other content
-		// renders on top.  On emery: 4 px strip at the bottom edge.
-		// On gabbro: annular arc along the circular screen edge.
-		ProgressBar($, {}),
-		// Main layout column — stops above the progress bar height so the
-		// absolute ProgressBar overlay doesn't overlap BottomWidgetBar.
-		Column($, {
-			top: 0, bottom: layout.progressBar.height, left: 0, right: 0,
-			contents: [
-				TopWidgetBar($, {}),
-				PrecipGraph($, {}),
-				// Center: time + date block vertically centred within its allotted height
-				Column($, {
-					height: layout.center.height, left: 0, right: 0,
-					contents: [
-						Column(null, {
-							top: layout.center.timeOffset, left: 0, right: 0,
-							contents: [
-								ClockLabel(null, { left: 0, right: 0 }),
-								DateLabel(null,  { left: 0, right: 0 }),
-							],
-						}),
-					],
-				}),
-				BottomWidgetBar($, {}),
-			],
-		}),
-	],
+	contents: getContents($),
 }));
 
 export default new CarbonApplication(null, {
