@@ -13,7 +13,7 @@
  */
 
 const fonts = {
-	time:  "bold 42px Bitham",
+	time:  "bold 72px Oswald",
 	date:  "bold 18px Gothic",
 	icons: "20px IcoMoon",
 };

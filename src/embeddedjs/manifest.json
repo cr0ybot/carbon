@@ -33,6 +33,14 @@
 				"blocks": [
 					"Private Use Area"
 				]
+			},
+			{
+				"source": "./assets/Oswald-Bold",
+				"size": 72,
+				"monochrome": true,
+				"characters": [
+					"1234567890:APM "
+				]
 			}
 		]
 	}
