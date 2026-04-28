@@ -35,5 +35,8 @@
     "emulator:emery": "pebble install --emulator emery --logs",
     "emulator:gabbro": "pebble install --emulator gabbro --logs",
     "device": "pebble install --cloudpebble"
+  },
+  "devDependencies": {
+    "@moddable/typings": "^8.0.1"
   }
 }
