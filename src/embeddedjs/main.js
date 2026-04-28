@@ -1,12 +1,29 @@
+/**
+ * Main Carbon watchface entry point.
+ *
+ * @author    Cory Hughart <cory@coryhughart.com>
+ * @copyright 2026 Cory Hughart
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
+ * @link      https://cr0ybot.com/project/pebble-watchface-carbon
+ */
+
 import icons, { IconLabel } from "icons";
 import assets from "assets";
 
 const blackSkin = new Skin(assets.skins.black);
 const timeStyle = new Style(assets.styles.time);
 
-// ---------------------------------------------------------------------------
+const TEST_ICONS = [
+	icons.sun,
+	icons.cloudRain,
+	icons.bluetooth,
+	icons.heartPulse,
+	icons.battery,
+];
+
+//
 // Behaviors
-// ---------------------------------------------------------------------------
+//
 
 class CarbonBehavior {
 	onDisplaying(application) {
@@ -24,21 +41,9 @@ class CarbonBehavior {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Test icons — one from each category
-// ---------------------------------------------------------------------------
-
-const TEST_ICONS = [
-	icons.sun,
-	icons.cloudRain,
-	icons.bluetooth,
-	icons.heartPulse,
-	icons.battery,
-];
-
-// ---------------------------------------------------------------------------
+//
 // Application
-// ---------------------------------------------------------------------------
+//
 
 const CarbonApplication = Application.template($ => ({
 	skin: blackSkin,
