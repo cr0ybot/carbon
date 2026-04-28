@@ -8,31 +8,25 @@
  */
 
 import assets from "assets";
-import ClockLabel from "clock";
-import icons, { IconLabel } from "icons";
+import layout from "layout";
+import ClockLabel from "modules/clock";
+import DateLabel from "modules/date-label";
+import { TopWidgetBar, BottomWidgetBar } from "modules/widget-bar";
+import PrecipGraph from "modules/precip-graph";
+import ProgressBar from "modules/progress-bar";
 
 const blackSkin = new Skin(assets.skins.black);
 
-const TEST_ICONS = [
-	icons.sun,
-	icons.cloudRain,
-	icons.bluetooth,
-	icons.heartPulse,
-	icons.battery,
-];
-
 //
-// Behaviors
+// Application behavior
 //
 
-/**
- * Application behavior.
- *
- * Listens for `minutechange` events and updates the time.
- */
 class CarbonBehavior extends Behavior {
-	onCreate(app, data) {
-		this.data = data;
+	onDisplaying(app) {
+		// Fire an initial clock event so all labels show the current time/date
+		// immediately rather than waiting for the first minutechange.
+		app.distribute("onClockChanged", new Date());
+
 		watch.addEventListener("minutechange", (e) => {
 			app.distribute("onClockChanged", e.date);
 		});
@@ -40,7 +34,14 @@ class CarbonBehavior extends Behavior {
 }
 
 //
-// Application
+// Layout
+//
+// 5-section column (top → bottom):
+//   TopWidgetBar  — fixed height, colored background
+//   PrecipGraph   — fixed height, custom-drawn 24 h precipitation bars
+//   Center        — flexible height, large time + date labels
+//   BottomWidgetBar — fixed height, no background
+//   ProgressBar   — fixed height, thin filled bar
 //
 
 const CarbonApplication = Application.template($ => ({
@@ -50,22 +51,30 @@ const CarbonApplication = Application.template($ => ({
 		Column($, {
 			top: 0, bottom: 0, left: 0, right: 0,
 			contents: [
-				ClockLabel($, {
-					left: 0, right: 0,
+				TopWidgetBar($, {}),
+				PrecipGraph($, {}),
+				// Center: time + date block vertically centred within its allotted height
+				Container($, {
+					height: layout.center.height, left: 0, right: 0,
+					contents: [
+						Column(null, {
+							top: layout.center.timeOffset, left: 0, right: 0,
+							contents: [
+								ClockLabel(null, { left: 0, right: 0 }),
+								DateLabel(null,  { left: 0, right: 0 }),
+							],
+						}),
+					],
 				}),
-				Row($, {
-					left: 0, right: 0,
-					contents: TEST_ICONS.map(char =>
-						IconLabel($, { string: char })
-					),
-				}),
+				BottomWidgetBar($, {}),
+				ProgressBar($, {}),
 			],
 		}),
 	],
 }));
 
 export default new CarbonApplication(null, {
-	displayListLength: 2048,
+	commandListLength: 4096,
 	touchCount: 0,
 	pixels: screen.width * 4,
 });

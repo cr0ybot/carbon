@@ -91,11 +91,13 @@ There are two ways a module can be declared:
 {
   "modules": {
     // Named key — import from "icons", NOT "modules/icons"
-    "icons": "./modules/icons",
+    "example": "./modules/example",
+
+    // Named key with wildcard — import from "modules/clock", NOT "clock"
+	"modules/*": "./modules/*",
 
     // Wildcard array — import specifier is the path stripped of "./" and ".js"
     // e.g. "./assets" → import from "assets"
-    //      "./modules/foo" → import from "modules/foo"
     "*": [
       "./main",
       "./assets"

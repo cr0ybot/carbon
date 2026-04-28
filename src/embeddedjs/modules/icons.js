@@ -12,8 +12,9 @@
  * @link      https://cr0ybot.com/project/pebble-watchface-carbon
  */
 
-import codepoints from "icons/codepoints";
 import assets from "assets";
+
+import codepoints from "./icons/codepoints";
 
 const iconStyle = new Style(assets.styles.icons);
 

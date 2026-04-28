@@ -4,12 +4,11 @@
 		"$(MODDABLE)/examples/manifest_typings.json"
 	],
 	"modules": {
-		"clock": "./modules/clock",
-		"icons": "./modules/icons",
-		"icons/codepoints": "./modules/icons/codepoints",
+		"modules/*": "./modules/*",
 		"*": [
 			"./main",
-			"./assets"
+			"./assets",
+			"./layout"
 		]
 	},
 	"resources": {
