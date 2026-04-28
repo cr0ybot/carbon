@@ -48,6 +48,10 @@ const CarbonApplication = Application.template($ => ({
 	skin: backgroundSkin,
 	Behavior: CarbonBehavior,
 	contents: [
+		// Progress bar: absolute overlay drawn FIRST so all other content
+		// renders on top.  On emery: 4 px strip at the bottom edge.
+		// On gabbro: annular arc along the circular screen edge.
+		ProgressBar($, {}),
 		// Main layout column — stops above the progress bar height so the
 		// absolute ProgressBar overlay doesn't overlap BottomWidgetBar.
 		Column($, {
@@ -71,10 +75,6 @@ const CarbonApplication = Application.template($ => ({
 				BottomWidgetBar($, {}),
 			],
 		}),
-		// Progress bar: absolute overlay.
-		// On emery: 4 px strip anchored to the bottom edge.
-		// On gabbro: full-screen Port drawing an arc along the circular edge.
-		ProgressBar($, {}),
 	],
 }));
 

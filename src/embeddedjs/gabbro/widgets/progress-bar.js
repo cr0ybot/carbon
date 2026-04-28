@@ -1,17 +1,30 @@
 /**
  * Gabbro arc progress bar
  *
- * A Port overlay covering the full screen.  Draws a BAR_THICKNESS-pixel band
- * along the bottom semicircle — from the left midpoint (x=0, y=r) clockwise
- * around the bottom to the right midpoint (x=w, y=r).
+ * A full-screen Port overlay drawn BEHIND other content (place first in
+ * Application contents).  Renders a BAR_THICKNESS-pixel annular band along
+ * the bottom semicircle of the circular screen — from the 9-o'clock midpoint
+ * (left) clockwise through 6 o'clock (bottom) to the 3-o'clock midpoint
+ * (right).
  *
- * Arc maths
- * ─────────
- * For gabbro (180×180, r = 90), the bottom arc at column px is:
- *   arcY = r + √(r² − (px − r)²)
+ * Drawing model
+ * ─────────────
+ * Row-by-row scan instead of column-by-column.  For each row y in the bottom
+ * half, we compute the x-spans of the outer ring minus the inner hole and
+ * issue two fillColor calls (left segment, right segment).  This produces a
+ * solid, gap-free band at all slopes.
  *
- * Progress fraction at column px (0 = left edge, 1 = right edge):
- *   fraction = 1 − acos((px − r) / r) / π
+ * Progress colouring
+ * ──────────────────
+ * The cutoff y-row is where the arc angle equals π·(1 − progress):
+ *
+ *   yCutoff = cy + R · sin(π · (1 − progress))
+ *
+ * • Left segment  (angle π→π/2 as y increases):
+ *   filled for y ≤ yCutoff when progress ≤ 0.5; always filled when > 0.5.
+ *
+ * • Right segment (angle 0→π/2 as y increases):
+ *   never filled when progress < 0.5; filled for y ≥ yCutoff when ≥ 0.5.
  *
  * @module gabbro/widgets/progress-bar
  *
@@ -38,53 +51,46 @@ class ArcProgressBehavior extends Behavior {
 	}
 
 	onDraw(port, dirtyX, dirtyY, dirtyW, dirtyH) {
-		// Use an effective radius/center inset by BAR_THICKNESS/2 so every
-		// BAR_THICKNESS-wide square stays fully within the circular clip.
-		// r = cx = (screen.width - BAR_THICKNESS) / 2  →  88 on gabbro.
-		const r  = (screen.width - BAR_THICKNESS) / 2;
-		const cx = r; // arc center-x = r, arc spans exactly x=0 to x=screen.width-1
-		const progress = this.progress;
+		const R  = screen.width / 2;   // outer radius = 90 on gabbro
+		const iR = R - BAR_THICKNESS;  // inner radius = 86
+		const cx = R;                  // center x = 90
+		const cy = R;                  // center y = 90
 
-		// Iterate over every column in the dirty rect.
-		const startX = Math.max(0, dirtyX);
-		const endX   = Math.min(screen.width - BAR_THICKNESS, dirtyX + dirtyW);
+		const progress   = this.progress;
+		const trackColor = assets.colors.progressTrack;
+		const fillColor  = assets.colors.progressFill;
 
-		// Seed prevArcY from the column just before startX so the first
-		// strip connects seamlessly when drawing a partial dirty rect.
-		const prevDx0 = (startX - 1) - cx;
-		let prevArcY = startX > 0
-			? Math.round(r + Math.sqrt(Math.max(0, r * r - prevDx0 * prevDx0)))
-			: null;
+		// y-row where the progress angle crosses the boundary between fill
+		// and track.  Identical formula for both left and right segments.
+		const yCutoff = cy + R * Math.sin(Math.PI * (1 - progress));
 
-		for (let px = startX; px < endX; px++) {
-			const dx   = px - cx;
-			const arcY = Math.round(r + Math.sqrt(Math.max(0, r * r - dx * dx)));
+		// Bottom semicircle only, clamped to the dirty rect.
+		const yStart = Math.max(cy, dirtyY);
+		const yEnd   = Math.min(cy + R, dirtyY + dirtyH);
 
-			// Bridge the vertical gap to the previous column:
-			//   topY    = top of the bar at whichever column is higher on screen
-			//   bottomY = arc position of whichever column is lower on screen
-			// This ensures a 1-pixel-wide strip with no gaps, regardless of slope.
-			const topY    = (prevArcY !== null ? Math.min(arcY, prevArcY) : arcY) - BAR_THICKNESS;
-			const bottomY =  prevArcY !== null ? Math.max(arcY, prevArcY) : arcY;
-			const h = bottomY - topY;
+		for (let y = yStart; y <= yEnd; y++) {
+			const dy      = y - cy;
+			const outerDx = Math.sqrt(Math.max(0, R  * R  - dy * dy));
+			const innerDx = Math.sqrt(Math.max(0, iR * iR - dy * dy));
 
-			// Skip strips fully outside the dirty rect.
-			if (topY < dirtyY + dirtyH && bottomY > dirtyY) {
-				// Progress fraction: 0 at left midpoint (x=0), 1 at right midpoint (x=width).
-				const fraction = 1 - Math.acos(dx / r) / Math.PI;
-				const color = fraction <= progress
-					? assets.colors.progressFill
-					: assets.colors.progressTrack;
+			const lx0 = Math.round(cx - outerDx); // left  outer x
+			const lx1 = Math.round(cx - innerDx); // left  inner x
+			const rx0 = Math.round(cx + innerDx); // right inner x
+			const rx1 = Math.round(cx + outerDx); // right outer x
 
-				port.fillColor(color, px, topY, BAR_THICKNESS, h);
-			}
+			// Left: fill sweeps downward (top→bottom) as progress 0 → 0.5.
+			const leftFilled  = progress > 0.5 || y <= yCutoff;
+			// Right: fill sweeps upward (bottom→top) as progress 0.5 → 1.
+			const rightFilled = progress >= 0.5 && y >= yCutoff;
 
-			prevArcY = arcY;
+			if (lx1 > lx0) port.fillColor(leftFilled  ? fillColor : trackColor, lx0, y, lx1 - lx0, 1);
+			if (rx1 > rx0) port.fillColor(rightFilled ? fillColor : trackColor, rx0, y, rx1 - rx0, 1);
 		}
 	}
 }
 
-// Full-screen overlay — circular clip naturally confines drawing to the screen shape.
+// Full-screen overlay — place FIRST in Application contents so subsequent
+// siblings (Column with clock, widget bars, etc.) render on top of the arc.
 const ProgressBar = Port.template($ => ({
 	top: 0, bottom: 0, left: 0, right: 0,
 	Behavior: ArcProgressBehavior,
