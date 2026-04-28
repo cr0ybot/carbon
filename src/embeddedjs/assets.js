@@ -18,26 +18,37 @@ const fonts = {
 	icons: "20px IcoMoon",
 };
 
+const palette = {
+	BLACK: "#000000",
+	DARK_GREY: "#555555",
+	LIGHT_GRAY: "#AAAAAA",
+	WHITE: "#FFFFFF",
+	TRANSPARENT: "transparent",
+};
+
+const colors = {
+	background:     palette.BLACK,
+	topBar:         palette.DARK_GREY,
+	graphBackground:palette.BLACK,
+	slotMarker:     palette.LIGHT_GREY,
+	progressTrack:  palette.DARK_GREY,
+	progressFill:   palette.WHITE,
+};
+
 const assets = {
 	fonts,
+	palette,
+	colors,
 	skins: {
-		black:   { fill: "black" },
-		topBar:  { fill: "#1c1c1c" },
-		graph:   { fill: "#080f18" },
-		progress: { fill: "#2a2a2a" },
+		background:   { fill: colors.background },
+		topBar:  { fill: colors.topBar },
+		graph:   { fill: colors.graphBackground },
+		progress: { fill: colors.progressTrack },
 	},
 	styles: {
-		time:  { color: "white", font: fonts.time },
-		date:  { color: "white", font: fonts.date },
-		icons: { color: "white", font: fonts.icons },
-	},
-	// Color palette — used by Port drawing modules
-	colors: {
-		topBar:         "#1c1c1c",
-		graphBackground:"#080f18",
-		slotMarker:     "#333333",
-		progressTrack:  "#2a2a2a",
-		progressFill:   "white",
+		time:  { color: palette.WHITE, font: fonts.time },
+		date:  { color: palette.WHITE, font: fonts.date },
+		icons: { color: palette.WHITE, font: fonts.icons },
 	},
 };
 

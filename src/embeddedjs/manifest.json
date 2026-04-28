@@ -11,6 +11,18 @@
 			"./layout"
 		]
 	},
+	"platforms": {
+		"*/emery": {
+			"modules": {
+				"modules/*": "./emery/widgets/*"
+			}
+		},
+		"*/gabbro": {
+			"modules": {
+				"modules/*": "./gabbro/widgets/*"
+			}
+		}
+	},
 	"resources": {
 		"*-alpha": [
 			{

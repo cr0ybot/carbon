@@ -15,14 +15,14 @@ import { TopWidgetBar, BottomWidgetBar } from "modules/widget-bar";
 import PrecipGraph from "modules/precip-graph";
 import ProgressBar from "modules/progress-bar";
 
-const blackSkin = new Skin(assets.skins.black);
+const backgroundSkin = new Skin(assets.skins.background);
 
 //
 // Application behavior
 //
 
 class CarbonBehavior extends Behavior {
-	onDisplaying(app) {
+	onCreate(app) {
 		// Fire an initial clock event so all labels show the current time/date
 		// immediately rather than waiting for the first minutechange.
 		app.distribute("onClockChanged", new Date());
@@ -45,16 +45,18 @@ class CarbonBehavior extends Behavior {
 //
 
 const CarbonApplication = Application.template($ => ({
-	skin: blackSkin,
+	skin: backgroundSkin,
 	Behavior: CarbonBehavior,
 	contents: [
+		// Main layout column — stops above the progress bar height so the
+		// absolute ProgressBar overlay doesn't overlap BottomWidgetBar.
 		Column($, {
-			top: 0, bottom: 0, left: 0, right: 0,
+			top: 0, bottom: layout.progressBar.height, left: 0, right: 0,
 			contents: [
 				TopWidgetBar($, {}),
 				PrecipGraph($, {}),
 				// Center: time + date block vertically centred within its allotted height
-				Container($, {
+				Column($, {
 					height: layout.center.height, left: 0, right: 0,
 					contents: [
 						Column(null, {
@@ -67,9 +69,12 @@ const CarbonApplication = Application.template($ => ({
 					],
 				}),
 				BottomWidgetBar($, {}),
-				ProgressBar($, {}),
 			],
 		}),
+		// Progress bar: absolute overlay.
+		// On emery: 4 px strip anchored to the bottom edge.
+		// On gabbro: full-screen Port drawing an arc along the circular edge.
+		ProgressBar($, {}),
 	],
 }));
 
