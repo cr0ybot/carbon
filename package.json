@@ -4,7 +4,7 @@
     "name": "Cory Hughart",
     "url": "https://coryhughart.com"
   },
-  "version": "0.0.1",
+  "version": "0.1.0",
   "keywords": [
     "pebble-app"
   ],
@@ -30,6 +30,7 @@
     }
   },
   "scripts": {
+    "clean": "rm -rf build",
     "gen-icons": "node scripts/gen-icons.js",
     "build": "pebble build",
     "emulator:emery": "pebble install --emulator emery --logs",
