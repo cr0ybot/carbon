@@ -18,6 +18,10 @@
  * skin, style, inset) and may override `render()` for platform-specific
  * layout (e.g. gabbro arc-chord clipping).
  *
+ * Note: `Column` is used as the slot wrapper rather than `Container` because
+ * `Container` requires a native host binding that is not registered on all
+ * Pebble platforms. For a single-child slot, `Column` is equivalent.
+ *
  * @module widget-bar
  *
  * @author    Cory Hughart <cory@coryhughart.com>
@@ -25,8 +29,6 @@
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
  * @link      https://cr0ybot.com/project/pebble-watchface-carbon
  */
-
-import { Container } from "piu/All";
 
 export default class WidgetBar {
 	/**
@@ -56,7 +58,7 @@ export default class WidgetBar {
 			contents: [ Widget(spec.config ?? null, {}) ],
 		};
 		if (this._style) dict.style = this._style;
-		return Container(null, dict);
+		return Column(null, dict);
 	}
 
 	/**

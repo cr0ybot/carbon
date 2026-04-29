@@ -6,7 +6,7 @@
  *
  * Stub implementation shows a static 40 % fill.
  *
- * @module progress-bar
+ * @module modules/progress-bar
  *
  * @author    Cory Hughart <cory@coryhughart.com>
  * @copyright 2026 Cory Hughart
