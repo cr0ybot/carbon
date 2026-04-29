@@ -54,7 +54,7 @@ const CarbonApplication = Application.template($ => ({
 }));
 
 export default new CarbonApplication(widgetConfig, {
-	commandListLength: 4096,
+	commandListLength: 1024,
 	touchCount: 0,
 	pixels: screen.width * 4,
 });

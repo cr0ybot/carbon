@@ -84,7 +84,33 @@ Move the downloaded TTF font file to `src/embeddedjs/assets/IcoMoon-Regular.ttf`
 npm run gen-icons
 ```
 
-This will update `src/embeddedjs/modules/icons/codepoints.js` with the new codepoint mapping. The icons module re-exports this mapping as its default export, so any changes will be reflected in the watchface immediately (or you'll get a runtime error if a codepoint is missing or the file is otherwise malformed).
+This regenerates `src/embeddedjs/modules/icons/library.js` as a set of named `export const` declarations — one per icon, e.g.:
+
+```js
+export const battery = "\uF346";
+export const batteryCharging = "\uF38E";
+// ...
+```
+
+`src/embeddedjs/modules/icons.js` re-exports the entire library via `export * from "./icons/library"` and also exports the `IconLabel` template (a `Label` with the icon font style pre-applied). Import only the symbols you need:
+
+```js
+import { IconLabel, battery, batteryFull, batteryLow } from "modules/icons";
+```
+
+Because these are individual named bindings rather than a frozen object, unused codepoints are never instantiated at runtime, keeping slot and chunk heap usage low.
+
+### XS VM Memory (`src/c/mdbl.c`)
+
+The XS virtual machine heap is configured in `src/c/mdbl.c` via `ModdableCreationRecord`:
+
+| Pool | Size | Purpose |
+|---|---|---|
+| `slot` | 32 768 bytes (2 048 slots × 16 B) | Object property bindings, module namespaces |
+| `chunk` | 16 384 bytes | Variable-size heap allocations (strings, arrays) |
+| `stack` | 8 192 bytes | Call stack frames |
+
+**Why `slot` is larger than the SDK default (8 192 bytes):** During startup the XS runtime initializes every prelinked module namespace simultaneously before any JavaScript runs. This burst requires roughly 2 048 slots even before `main.js` executes. The default 512-slot budget caused an immediate OOM crash (`Chunk allocation: failed` — misleadingly reported as a chunk error, but caused by slot exhaustion). Setting `slot = 32768` gives comfortable headroom; the emery platform has ~192 KB heap and reports ~57 KB still free after all allocations.
 
 ### Troubleshooting
 
