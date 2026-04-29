@@ -2,12 +2,12 @@
  * Icons
  *
  * Provides the `IconLabel` template — a Label with the IcoMoon icon font
- * style pre-applied.  Import icon codepoints directly from
- * "modules/icons/library" (generated file) wherever they are needed.
+ * style pre-applied.  Use kebab-case ligature strings as the `string` value.
  *
  * Usage:
  *   import { IconLabel } from "modules/icons";
- *   import { battery, batteryFull } from "modules/icons/library";
+ *   IconLabel.template($ => ({ string: "battery" }))
+ *   label.string = "battery-charging";
  *
  * @module icons
  *

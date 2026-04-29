@@ -5,7 +5,6 @@
 	],
 	"modules": {
 		"modules/*": "./modules/*",
-		"modules/icons/library": "./modules/icons/library",
 		"widgets/*": "./widgets/*",
 		"*": [
 			"./main",

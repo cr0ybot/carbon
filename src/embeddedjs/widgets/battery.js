@@ -16,16 +16,15 @@
 
 import Battery from "embedded:sensor/Battery";
 import { IconLabel } from "modules/icons";
-import { battery, batteryCharging, batteryFull, batteryMedium, batteryLow, batteryWarning } from "modules/icons/library";
 
 console.log("Battery widget loaded");
 
 function batteryIcon(sample) {
-	if (sample.charging)     return batteryCharging;
-	if (sample.percent > 80) return batteryFull;
-	if (sample.percent > 40) return batteryMedium;
-	if (sample.percent > 20) return batteryLow;
-	return batteryWarning;
+	if (sample.charging)     return "battery-charging";
+	if (sample.percent > 80) return "battery-full";
+	if (sample.percent > 40) return "battery-medium";
+	if (sample.percent > 20) return "battery-low";
+	return "battery-warning";
 }
 
 class BatteryBehavior extends Behavior {
@@ -43,7 +42,7 @@ class BatteryBehavior extends Behavior {
 
 const BatteryWidget = IconLabel.template($ => ({
 	Behavior: BatteryBehavior,
-	string: battery,
+	string: "battery",
 }));
 
 export default BatteryWidget;

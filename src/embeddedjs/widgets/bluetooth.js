@@ -15,12 +15,11 @@
  */
 
 import { IconLabel } from "modules/icons";
-import { bluetooth, bluetoothOff } from "modules/icons/library";
 
 console.log("Bluetooth widget loaded");
 
 function btIcon() {
-	return watch.connected.app ? bluetooth : bluetoothOff;
+	return watch.connected.app ? "bluetooth" : "bluetooth-off";
 }
 
 class BluetoothBehavior extends Behavior {
@@ -34,7 +33,7 @@ class BluetoothBehavior extends Behavior {
 
 const BluetoothWidget = IconLabel.template($ => ({
 	Behavior: BluetoothBehavior,
-	string: bluetooth,
+	string: "bluetooth",
 }));
 
 export default BluetoothWidget;

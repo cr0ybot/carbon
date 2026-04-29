@@ -61,7 +61,6 @@ npm run device
 ### Project Structure
 
 ```
-scripts/           # Build/util scripts (e.g. icon codepoint generation)
 src/
   embeddedjs/      # Watch-side JavaScript (runs on device)
     assets/        # Fonts and other static resources
@@ -76,29 +75,23 @@ src/
 
 ### Icons
 
-Icons are included as a custom font generated from [IcoMoon](https://icomoon.io/). The `src/embeddedjs/assets/icons.icomoon.json` file can be imported into IcoMoon to edit the icon set. When icons are added, removed, or rearranged, the font and selection JSON file must be re-exported from IcoMoon (with font family set to "IcoMoon"), and the icon library must be regenerated.
+Icons are included as a custom font generated from [IcoMoon](https://icomoon.io/). The `src/embeddedjs/assets/icons.icomoon.json` file can be imported into IcoMoon to edit the icon set. When icons are added, removed, or rearranged, the font must be re-exported from IcoMoon (with font family set to "IcoMoon" and ligatures enabled), and both the TTF and the JSON selection file must be replaced.
 
-Move the downloaded TTF font file to `src/embeddedjs/assets/IcoMoon-Regular.ttf` (the `-Regular` suffix is important!) and the JSON selection file to `src/embeddedjs/assets/icons.icomoon.json`, then run:
+Move the downloaded TTF font file to `src/embeddedjs/assets/IcoMoon-Regular.ttf` (the `-Regular` suffix is important!) and the JSON selection file to `src/embeddedjs/assets/icons.icomoon.json`.
 
-```sh
-npm run gen-icons
-```
-
-This regenerates `src/embeddedjs/modules/icons/library.js` as a set of named `export const` declarations — one per icon, e.g.:
+`src/embeddedjs/modules/icons.js` exports the `IconLabel` template — a `Label` with the icon font style pre-applied. Use icon names as ligature strings directly on the `string` property:
 
 ```js
-export const battery = "\uF346";
-export const batteryCharging = "\uF38E";
-// ...
+import { IconLabel } from "modules/icons";
+
+// In a template:
+const Widget = IconLabel.template($ => ({ string: "battery" }));
+
+// Or at runtime:
+label.string = "battery-charging";
 ```
 
-`src/embeddedjs/modules/icons.js` re-exports the entire library via `export * from "./icons/library"` and also exports the `IconLabel` template (a `Label` with the icon font style pre-applied). Import only the symbols you need:
-
-```js
-import { IconLabel, battery, batteryFull, batteryLow } from "modules/icons";
-```
-
-Because these are individual named bindings rather than a frozen object, unused codepoints are never instantiated at runtime, keeping slot and chunk heap usage low.
+Ligature names are the kebab-case icon names as they appear in the IcoMoon selection JSON (e.g. `"battery"`, `"battery-charging"`, `"bluetooth-off"`). Because these are plain string literals rather than property names, they consume no XSA symbol table slots.
 
 ### XS VM Memory (`src/c/mdbl.c`)
 
@@ -144,6 +137,48 @@ There are two ways a module can be declared:
 ```
 
 When in doubt, grep the manifest for the key and make sure your import string matches it literally.
+
+#### `fxMapArchive failed` — XSA symbol table overflow
+
+At runtime (not compile time) you may see:
+
+```
+fxMapArchive failed
+```
+
+This is a hard crash with no further detail. The cause is that the compiled XSA archive contains more than **256 unique symbols** (identifier names). The Pebble host calls `fxMapArchive` with a fixed `bufferSize=256`, so any build that exceeds this limit will fail at startup.
+
+The XS compiler (`xsc`) records every identifier as a symbol — not just exported names, but also local variable names, method call names, and destructured property keys — even in release builds.
+
+**Diagnosis:** Parse the SYMB atom of the built XSA archive to count symbols:
+
+```sh
+python3 - <<'EOF'
+import struct
+data = open("build/gabbro/src/resource_ids.auto.c", "rb").read()  # adjust path
+# The XSA is the .xsa file in build/mods/gabbro/
+EOF
+```
+
+Or more directly, count unique identifiers in the XSA:
+
+```sh
+python3 -c "
+data = open('build/mods/gabbro/mc.xsa', 'rb').read()
+count = int.from_bytes(data[81:83], 'little')
+print(f'{count} symbols')
+"
+```
+
+**Common causes and fixes:**
+
+| Cause | Slots consumed | Fix |
+|---|---|---|
+| Named `export const` icon library | 62 (one per name) | Use font ligature strings instead — `label.string = "battery-charging"` |
+| `import { Container } from "piu/All"` | ~10+ new names | Use the Piu globals (`Column`, `Row`, etc.) injected by the host instead |
+| Extra local variable names | 1 per unique name | Reuse existing names or inline expressions |
+
+The icon ligature approach (used in this project) is the highest-leverage fix: icon names are plain string *values*, not property *keys*, so they contribute zero symbols to the table.
 
 #### Build environment: settings.json
 

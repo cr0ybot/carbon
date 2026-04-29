@@ -31,7 +31,6 @@
   },
   "scripts": {
     "clean": "rm -rf build",
-    "gen-icons": "node scripts/gen-icons.js",
     "build": "pebble build",
     "build:dev": "ALLOY_INSTRUMENTATION=1 npm run build",
     "build-run:emery": "npm run build:dev && pebble install --emulator emery --logs",

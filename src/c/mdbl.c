@@ -12,9 +12,6 @@
 //     GC count:   8192      ←  GC thrashed trying to free space
 //     Modules:    153
 //
-// Also note: modules/icons does `export * from "./icons/library"` which
-// registers 63 named bindings (62 codepoints + IconLabel) in the icons
-// module namespace alone.
 //
 // 4096 slots × 16 B = 65536 B.  emery heap ~192 KB; pools total ~88 KB,
 // leaving ~104 KB free for Pebble OS and Piu rendering.
