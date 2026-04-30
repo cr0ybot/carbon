@@ -17,17 +17,23 @@ const backgroundSkin = new Skin(assets.skins.background);
 //
 
 const widgetConfig = {
+	// 5 slots per bar.
+	// Gabbro top:    row 1 = slots 0-1 (2 wide), row 2 = slots 2-4 (3 wide)
+	// Gabbro bottom: row 1 = slots 0-2 (3 wide), row 2 = slots 3-4 (2 wide)
+	// Emery:         single row, left-to-right, slots 0-4
 	topWidgets: [
-		{ name: "bluetooth", config: {} },
-		null,
-		null,
-		{ name: "battery",   config: {} },
+		{ name: "bluetooth",   config: {} },
+		{ name: "placeholder", config: { string: "22", text: true } },
+		{ name: "placeholder", config: { string: "\uF1DC" } },  // sun
+		{ name: "placeholder", config: { string: "\uF0D1" } },  // cloud
+		{ name: "battery",     config: {} },
 	],
 	bottomWidgets: [
-		null,
-		null,
-		null,
-		null,
+		{ name: "placeholder", config: { string: "\uF114" } },  // activity
+		{ name: "placeholder", config: { string: "72", text: true } },
+		{ name: "placeholder", config: { string: "\uF02E" } },  // heart-pulse
+		{ name: "placeholder", config: { string: "\uF08C" } },  // flame
+		{ name: "placeholder", config: { string: "32", text: true } },
 	],
 };
 

@@ -13,9 +13,9 @@
  */
 
 // Section heights
-const TOP_BAR_HEIGHT    = 22;
+const TOP_BAR_HEIGHT    = 24;
 const PRECIP_HEIGHT     = 28;
-const BOTTOM_BAR_HEIGHT = 22;
+const BOTTOM_BAR_HEIGHT = 24;
 const PROGRESS_HEIGHT   = 4;
 
 // ProgressBar is the last Column child, so subtract its height here.
@@ -29,7 +29,7 @@ const layout = Object.freeze({
 	isRound: false,
 	topBar: Object.freeze({
 		height: TOP_BAR_HEIGHT,
-		inset:  0,
+		padding: 2,
 	}),
 	precipGraph: Object.freeze({
 		height: PRECIP_HEIGHT,
@@ -39,7 +39,6 @@ const layout = Object.freeze({
 	}),
 	bottomBar: Object.freeze({
 		height: BOTTOM_BAR_HEIGHT,
-		inset:  0,
 	}),
 	progressBar: Object.freeze({
 		height: PROGRESS_HEIGHT,
@@ -47,7 +46,7 @@ const layout = Object.freeze({
 	clock: Object.freeze({
 		blockHeight: CLOCK_BLOCK_H,
 		timeOffset:  Math.max(0, Math.floor((CENTER_HEIGHT - CLOCK_BLOCK_H) / 2)),
-		dateOffset:  -8,
+		dateOffset:  -16,
 	}),
 });
 

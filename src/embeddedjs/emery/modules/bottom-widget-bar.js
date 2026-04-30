@@ -2,7 +2,7 @@
  * Emery bottom widget bar
  *
  * Extends WidgetBar with emery-specific height.  No background skin
- * (transparent).  Slots are ordered left-to-right: — | — | — | —
+ * (transparent).  Slots are ordered left-to-right: slot 0 | slot 1 | slot 2 | slot 3 | slot 4
  *
  * @module modules/bottom-widget-bar
  *
@@ -20,12 +20,10 @@ const bottomBarStyle = new Style(assets.styles.icons);
 
 export default class BottomWidgetBar extends WidgetBar {
 	constructor() {
-		const inset = layout.bottomBar.inset;
 		super({
-			height:    layout.bottomBar.height,
-			slotWidth: Math.floor((screen.width - inset * 2) / 4),
+			...layout.bottomBar,
+			slotWidth: Math.floor(screen.width / 5),
 			style:     bottomBarStyle,
-			inset,
 		});
 	}
 }

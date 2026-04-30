@@ -1,12 +1,15 @@
 /**
  * Gabbro top widget bar
  *
- * Extends WidgetBar with gabbro-specific height, arc-chord inset, background
- * skin, and label style.  The inset trims each side so the slot row fits
- * within the circular screen chord.  Override `render()` here if additional
- * arc-specific geometry is needed beyond the base left/right inset.
+ * Extends WidgetBar with a two-row layout that spans the full screen width.
+ * The circular display clips bar corners naturally; no explicit inset needed.
  *
- * Slot order (left → right): Battery | Bluetooth | — | —
+ * Row layout (5 slots total):
+ *   Row 1 (2 slots, ~1/3 screen width, centered): slot 0 | slot 1
+ *   Row 2 (3 slots, ~1/2 screen width, centered): slot 2 | slot 3 | slot 4
+ *
+ * The rows are horizontally centered with insets sized to keep content
+ * within the visible circle at the top of the screen.
  *
  * @module modules/top-widget-bar
  *
@@ -25,13 +28,32 @@ const topBarStyle = new Style(assets.styles.icons);
 
 export default class TopWidgetBar extends WidgetBar {
 	constructor() {
-		const inset = layout.topBar.inset;
 		super({
-			height:    layout.topBar.height,
-			slotWidth: Math.floor((screen.width - inset * 2) / 4),
-			skin:      topBarSkin,
-			style:     topBarStyle,
-			inset,
+			...layout.topBar,
+			slotHeight: Math.floor(layout.topBar.height / 2),
+			skin:       topBarSkin,
+			style:      topBarStyle,
 		});
+	}
+
+	render(slots) {
+		const rowH  = this._slotHeight;
+		const slotW = Math.floor(screen.width / 4);
+		const in2   = Math.floor((screen.width - slotW * 2) / 2); // inset for 2-slot row
+		const in3   = Math.floor((screen.width - slotW * 3) / 2); // inset for 3-slot row
+		const dict  = { left: 0, right: 0, height: this._height };
+		if (this._skin)  dict.skin  = this._skin;
+		if (this._style) dict.style = this._style;
+		dict.contents = [
+			Row(null, {
+				top: 8, left: in2, right: in2, height: rowH,
+				contents: (slots ?? []).slice(0, 2).map(s => this._makeSlot(s, slotW, rowH)),
+			}),
+			Row(null, {
+				left: in3, right: in3, height: rowH,
+				contents: (slots ?? []).slice(2, 5).map(s => this._makeSlot(s, slotW, rowH)),
+			}),
+		];
+		return Column(null, dict);
 	}
 }

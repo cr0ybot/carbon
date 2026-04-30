@@ -33,28 +33,33 @@
 export default class WidgetBar {
 	/**
 	 * @param {object} options
-	 * @param {number} options.height        - Bar height in pixels.
-	 * @param {number} options.slotWidth     - Width of each slot in pixels.
-	 * @param {Skin}   [options.skin=null]   - Background skin for the bar Row.
-	 * @param {Style}  [options.style=null]  - Label style inherited by slot contents.
-	 * @param {number} [options.inset=0]     - Horizontal inset (px) for circular screens.
+	 * @param {number} options.height              - Bar height in pixels.
+	 * @param {number} [options.slotWidth]         - Width of each slot. Defaults to screen.width.
+	 * @param {number} [options.slotHeight]        - Height of each slot. Defaults to `height`.
+	 * @param {Skin}   [options.skin=null]         - Background skin for the bar container.
+	 * @param {Style}  [options.style=null]        - Label style inherited by slot contents.
+	 * @param {number} [options.inset=0]           - Horizontal inset (px) for circular screens.
 	 */
-	constructor({ height, slotWidth, skin = null, style = null, inset = 0 }) {
-		this._height    = height;
-		this._slotWidth = slotWidth;
-		this._skin      = skin;
-		this._style     = style;
-		this._inset     = inset;
+	constructor({ height, slotWidth = screen.width, slotHeight, skin = null, style = null, inset = 0, offset = 0, padding = 0 }) {
+		this._height     = height;
+		this._slotWidth  = slotWidth;
+		this._slotHeight = slotHeight ?? height;
+		this._skin       = skin;
+		this._style      = style;
+		this._inset      = inset;
+		this._offset     = offset;
+		this._padding    = padding;
 	}
 
-	_makeSlot(spec) {
+	_makeSlot(spec, slotW = this._slotWidth, slotH = this._slotHeight) {
 		if (!spec) {
-			return Content(null, { width: this._slotWidth, height: this._height });
+			return Content(null, { top: this._padding, width: slotW, height: slotH });
 		}
 		const Widget = importNow("widgets/" + spec.name).default;
 		const dict = {
-			width:    this._slotWidth,
-			height:   this._height,
+			top:      this._padding,
+			width:    slotW,
+			height:   slotH,
 			contents: [ Widget(spec.config ?? null, {}) ],
 		};
 		if (this._style) dict.style = this._style;
@@ -62,19 +67,20 @@ export default class WidgetBar {
 	}
 
 	/**
-	 * Builds the bar Row from an array of slot descriptors.
+	 * Builds the bar from an array of slot descriptors.
 	 *
 	 * Override in subclasses to apply platform-specific geometry
-	 * (e.g. arc-chord slot layout on gabbro).
+	 * (e.g. multi-row layout on gabbro).
 	 *
 	 * @param   {Array} slots  Array of `{ name, config } | null` descriptors.
 	 * @returns {Row}   Piu Row content.
 	 */
 	render(slots) {
 		const dict = {
-			height: this._height,
+			top:    this._offset,
 			left:   this._inset,
 			right:  this._inset,
+			height: this._height,
 			contents: (slots ?? []).map(spec => this._makeSlot(spec)),
 		};
 		if (this._skin) dict.skin = this._skin;

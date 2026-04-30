@@ -2,7 +2,7 @@
  * Emery top widget bar
  *
  * Extends WidgetBar with emery-specific height, background skin, and label
- * style.  Slot order (left → right): Battery | Bluetooth | — | —
+ * style.  Slot order (left → right): slot 0 | slot 1 | slot 2 | slot 3 | slot 4
  *
  * @module modules/top-widget-bar
  *
@@ -21,13 +21,11 @@ const topBarStyle = new Style(assets.styles.icons);
 
 export default class TopWidgetBar extends WidgetBar {
 	constructor() {
-		const inset = layout.topBar.inset;
 		super({
-			height:    layout.topBar.height,
-			slotWidth: Math.floor((screen.width - inset * 2) / 4),
+			...layout.topBar,
+			slotWidth: Math.floor(screen.width / 5),
 			skin:      topBarSkin,
 			style:     topBarStyle,
-			inset,
 		});
 	}
 }
