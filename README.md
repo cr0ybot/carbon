@@ -1,4 +1,4 @@
-# Carbon
+# Carbon [WORK IN PROGRESS]
 
 A feature-rich, highly configurable Pebble watchface for **Pebble Time 2** and **Pebble Round 2**, built with the [Alloy](https://developer.repebble.com/guides/alloy/) JavaScript framework.
 
