@@ -29,9 +29,9 @@ function batteryIcon(sample) {
 	return "\uF431"; // battery-warning
 }
 
-class BatteryBehavior extends Widget.Behavior {
+class BatteryBehavior extends Behavior {
 	onCreate(label, data) {
-		super.onCreate(label, data);
+		this.data = data;
 		this.sensor = new Battery({
 			onSample() {
 				label.string = batteryIcon(this.sample());
@@ -44,7 +44,7 @@ class BatteryBehavior extends Widget.Behavior {
 }
 
 const BatteryTemplate = IconLabel.template($ => ({
-	Behavior: $.constructor.Behavior,
+	Behavior: $.controller.constructor.Behavior,
 	string: "\uF346", // battery
 }));
 

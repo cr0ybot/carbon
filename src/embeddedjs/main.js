@@ -22,11 +22,11 @@ const widgetConfig = {
 	// Gabbro top:    row 1 = slots 0-1 (2 wide), row 2 = slots 2-4 (3 wide)
 	// Gabbro bottom: row 1 = slots 0-2 (3 wide), row 2 = slots 3-4 (2 wide)
 	topWidgets: [
-		{ name: "bluetooth",   config: {} },
+		{ name: "placeholder", config: { string: "\uF2FF" } }, // bluetooth
 		{ name: "placeholder", config: { string: "22", text: true } },
 		{ name: "placeholder", config: { string: "\uF1DC" } },  // sun
 		{ name: "placeholder", config: { string: "\uF0D1" } },  // cloud
-		{ name: "battery",     config: {} },
+		{ name: "placeholder", config: { string: "\uF346" } },  // battery
 	],
 	bottomWidgets: [
 		{ name: "placeholder", config: { string: "\uF114" } },  // activity

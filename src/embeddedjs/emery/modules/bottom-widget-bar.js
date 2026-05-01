@@ -22,11 +22,6 @@ const BottomWidgetBarTemplate = WidgetBarTemplate.template($ => ({
 }));
 
 class BottomWidgetBar extends WidgetBar {
-	constructor() {
-		console.log("Initializing BottomWidgetBar");
-		super();
-	}
-
 	get Template() { return BottomWidgetBarTemplate; }
 }
 

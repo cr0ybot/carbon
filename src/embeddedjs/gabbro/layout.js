@@ -16,9 +16,6 @@ import BottomWidgetBar from "modules/bottom-widget-bar";
 import PrecipGraph from "modules/precip-graph";
 import ProgressBar from "modules/progress-bar";
 
-const topWidgetBar    = new TopWidgetBar();
-const bottomWidgetBar = new BottomWidgetBar();
-
 /**
  * Returns the Application contents array for the gabbro platform.
  * Arc ProgressBar overlay is placed before the Column so it draws behind.
@@ -31,7 +28,7 @@ const Layout = Container.template($ => ({
 			top: 0, bottom: 0, left: 0, right: 0,
 			contents: [
 				// Top widget bar
-				new topWidgetBar.Template($.topWidgets, { height: 64 }),
+				new TopWidgetBar($.topWidgets, { height: 64 }),
 				// Precipitation graph
 				PrecipGraph($, { height: 30 }),
 				// Clock + date
@@ -48,7 +45,7 @@ const Layout = Container.template($ => ({
 					],
 				}),
 				// Bottom widget bar
-				new bottomWidgetBar.Template($.bottomWidgets, { height: 60 }),
+				new BottomWidgetBar($.bottomWidgets, { height: 60 }),
 			],
 		}),
 	],

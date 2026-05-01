@@ -23,9 +23,9 @@ function btIcon() {
 	return watch.connected.app ? "\uF2FF" : "\uF582"; // bluetooth / bluetooth-off
 }
 
-class BluetoothBehavior extends Widget.Behavior {
+class BluetoothBehavior extends Behavior {
 	onCreate(label, data) {
-		super.onCreate(label, data);
+		this.data = data;
 		console.log('BluetoothBehavior onCreate');
 		label.string = btIcon();
 		watch.addEventListener("connected", () => {
@@ -36,7 +36,7 @@ class BluetoothBehavior extends Widget.Behavior {
 }
 
 const BluetoothTemplate = IconLabel.template($ => ({
-	Behavior: $.constructor.Behavior,
+	Behavior: $.controller.constructor.Behavior,
 	string: "\uF2FF", // bluetooth
 }));
 

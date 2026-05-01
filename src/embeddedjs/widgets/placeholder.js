@@ -25,7 +25,7 @@ const dateStyle = new Style(assets.styles.date);
 
 // Template created once at module init — never inside a getter or template body.
 const PlaceholderTemplate = Label.template($ => ({
-	top:    $.text ? -3 : 0, // nudge up to better align with icons
+	top:    $.text ? -1 : 0, // nudge up to better align with icons
 	string: $.string ?? "\uF350", // thermometer by default
 	style:  $.text ? dateStyle : iconStyle,
 }));
@@ -35,4 +35,4 @@ class PlaceholderWidget extends Widget {
 }
 
 Object.freeze(PlaceholderWidget);
-export default new PlaceholderWidget();
+export default PlaceholderWidget;

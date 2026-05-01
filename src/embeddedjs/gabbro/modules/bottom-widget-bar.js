@@ -26,7 +26,7 @@ import assets from "assets";
 const bottomBarStyle = new Style(assets.styles.icons);
 
 const BottomWidgetBarTemplate = Column.template($ => ({
-	Behavior: $.constructor.Behavior,
+	Behavior: $.controller.constructor.Behavior,
 	style: bottomBarStyle,
 	contents: [
 		Row($, {
@@ -47,11 +47,6 @@ const BottomWidgetBarTemplate = Column.template($ => ({
 }));
 
 class BottomWidgetBar extends WidgetBar {
-	constructor() {
-		console.log("Initializing BottomWidgetBar");
-		super();
-	}
-
 	get Template() { return BottomWidgetBarTemplate; }
 
 	renderSlots( container, slots ) {

@@ -10,19 +10,19 @@
  *
  * Usage:
  *   const MyTemplate = Label.template($ => ({
- *     Behavior: MyBehavior,
+ *     Behavior: $.controller.constructor.Behavior,
  *     string:   "\uF000",
  *   }));
  *
  *   class MyWidget extends Widget {
- *     get Behavior() { return MyBehavior; }
+ *     static get Behavior() { return MyBehavior; }
  *     get Template() { return MyTemplate; }
  *   }
  *   Object.freeze(MyWidget);
- *   export default new MyWidget();
+ *   export default MyWidget;
  *
- * WidgetBar._makeSlot() calls widget.Template(config, { width, height }) to
- * instantiate the widget content inside a slot.
+ * WidgetBar.makeSlot() instantiates the widget class directly:
+ *   new WidgetSubclass(config, coordinates)
  *
  * IMPORTANT: `get Template()` must return a pre-created template, never call
  * `.template()` inside the getter — that would invoke template creation at
@@ -49,13 +49,21 @@ class WidgetBehavior extends Behavior {
 	}
 }
 
-const WidgetTemplate = Content.template(() => ({}));
+const WidgetTemplate = Content.template($ => ({
+	Behavior: $.controller.constructor.Behavior,
+}));
 
 class Widget {
 	static get Behavior() { return WidgetBehavior; }
-	constructor( data ) {
-		this.data = data;
+
+	constructor(data = {}, coordinates = {}) {
+		this.data = data ?? {};
+		return new this.Template({
+			controller: this,
+			...this.data,
+		}, coordinates);
 	}
+
 	get Template() { return WidgetTemplate; }
 }
 

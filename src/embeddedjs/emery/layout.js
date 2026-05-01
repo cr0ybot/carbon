@@ -59,9 +59,6 @@ import BottomWidgetBar from "modules/bottom-widget-bar";
 import PrecipGraph from "modules/precip-graph";
 import ProgressBar from "modules/progress-bar";
 
-const topWidgetBar    = new TopWidgetBar();
-const bottomWidgetBar = new BottomWidgetBar();
-
 /**
  * Returns the Application contents array for the emery platform.
  * Single full-height Column; ProgressBar is the last child.
@@ -75,7 +72,7 @@ const Layout = Container.template($ => ({
 			top: 0, bottom: 0, left: 0, right: 0,
 			contents: [
 				// Top widget bar
-				new topWidgetBar.Template($.topWidgets, {}),
+				new TopWidgetBar($.topWidgets, {}),
 				// Precipitation graph
 				PrecipGraph($, {}),
 				// Clock + date
@@ -92,7 +89,7 @@ const Layout = Container.template($ => ({
 					],
 				}),
 				// Bottom widget bar
-				new bottomWidgetBar.Template($.bottomWidgets, {}),
+				new BottomWidgetBar($.bottomWidgets, {}),
 				// Progress bar
 				ProgressBar($, {}),
 			],
