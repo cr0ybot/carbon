@@ -47,7 +47,7 @@ class BluetoothBehavior extends Behavior {
 const BluetoothTemplate = Label.template($ => ({
 	Behavior: BluetoothBehavior,
 	top: $.text ? -1 : 0,
-	string: "\uF2FF", // bluetooth
+	string: '',
 	style: $.text ? dateStyle : iconStyle,
 }));
 

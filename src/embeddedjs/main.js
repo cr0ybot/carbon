@@ -16,7 +16,7 @@ import { backgroundSkin } from "assets";
 
 const widgetConfig = {
 	progressBar: {
-		source: "none",
+		source: "battery",
 	},
 
 	// 5 slots per bar.
@@ -26,8 +26,8 @@ const widgetConfig = {
 	topWidgets: [
 		{ name: "battery", config: {} },
 		{ name: "battery", config: { text: true } },
-		{ name: "placeholder", config: { string: "\uF582" } },  // bluetooth-off
-		{ name: "placeholder", config: { string: "22", text: true } },
+		{ name: "bluetooth", config: {} },
+		{ name: "bluetooth", config: { text: true } },
 		{ name: "placeholder", config: { string: "\uF1DC" } },  // sun
 	],
 	bottomWidgets: [
