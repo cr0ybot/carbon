@@ -42,7 +42,7 @@
 // "Stack used", and "System bytes free" every second. If any "used" value
 // is close to its pool size when the crash occurs, that pool is the culprit.
 #define CARBON_SLOT_SIZE  40960
-#define CARBON_CHUNK_SIZE 20480
+#define CARBON_CHUNK_SIZE 16384
 #define CARBON_STACK_SIZE 6144
 
 int main(void) {
