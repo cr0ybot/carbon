@@ -22,8 +22,21 @@
     "watchapp": {
       "watchface": true
     },
+    "capabilities": [
+      "location"
+    ],
     "messageKeys": [
-      "dummy"
+      "WEATHER_REQUEST",
+      "WEATHER_TEMP",
+      "WEATHER_TEMP_LOW",
+      "WEATHER_TEMP_HIGH",
+      "WEATHER_CODE",
+      "WEATHER_PRECIP_0",
+      "WEATHER_PRECIP_1",
+      "WEATHER_PRECIP_2",
+      "WEATHER_SUNRISE",
+      "WEATHER_SUNSET",
+      "WEATHER_ERROR"
     ],
     "resources": {
       "media": []
@@ -41,5 +54,8 @@
   },
   "devDependencies": {
     "@moddable/typings": "^8.0.1"
+  },
+  "dependencies": {
+    "@moddable/pebbleproxy": "^0.1.8"
   }
 }

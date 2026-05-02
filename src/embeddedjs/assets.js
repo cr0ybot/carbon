@@ -23,10 +23,11 @@ const fonts = Object.freeze({
 });
 
 const palette = Object.freeze({
-	BLACK:       "#000000",
-	DARK_GREY:   "#555555",
-	LIGHT_GRAY:  "#AAAAAA",
-	WHITE:       "#FFFFFF",
+	BLACK:         "#000000",
+	DARK_GREY:     "#555555",
+	LIGHT_GRAY:    "#AAAAAA",
+	WHITE:         "#FFFFFF",
+	BLUE:          "#00AAFF",
 	TRANSPARENT: "transparent",
 });
 
@@ -34,6 +35,8 @@ const colors = Object.freeze({
 	background:      palette.BLACK,
 	topBar:          palette.DARK_GREY,
 	graphBackground: palette.BLACK,
+	graphBar:        palette.BLUE,
+	graphDaylight:   palette.WHITE,
 	slotMarker:      palette.LIGHT_GREY,
 	progressTrack:   palette.DARK_GREY,
 	progressFill:    palette.WHITE,

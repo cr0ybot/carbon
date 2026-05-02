@@ -24,18 +24,18 @@ const widgetConfig = {
 	// Gabbro top:    row 1 = slots 0-1 (2 wide), row 2 = slots 2-4 (3 wide)
 	// Gabbro bottom: row 1 = slots 0-2 (3 wide), row 2 = slots 3-4 (2 wide)
 	topWidgets: [
+		{ name: "bluetooth", config: { onlyDisconnected: true } },
+		null,
+		{ name: "weather", config: {} },
+		null,
 		{ name: "battery", config: {} },
-		{ name: "battery", config: { text: true } },
-		{ name: "bluetooth", config: {} },
-		{ name: "bluetooth", config: { text: true } },
-		{ name: "placeholder", config: { string: "\uF1DC" } },  // sun
 	],
 	bottomWidgets: [
-		{ name: "placeholder", config: { string: "\uF114" } },  // activity
-		{ name: "placeholder", config: { string: "72", text: true } },
-		{ name: "placeholder", config: { string: "\uF02E" } },  // heart-pulse
-		{ name: "placeholder", config: { string: "\uF08C" } },  // flame
-		{ name: "placeholder", config: { string: "32", text: true } },
+		{ name: "temperature", config: { mode: "low" } },
+		null,
+		{ name: "temperature", config: { mode: "current" } },
+		null,
+		{ name: "temperature", config: { mode: "high" } },
 	],
 };
 
