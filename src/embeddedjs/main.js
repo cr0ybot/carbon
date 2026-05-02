@@ -31,11 +31,11 @@ const widgetConfig = {
 		{ name: "temperature", config: { mode: "high" } },
 	],
 	bottomWidgets: [
-		{ name: "bluetooth", config: { onlyDisconnected: true } },
+		{ name: "battery", config: { onlyWarningCharging: true} },
 		null,
 		{ name: "weather", config: {} },
 		null,
-		{ name: "battery", config: {} },
+		{ name: "bluetooth", config: { onlyDisconnected: true } },
 	],
 };
 

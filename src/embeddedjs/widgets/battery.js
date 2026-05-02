@@ -6,6 +6,7 @@
  *
  * Config:
  *   text    - if true, show percentage text; default is icon mode
+ *   onlyWarningCharging - if true, hide unless charging or warning level
  *
  * Battery data comes from the shared battery observer module so multiple
  * battery-driven features can share a single sensor instance.
@@ -34,7 +35,17 @@ function batteryText(sample) {
 	return `${ Math.round(sample.percent) }%`;
 }
 
-function batteryString(sample, text) {
+function batteryShouldShow(sample, onlyWarningCharging) {
+	if (!onlyWarningCharging)
+		return true;
+
+	return sample.charging || sample.percent <= 20;
+}
+
+function batteryString(sample, text, onlyWarningCharging) {
+	if (!batteryShouldShow(sample, onlyWarningCharging))
+		return "";
+
 	return text ? batteryText(sample) : batteryIcon(sample);
 }
 
@@ -42,7 +53,7 @@ class BatteryBehavior extends Behavior {
 	onCreate(label, data) {
 		this.data = data;
 		this.unobserve = observeBattery((sample) => {
-			label.string = batteryString(sample, !!this.data?.text);
+			label.string = batteryString(sample, !!this.data?.text, !!this.data?.onlyWarningCharging);
 		});
 	}
 
@@ -57,7 +68,7 @@ class BatteryBehavior extends Behavior {
 const BatteryTemplate = Label.template($ => ({
 	Behavior: BatteryBehavior,
 	top: $.text ? -1 : 0,
-	string: $.text ? "--%" : "\uF346",
+	string: $.onlyWarningCharging ? "" : ($.text ? "--%" : "\uF346"),
 	style: $.text ? dateStyle : iconStyle,
 }));
 
