@@ -41,9 +41,9 @@
 // for the "instruments key" log lines. They report "Slot used", "Chunk used",
 // "Stack used", and "System bytes free" every second. If any "used" value
 // is close to its pool size when the crash occurs, that pool is the culprit.
-#define CARBON_SLOT_SIZE  40960
-#define CARBON_CHUNK_SIZE 16384
-#define CARBON_STACK_SIZE 6144
+#define CARBON_SLOT_SIZE  37888 //40960
+#define CARBON_CHUNK_SIZE 21504 //18432
+#define CARBON_STACK_SIZE 4096 //6144
 
 int main(void) {
 	Window *w = window_create();

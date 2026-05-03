@@ -43,36 +43,20 @@ const colors = Object.freeze({
 	progressFill:    palette.WHITE,
 });
 
-const skinConfigs = Object.freeze({
-	background: { fill: colors.background },
-	topBar:     { fill: colors.topBar },
-	graph:      { fill: colors.graphBackground },
-	progress:   { fill: colors.progressTrack },
-});
-
-const styleConfigs = Object.freeze({
-	time:           { color: palette.WHITE, font: fonts.time },
-	date:           { color: palette.LIGHT_GREY, font: fonts.date },
-	topBarIcons:    { color: palette.BLACK, font: fonts.icons, horizontal: "center" },
-	topBarText:     { color: palette.BLACK, font: fonts.date, horizontal: "center" },
-	bottomBarIcons: { color: palette.WHITE, font: fonts.icons, horizontal: "center" },
-	bottomBarText:  { color: palette.WHITE, font: fonts.date, horizontal: "center" },
-});
-
 const skins = Object.freeze({
-	background: new Skin(skinConfigs.background),
-	topBar:     new Skin(skinConfigs.topBar),
-	graph:      new Skin(skinConfigs.graph),
-	progress:   new Skin(skinConfigs.progress),
+	background: new Skin({ fill: colors.background }),
+	topBar:     new Skin({ fill: colors.topBar }),
+	graph:      new Skin({ fill: colors.graphBackground }),
+	progress:   new Skin({ fill: colors.progressTrack }),
 });
 
 const styles = Object.freeze({
-	time:           new Style(styleConfigs.time),
-	date:           new Style(styleConfigs.date),
-	topBarIcons:    new Style(styleConfigs.topBarIcons),
-	topBarText:     new Style(styleConfigs.topBarText),
-	bottomBarIcons: new Style(styleConfigs.bottomBarIcons),
-	bottomBarText:  new Style(styleConfigs.bottomBarText),
+	time:           new Style({ color: palette.WHITE, font: fonts.time }),
+	date:           new Style({ color: palette.LIGHT_GREY, font: fonts.date }),
+	topBarIcons:    new Style({ color: palette.BLACK, font: fonts.icons, horizontal: "center" }),
+	topBarText:     new Style({ color: palette.BLACK, font: fonts.date, horizontal: "center" }),
+	bottomBarIcons: new Style({ color: palette.WHITE, font: fonts.icons, horizontal: "center" }),
+	bottomBarText:  new Style({ color: palette.WHITE, font: fonts.date, horizontal: "center" }),
 });
 
 export { fonts, palette, colors, skins, styles };
