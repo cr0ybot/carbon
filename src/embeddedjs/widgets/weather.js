@@ -23,7 +23,7 @@ import Widget from "modules/widget";
 
 function weatherText(sample, mode) {
 	if (!sample)
-		return "--";
+		return "";
 
 	if (mode === "low")
 		return `${sample.temperatureLow}°`;
@@ -93,12 +93,12 @@ const WeatherTemplate = Row.template($ => {
 			Label($, {
 				width: iconW,
 				style: $.iconStyle ?? styles.topBarIcons,
-				string: showIcon ? "\uF0F0" : "",
+				string: "",
 			}),
 			Label($, {
 				width: textW,
 				style: $.textStyle ?? styles.topBarText,
-				string: showText ? "--" : "",
+				string: "",
 			}),
 		],
 	};

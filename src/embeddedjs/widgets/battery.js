@@ -68,7 +68,7 @@ class BatteryBehavior extends Behavior {
 const BatteryTemplate = Label.template($ => ({
 	Behavior: BatteryBehavior,
 	top: $.text ? -1 : 0,
-	string: $.onlyWarningCharging ? "" : ($.text ? "--%" : "\uF346"),
+	string: $.onlyWarningCharging ? "" : ($.text ? "" : "\uF346"),
 	style: $.text ? ($.textStyle ?? styles.topBarText) : ($.iconStyle ?? styles.topBarIcons),
 }));
 
