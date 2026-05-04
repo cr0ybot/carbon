@@ -19,6 +19,15 @@
 import { observeWeather, getWeatherSample } from "modules/weather-observer";
 import { colors, skins } from "assets";
 
+// Comfort ranges in Fahrenheit for temperature line colorization.
+const TEMP_EXTREME_COLD_MAX = 10;
+const TEMP_FREEZE_MAX = 32;
+const TEMP_COLD_MAX = 45;
+const TEMP_CHILLY_MAX = 59;
+const TEMP_MILD_MAX = 76;
+const TEMP_WARM_MAX = 84;
+const TEMP_HOT_MAX = 96;
+
 class WeatherGraphBehavior extends Behavior {
 	onCreate(port) {
 		this.port = port;
@@ -70,6 +79,24 @@ class WeatherGraphBehavior extends Behavior {
 			const py = Math.round(startY + ((dy * i) / steps));
 			port.fillColor(color, px, py, 1, 1);
 		}
+	}
+
+	getTempColor(tempF) {
+		if (tempF <= TEMP_EXTREME_COLD_MAX)
+			return colors.graphTempExtremeCold;
+		if (tempF <= TEMP_FREEZE_MAX)
+			return colors.graphTempFreeze;
+		if (tempF <= TEMP_COLD_MAX)
+			return colors.graphTempColdA;
+		if (tempF <= TEMP_CHILLY_MAX)
+			return colors.graphTempColdB;
+		if (tempF <= TEMP_MILD_MAX)
+			return colors.graphTempMild;
+		if (tempF <= TEMP_WARM_MAX)
+			return colors.graphTempWarm;
+		if (tempF <= TEMP_HOT_MAX)
+			return colors.graphTempHot;
+		return colors.graphTempExtremeHot;
 	}
 
 	onDraw(port, x, y, width, height) {
@@ -146,6 +173,7 @@ class WeatherGraphBehavior extends Behavior {
 		const lineRange = Math.max(1, lineBottom - lineTop);
 		let lastX = -1;
 		let lastY = -1;
+		let lastTemp = fallbackTemp;
 
 		for (let i = 0; i < pointCount; i++) {
 			const temp = lineTemps[i];
@@ -160,11 +188,15 @@ class WeatherGraphBehavior extends Behavior {
 			if (!Number.isFinite(xSafe) || !Number.isFinite(ySafe))
 				continue;
 
-			if (lastX >= 0)
-				this.drawLine(port, colors.graphTempLine, lastX, lastY, xSafe, ySafe);
-			port.fillColor(colors.graphTempLine, xSafe, ySafe, 1, 1);
+			if (lastX >= 0) {
+				const segmentColor = this.getTempColor((lastTemp + clamped) / 2);
+				this.drawLine(port, segmentColor, lastX, lastY, xSafe, ySafe);
+			}
+			const pointColor = this.getTempColor(clamped);
+			port.fillColor(pointColor, xSafe, ySafe, 1, 1);
 			lastX = xSafe;
 			lastY = ySafe;
+			lastTemp = clamped;
 		}
 	}
 }
