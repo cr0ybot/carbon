@@ -13,27 +13,26 @@ import ClockLabel from "modules/clock";
 import DateLabel from "modules/date-label";
 import TopWidgetBar from "modules/top-widget-bar";
 import BottomWidgetBar from "modules/bottom-widget-bar";
-import WeatherGraph from "modules/weather-graph";
+import PrecipGraph from "modules/precip-graph";
+import TempGraph from "modules/temp-graph";
 import ProgressBar from "modules/progress-bar";
 
 /**
  * Returns the Application contents array for the gabbro platform.
- * Arc ProgressBar overlay is placed before the Column so it draws behind.
+ * Uses the same linear progress bar module as emery.
  */
 const Layout = Container.template($ => ({
 	contents: [
-		// Arc progress bar: full-screen Port overlay, drawn behind everything.
-		ProgressBar($.progressBar ?? {}, {}),
 		Column($, {
 			top: 0, bottom: 0, left: 0, right: 0,
 			contents: [
 				// Top widget bar
 				new TopWidgetBar($.topWidgets, { height: 64 }),
-				// Weather graph
-				WeatherGraph($, { height: 30 }),
+				// Precipitation graph
+				PrecipGraph($, { height: 30 }),
 				// Clock + date
 				Column($, {
-					height: 100, left: 0, right: 0,
+					height: 70, left: 0, right: 0,
 					contents: [
 						Column(null, {
 							top: -20, left: 0, right: 0,
@@ -44,6 +43,10 @@ const Layout = Container.template($ => ({
 						}),
 					],
 				}),
+				// Temperature graph
+				TempGraph($, { height: 30 }),
+				// Progress bar
+				ProgressBar($.progressBar ?? {}, {}),
 				// Bottom widget bar
 				new BottomWidgetBar($.bottomWidgets, { height: 60 }),
 			],

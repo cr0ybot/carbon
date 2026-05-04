@@ -24,15 +24,15 @@ const widgetConfig = {
 	// Gabbro top: #1 bottom-left, #2 top-center, #3 bottom-right.
 	// Gabbro bottom: #1 top-left, #2 bottom-center, #3 top-right.
 	topWidgets: [
-		{ name: "weather", config: { mode: "low", showIcon: true, showText: true } },
-		{ name: "weather", config: { mode: "current", showIcon: true, showText: true } },
-		{ name: "weather", config: { mode: "high", showIcon: true, showText: true } },
-	],
-	bottomWidgets: [
 		{ name: "battery", config: { onlyWarningCharging: true } },
 		// { name: "placeholder", config: { icon: "\uF110", text: "Hi" } },
 		null,
 		{ name: "bluetooth", config: { onlyDisconnected: true } },
+	],
+	bottomWidgets: [
+		{ name: "weather", config: { mode: "low", showIcon: true, showText: true } },
+		{ name: "weather", config: { mode: "current", showIcon: true, showText: true } },
+		{ name: "weather", config: { mode: "high", showIcon: true, showText: true } },
 	],
 };
 

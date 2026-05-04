@@ -22,11 +22,13 @@
 
 import WidgetBar from "modules/widget-bar";
 import {
+	skins,
 	styles,
 } from "assets";
 
 const BottomWidgetBarTemplate = Column.template($ => ({
 	Behavior: $.controller.constructor.Behavior,
+	skin: skins.bottomBar,
 	style: styles.bottomBarIcons,
 	contents: [
 		Row($, {

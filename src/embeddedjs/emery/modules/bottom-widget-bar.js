@@ -13,11 +13,13 @@
  */
 
 import {
+	skins,
 	styles,
 } from "assets";
 import WidgetBar, { WidgetBarTemplate } from "modules/widget-bar";
 
 const BottomWidgetBarTemplate = WidgetBarTemplate.template($ => ({
+	skin: skins.bottomBar,
 	style: styles.bottomBarIcons,
 }));
 

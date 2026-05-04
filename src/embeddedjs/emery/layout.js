@@ -56,7 +56,8 @@ import ClockLabel from "modules/clock";
 import DateLabel from "modules/date-label";
 import TopWidgetBar from "modules/top-widget-bar";
 import BottomWidgetBar from "modules/bottom-widget-bar";
-import WeatherGraph from "modules/weather-graph";
+import PrecipGraph from "modules/precip-graph";
+import TempGraph from "modules/temp-graph";
 import ProgressBar from "modules/progress-bar";
 
 /**
@@ -73,11 +74,11 @@ const Layout = Container.template($ => ({
 			contents: [
 				// Top widget bar
 				new TopWidgetBar($.topWidgets, {}),
-				// Weather graph
-				WeatherGraph($, {}),
+				// Precipitation graph
+				PrecipGraph($, {}),
 				// Clock + date
 				Column($, {
-					height: 148, left: 0, right: 0,
+					height: 120, left: 0, right: 0,
 					contents: [
 						Column(null, {
 							top: 0, left: 0, right: 0,
@@ -88,10 +89,12 @@ const Layout = Container.template($ => ({
 						}),
 					],
 				}),
-				// Bottom widget bar
-				new BottomWidgetBar($.bottomWidgets, {}),
+				// Temperature graph
+				TempGraph($, {}),
 				// Progress bar
 				ProgressBar($.progressBar ?? {}, {}),
+				// Bottom widget bar
+				new BottomWidgetBar($.bottomWidgets, {}),
 			],
 		}),
 	],

@@ -42,6 +42,7 @@ const palette = Object.freeze({
 const colors = Object.freeze({
 	background:           palette.BLACK,
 	topBar:               palette.BLUE,
+	bottomBar:            palette.BLUE,
 	graphBackground:      palette.BLACK,
 	graphBar:             palette.BLUE,
 	graphTempLine:        palette.RED,
@@ -65,6 +66,7 @@ const colors = Object.freeze({
 const skins = Object.freeze({
 	background: new Skin({ fill: colors.background }),
 	topBar:     new Skin({ fill: colors.topBar }),
+	bottomBar:  new Skin({ fill: colors.bottomBar }),
 	graph:      new Skin({ fill: colors.graphBackground }),
 	progress:   new Skin({ fill: colors.progressTrack }),
 }, true);
