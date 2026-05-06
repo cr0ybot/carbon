@@ -1,12 +1,24 @@
 #include "daylight_layer.h"
 #include "graph_common.h"
+#include "../generated/icons.h"
 
 struct DaylightLayer {
   Layer   *layer;
+  GFont    icon_font;
+  int      battery_percent;
+  bool     battery_charging;
   uint8_t  sunrise_hour;
   uint8_t  sunset_hour;
   uint8_t  current_hour;
 };
+
+static const char *prv_battery_icon(int pct, bool charging) {
+  if (charging)  return ICON_BATTERY_CHARGING;
+  if (pct >= 70) return ICON_BATTERY_FULL;
+  if (pct >= 35) return ICON_BATTERY_MEDIUM;
+  if (pct >= 10) return ICON_BATTERY_LOW;
+  return ICON_BATTERY_WARNING;
+}
 
 static void prv_update_proc(Layer *layer, GContext *ctx) {
   DaylightLayer *dl = *(DaylightLayer **)layer_get_data(layer);
@@ -14,17 +26,43 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int graph_x = GRAPH_OFFSET_X;
   int graph_w = bounds.size.w - graph_x;
   int bar_w   = graph_w / GRAPH_HOURS;
-  int mid_y   = bounds.size.h / 2;
   int lh      = bounds.size.h;
+  int line_y  = lh - 3;  // line near bottom; vertical caps fit in ±2px
 
   // Vertical separator
   graph_draw_separator(ctx, graph_x, lh);
 
+  // Battery icon in left column
+  graphics_context_set_text_color(ctx, GColorWhite);
+  graphics_draw_text(ctx,
+                     prv_battery_icon(dl->battery_percent, dl->battery_charging),
+                     dl->icon_font,
+                     GRect(0, 0, GRAPH_OFFSET_X, 14),
+                     GTextOverflowModeTrailingEllipsis,
+                     GTextAlignmentCenter, NULL);
+
+  // Sun icon at noon column, moon icon at midnight column
+  int noon_off = (12 - (int)dl->current_hour + 24) % 24;
+  int midn_off = (24 - (int)dl->current_hour)      % 24;
+  if (noon_off > 0) {
+    int x = graph_x + noon_off * bar_w;
+    graphics_draw_text(ctx, ICON_SUN, dl->icon_font,
+                       GRect(x - 7, 0, 14, 14),
+                       GTextOverflowModeTrailingEllipsis,
+                       GTextAlignmentCenter, NULL);
+  }
+  if (midn_off > 0) {
+    int x = graph_x + midn_off * bar_w;
+    graphics_draw_text(ctx, ICON_MOON, dl->icon_font,
+                       GRect(x - 7, 0, 14, 14),
+                       GTextOverflowModeTrailingEllipsis,
+                       GTextAlignmentCenter, NULL);
+  }
+
+  // Daylight line
   graphics_context_set_stroke_color(ctx, GColorWhite);
   graphics_context_set_stroke_width(ctx, 1);
 
-  // Map sunrise/sunset wall-clock hours to graph column offsets.
-  // Column offset i means "current_hour + i" wrapping mod 24.
   int rise_off = ((int)dl->sunrise_hour - (int)dl->current_hour + 24) % 24;
   int set_off  = ((int)dl->sunset_hour  - (int)dl->current_hour + 24) % 24;
 
@@ -33,25 +71,27 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int x_end  = bounds.size.w;
 
   if (rise_off < set_off) {
-    // It is currently night before sunrise: draw one segment rise→set
-    graphics_draw_line(ctx, GPoint(x_rise, mid_y), GPoint(x_set,  mid_y));
-    graphics_draw_line(ctx, GPoint(x_rise, mid_y - 2), GPoint(x_rise, mid_y + 2));
-    graphics_draw_line(ctx, GPoint(x_set,  mid_y - 2), GPoint(x_set,  mid_y + 2));
+    graphics_draw_line(ctx, GPoint(x_rise, line_y), GPoint(x_set,  line_y));
+    graphics_draw_line(ctx, GPoint(x_rise, line_y - 2), GPoint(x_rise, line_y + 2));
+    graphics_draw_line(ctx, GPoint(x_set,  line_y - 2), GPoint(x_set,  line_y + 2));
   } else if (rise_off > set_off) {
-    // Currently in daytime: draw left-edge→sunset, then sunrise→right-edge
     if (set_off > 0) {
-      graphics_draw_line(ctx, GPoint(graph_x, mid_y), GPoint(x_set, mid_y));
-      graphics_draw_line(ctx, GPoint(x_set, mid_y - 2), GPoint(x_set, mid_y + 2));
+      graphics_draw_line(ctx, GPoint(graph_x, line_y), GPoint(x_set, line_y));
+      graphics_draw_line(ctx, GPoint(x_set, line_y - 2), GPoint(x_set, line_y + 2));
     }
-    graphics_draw_line(ctx, GPoint(x_rise, mid_y), GPoint(x_end, mid_y));
-    graphics_draw_line(ctx, GPoint(x_rise, mid_y - 2), GPoint(x_rise, mid_y + 2));
+    graphics_draw_line(ctx, GPoint(x_rise, line_y), GPoint(x_end, line_y));
+    graphics_draw_line(ctx, GPoint(x_rise, line_y - 2), GPoint(x_rise, line_y + 2));
   }
-  // rise_off == set_off: sunrise and sunset at the same offset — skip drawing
 }
 
 DaylightLayer *daylight_layer_create(GRect frame) {
   DaylightLayer *dl = malloc(sizeof(DaylightLayer));
   if (!dl) return NULL;
+  BatteryChargeState batt = battery_state_service_peek();
+  dl->battery_percent  = batt.charge_percent;
+  dl->battery_charging = batt.is_charging;
+  dl->icon_font        = fonts_load_custom_font(
+    resource_get_handle(RESOURCE_ID_CARBON_ICONS_14));
   dl->sunrise_hour = 6;
   dl->sunset_hour  = 20;
   dl->current_hour = 0;
@@ -64,6 +104,7 @@ DaylightLayer *daylight_layer_create(GRect frame) {
 
 void daylight_layer_destroy(DaylightLayer *layer) {
   if (!layer) return;
+  fonts_unload_custom_font(layer->icon_font);
   layer_destroy(layer->layer);
   free(layer);
 }
@@ -80,5 +121,13 @@ void daylight_layer_set_data(DaylightLayer *layer,
   layer->sunrise_hour = sunrise_hour;
   layer->sunset_hour  = sunset_hour;
   layer->current_hour = current_hour;
+  layer_mark_dirty(layer->layer);
+}
+
+void daylight_layer_notify_battery(DaylightLayer *layer,
+                                   BatteryChargeState state) {
+  if (!layer) return;
+  layer->battery_percent  = state.charge_percent;
+  layer->battery_charging = state.is_charging;
   layer_mark_dirty(layer->layer);
 }

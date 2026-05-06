@@ -74,8 +74,8 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   }
 
   // Noon/midnight ticks — temp is the bottommost graph layer, draw bottom only
-  graphics_context_set_stroke_color(ctx, GColorDarkGray);
-  graph_draw_ticks(ctx, graph_x, graph_w, lh, tl->current_hour, 3, false, true);
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graph_draw_ticks(ctx, graph_x, graph_w, lh, tl->current_hour, 4, false, true);
 }
 
 TempLayer *temp_layer_create(GRect frame) {

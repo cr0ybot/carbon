@@ -1,7 +1,6 @@
 #include <pebble.h>
 #include "modules/weather.h"
 #include "modules/settings.h"
-#include "ui/top_bar.h"
 #include "ui/daylight_layer.h"
 #include "ui/cloud_layer.h"
 #include "ui/precip_layer.h"
@@ -13,15 +12,13 @@
 
 // Emery layout constants (200x228)
 // Round (gabbro, 260x260) values are provided via PBL_IF_RECT_ELSE
-#define TOP_BAR_H     14
-#define DAYLIGHT_H     8
+#define DAYLIGHT_H    18
 #define CLOUD_H       22
 #define PRECIP_H      23
 #define TIME_BLOCK_H  PBL_IF_RECT_ELSE(102, 96)
 #define TEMP_H        44
 
 static Window         *s_main_window;
-static TopBarLayer    *s_top_bar;
 static DaylightLayer  *s_daylight_layer;
 static CloudLayer     *s_cloud_layer;
 static PrecipLayer    *s_precip_layer;
@@ -144,11 +141,11 @@ static void prv_request_weather(void) {
 // ==========================================================================
 
 static void prv_battery_handler(BatteryChargeState state) {
-  top_bar_layer_notify_battery(s_top_bar, state);
+  daylight_layer_notify_battery(s_daylight_layer, state);
 }
 
 static void prv_bt_handler(bool connected) {
-  top_bar_layer_notify_bt(s_top_bar, connected);
+  cloud_layer_notify_bt(s_cloud_layer, connected);
 }
 
 // ==========================================================================
@@ -160,15 +157,10 @@ static void prv_window_load(Window *window) {
   GRect bounds = layer_get_bounds(root);
   int w = bounds.size.w;
 
-  // Calculate vertical positions
-  int y = 2;  // 2px top margin
+  // Calculate vertical positions — daylight layer is flush to the top
+  int y = 0;
 
-  // Top bar
-  s_top_bar = top_bar_layer_create(GRect(0, y, w, TOP_BAR_H));
-  layer_add_child(root, top_bar_layer_get_layer(s_top_bar));
-  y += TOP_BAR_H;
-
-  // Daylight line (above cloud layer)
+  // Daylight line with battery and sun/moon hour markers
   s_daylight_layer = daylight_layer_create(GRect(0, y, w, DAYLIGHT_H));
   layer_add_child(root, daylight_layer_get_layer(s_daylight_layer));
   y += DAYLIGHT_H;
@@ -220,7 +212,6 @@ static void prv_window_load(Window *window) {
 }
 
 static void prv_window_unload(Window *window) {
-  top_bar_layer_destroy(s_top_bar);
   daylight_layer_destroy(s_daylight_layer);
   cloud_layer_destroy(s_cloud_layer);
   precip_layer_destroy(s_precip_layer);
