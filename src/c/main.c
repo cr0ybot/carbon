@@ -15,7 +15,13 @@
 #define DAYLIGHT_H    14
 #define CLOUD_H       22
 #define PRECIP_H      23
+#if PBL_DISPLAY_HEIGHT >= 228
+#define TIME_BLOCK_H  116
+#elif PBL_DISPLAY_HEIGHT <= 168
+#define TIME_BLOCK_H  78
+#else
 #define TIME_BLOCK_H  PBL_IF_RECT_ELSE(102, 96)
+#endif
 #define TEMP_H        44
 
 static Window         *s_main_window;
@@ -173,7 +179,7 @@ static void prv_window_load(Window *window) {
   // Precip graph + weather icon
   s_precip_layer = precip_layer_create(GRect(0, y, w, PRECIP_H));
   layer_add_child(root, precip_layer_get_layer(s_precip_layer));
-  y += PRECIP_H + 4;  // small gap before time block
+  y += PRECIP_H;
 
   // Time block (city + time + date)
   s_time_layer = time_layer_create(GRect(0, y, w, TIME_BLOCK_H));
