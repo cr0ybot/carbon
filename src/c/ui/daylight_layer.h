@@ -13,5 +13,4 @@ void           daylight_layer_set_data(DaylightLayer *layer,
                                        uint8_t sunrise_hour,
                                        uint8_t sunset_hour,
                                        uint8_t current_hour);
-void           daylight_layer_notify_battery(DaylightLayer *layer,
-                                             BatteryChargeState state);
+

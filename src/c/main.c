@@ -6,6 +6,7 @@
 #include "ui/precip_layer.h"
 #include "ui/time_layer.h"
 #include "ui/temp_layer.h"
+#include "ui/icon_bar_layer.h"
 
 // Storage key for persisting last-received weather across cold starts
 #define STORAGE_KEY_WEATHER 1
@@ -37,6 +38,7 @@ static CloudLayer     *s_cloud_layer;
 static PrecipLayer    *s_precip_layer;
 static TimeLayer      *s_time_layer;
 static TempLayer      *s_temp_layer;
+static IconBarLayer   *s_icon_bar_layer;
 
 static WeatherData s_weather;
 
@@ -125,8 +127,8 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
                           current_hour);
   cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
   precip_layer_set_data(s_precip_layer, s_weather.precip_prob, current_hour);
-  precip_layer_set_condition(s_precip_layer,
-                             weather_code_to_condition(s_weather.weather_code));
+  icon_bar_layer_set_condition(s_icon_bar_layer,
+                               weather_code_to_condition(s_weather.weather_code));
   temp_layer_set_data(s_temp_layer,
                       s_weather.current_temp,
                       s_weather.high_temp,
@@ -154,11 +156,11 @@ static void prv_request_weather(void) {
 // ==========================================================================
 
 static void prv_battery_handler(BatteryChargeState state) {
-  daylight_layer_notify_battery(s_daylight_layer, state);
+  icon_bar_layer_notify_battery(s_icon_bar_layer, state);
 }
 
 static void prv_bt_handler(bool connected) {
-  cloud_layer_notify_bt(s_cloud_layer, connected);
+  icon_bar_layer_notify_bt(s_icon_bar_layer, connected);
 }
 
 // ==========================================================================
@@ -183,10 +185,14 @@ static void prv_window_load(Window *window) {
   layer_add_child(root, cloud_layer_get_layer(s_cloud_layer));
   y += CLOUD_H;
 
-  // Precip graph + weather icon
+  // Precip graph
   s_precip_layer = precip_layer_create(GRect(0, y, w, PRECIP_H));
   layer_add_child(root, precip_layer_get_layer(s_precip_layer));
   y += PRECIP_H;
+
+  // Icon bar — overlaid on top of daylight/cloud/precip, owns the left column
+  s_icon_bar_layer = icon_bar_layer_create(GRect(0, 0, w, DAYLIGHT_H + CLOUD_H + PRECIP_H));
+  layer_add_child(root, icon_bar_layer_get_layer(s_icon_bar_layer));
 
   // Time block (city + time + date)
   s_time_layer = time_layer_create(GRect(0, y, w, TIME_BLOCK_H));
@@ -212,8 +218,8 @@ static void prv_window_load(Window *window) {
                             current_hour);
     cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
     precip_layer_set_data(s_precip_layer, s_weather.precip_prob, current_hour);
-    precip_layer_set_condition(s_precip_layer,
-                               weather_code_to_condition(s_weather.weather_code));
+    icon_bar_layer_set_condition(s_icon_bar_layer,
+                                 weather_code_to_condition(s_weather.weather_code));
     temp_layer_set_data(s_temp_layer,
                         s_weather.current_temp,
                         s_weather.high_temp,
@@ -228,6 +234,7 @@ static void prv_window_unload(Window *window) {
   daylight_layer_destroy(s_daylight_layer);
   cloud_layer_destroy(s_cloud_layer);
   precip_layer_destroy(s_precip_layer);
+  icon_bar_layer_destroy(s_icon_bar_layer);
   time_layer_destroy(s_time_layer);
   temp_layer_destroy(s_temp_layer);
 }

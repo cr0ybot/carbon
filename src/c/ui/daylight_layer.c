@@ -4,21 +4,10 @@
 
 struct DaylightLayer {
   Layer   *layer;
-  GFont    icon_font;
-  int      battery_percent;
-  bool     battery_charging;
   uint8_t  sunrise_hour;
   uint8_t  sunset_hour;
   uint8_t  current_hour;
 };
-
-static const char *prv_battery_icon(int pct, bool charging) {
-  if (charging)  return ICON_BATTERY_CHARGING;
-  if (pct >= 70) return ICON_BATTERY_FULL;
-  if (pct >= 35) return ICON_BATTERY_MEDIUM;
-  if (pct >= 10) return ICON_BATTERY_LOW;
-  return ICON_BATTERY_WARNING;
-}
 
 // Calculate the current moon phase (0=new, 1=wax crescent, 2=first quarter,
 // 3=wax gibbous, 4=full, 5=wan gibbous, 6=last quarter, 7=wan crescent).
@@ -118,20 +107,6 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   prv_draw_col_marker(ctx, noon_off, 4,          graph_x, bar_w, line_y, bounds.size.w);
   prv_draw_col_marker(ctx, midn_off, moon_phase, graph_x, bar_w, line_y, bounds.size.w);
 
-  // Clip any marker bleed into the label column, then draw separator on top
-  graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_rect(ctx, GRect(0, 0, graph_x - 1, lh), 0, GCornerNone);
-  graph_draw_separator(ctx, graph_x, lh);
-
-  // Battery icon drawn last so it sits on top of the clipped column
-  graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx,
-                     prv_battery_icon(dl->battery_percent, dl->battery_charging),
-                     dl->icon_font,
-                     GRect(0, 0, GRAPH_OFFSET_X, 14),
-                     GTextOverflowModeTrailingEllipsis,
-                     GTextAlignmentCenter, NULL);
-
   // Daylight line
   graphics_context_set_stroke_color(ctx, GColorWhite);
   graphics_context_set_stroke_width(ctx, 1);
@@ -160,11 +135,6 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 DaylightLayer *daylight_layer_create(GRect frame) {
   DaylightLayer *dl = malloc(sizeof(DaylightLayer));
   if (!dl) return NULL;
-  BatteryChargeState batt = battery_state_service_peek();
-  dl->battery_percent  = batt.charge_percent;
-  dl->battery_charging = batt.is_charging;
-  dl->icon_font        = fonts_load_custom_font(
-    resource_get_handle(RESOURCE_ID_CARBON_ICONS_14));
   dl->sunrise_hour = 6;
   dl->sunset_hour  = 20;
   dl->current_hour = 0;
@@ -177,7 +147,6 @@ DaylightLayer *daylight_layer_create(GRect frame) {
 
 void daylight_layer_destroy(DaylightLayer *layer) {
   if (!layer) return;
-  fonts_unload_custom_font(layer->icon_font);
   layer_destroy(layer->layer);
   free(layer);
 }
@@ -197,10 +166,4 @@ void daylight_layer_set_data(DaylightLayer *layer,
   layer_mark_dirty(layer->layer);
 }
 
-void daylight_layer_notify_battery(DaylightLayer *layer,
-                                   BatteryChargeState state) {
-  if (!layer) return;
-  layer->battery_percent  = state.charge_percent;
-  layer->battery_charging = state.is_charging;
-  layer_mark_dirty(layer->layer);
-}
+

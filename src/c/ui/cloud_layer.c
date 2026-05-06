@@ -6,10 +6,8 @@
 
 struct CloudLayer {
   Layer   *layer;
-  GFont    icon_font;
   uint8_t  cover[GRAPH_HOURS];
   uint8_t  current_hour;
-  bool     bt_connected;
 };
 
 static void prv_draw_cloud(GContext *ctx, int cx, int cy, int r) {
@@ -24,7 +22,6 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int graph_x = GRAPH_OFFSET_X;
   int graph_w = bounds.size.w - graph_x;
   int cy = bounds.size.h / 2;
-  int lh = bounds.size.h;
 
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_context_set_antialiased(ctx, false);
@@ -45,18 +42,6 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
     prv_draw_cloud(ctx, cx, cy, r);
   }
 
-  // Clip any cloud bleed into the label column, then separator, then BT icon on top
-  graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_rect(ctx, GRect(0, 0, graph_x - 1, lh), 0, GCornerNone);
-  graph_draw_separator(ctx, graph_x, lh);
-
-  if (!cl->bt_connected) {
-    graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, ICON_BLUETOOTH_OFF, cl->icon_font,
-                       GRect(0, 0, GRAPH_OFFSET_X, lh),
-                       GTextOverflowModeTrailingEllipsis,
-                       GTextAlignmentCenter, NULL);
-  }
 }
 
 CloudLayer *cloud_layer_create(GRect frame) {
@@ -64,9 +49,6 @@ CloudLayer *cloud_layer_create(GRect frame) {
   if (!cl) return NULL;
   memset(cl->cover, 0, sizeof(cl->cover));
   cl->current_hour = 0;
-  cl->bt_connected = true;
-  cl->icon_font    = fonts_load_custom_font(
-    resource_get_handle(RESOURCE_ID_CARBON_ICONS_14));
 
   cl->layer = layer_create_with_data(frame, sizeof(CloudLayer *));
   *(CloudLayer **)layer_get_data(cl->layer) = cl;
@@ -76,7 +58,6 @@ CloudLayer *cloud_layer_create(GRect frame) {
 
 void cloud_layer_destroy(CloudLayer *layer) {
   if (!layer) return;
-  fonts_unload_custom_font(layer->icon_font);
   layer_destroy(layer->layer);
   free(layer);
 }
@@ -90,11 +71,5 @@ void cloud_layer_set_data(CloudLayer *layer, const uint8_t cover[24],
   if (!layer) return;
   memcpy(layer->cover, cover, GRAPH_HOURS);
   layer->current_hour = current_hour;
-  layer_mark_dirty(layer->layer);
-}
-
-void cloud_layer_notify_bt(CloudLayer *layer, bool connected) {
-  if (!layer) return;
-  layer->bt_connected = connected;
   layer_mark_dirty(layer->layer);
 }

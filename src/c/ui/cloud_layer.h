@@ -8,4 +8,3 @@ void        cloud_layer_destroy(CloudLayer *layer);
 Layer      *cloud_layer_get_layer(CloudLayer *layer);
 void        cloud_layer_set_data(CloudLayer *layer, const uint8_t cover[24],
                                  uint8_t current_hour);
-void        cloud_layer_notify_bt(CloudLayer *layer, bool connected);
