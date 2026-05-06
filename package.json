@@ -37,17 +37,29 @@
       "WEATHER_SUNSET_HOUR",
       "CITY_NAME",
       "SETTING_TEMP_UNIT",
-      "SETTING_TIME_FORMAT",
       "SETTING_DATE_FORMAT",
       "SETTING_ACCENT_COLOR"
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "font",
+          "name": "CARBON_ICONS_14",
+          "file": "fonts/IcoMoon-Regular.ttf",
+          "characterRegex": "[\\uE000-\\uF8FF]"
+        },
+        {
+          "type": "font",
+          "name": "CARBON_ICONS_20",
+          "file": "fonts/IcoMoon-Regular.ttf",
+          "characterRegex": "[\\uE000-\\uF8FF]"
+        }
+      ]
     }
   },
   "scripts": {
     "clean": "pebble clean",
-    "gen-icon-ref": "node scripts/gen-icon-ref.js",
+    "gen-icons": "node scripts/gen-icons.js",
     "build": "pebble build",
     "build-run:emery": "npm run build && pebble install --emulator emery --logs",
     "build-run:gabbro": "npm run build && pebble install --emulator gabbro --logs",
