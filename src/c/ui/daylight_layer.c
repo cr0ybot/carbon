@@ -20,6 +20,25 @@ static const char *prv_battery_icon(int pct, bool charging) {
   return ICON_BATTERY_WARNING;
 }
 
+// Draw a 14px icon centered at the given graph column.
+// When col == 0 the event is at the left edge — also draw it peeking in
+// from the right so it appears to wrap around the 24-hour cycle.
+static void prv_draw_col_icon(GContext *ctx, GFont font, const char *icon,
+                               int col, int graph_x, int bar_w, int layer_w) {
+  int x = graph_x + col * bar_w;
+  graphics_draw_text(ctx, icon, font,
+                     GRect(x - 7, 0, 14, 14),
+                     GTextOverflowModeTrailingEllipsis,
+                     GTextAlignmentCenter, NULL);
+  if (col == 0) {
+    // Wrap: center the icon on the true right edge so the layer clips the right half
+    graphics_draw_text(ctx, icon, font,
+                       GRect(layer_w - 7, 0, 14, 14),
+                       GTextOverflowModeTrailingEllipsis,
+                       GTextAlignmentCenter, NULL);
+  }
+}
+
 static void prv_update_proc(Layer *layer, GContext *ctx) {
   DaylightLayer *dl = *(DaylightLayer **)layer_get_data(layer);
   GRect bounds = layer_get_bounds(layer);
@@ -29,35 +48,25 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int lh      = bounds.size.h;
   int line_y  = lh - 3;  // line near bottom; vertical caps fit in ±2px
 
-  // Vertical separator
+  // Sun/moon icons drawn first so the separator line renders on top of them
+  graphics_context_set_text_color(ctx, GColorWhite);
+  int noon_off = (12 - (int)dl->current_hour + 24) % 24;
+  int midn_off = (24 - (int)dl->current_hour)      % 24;
+  prv_draw_col_icon(ctx, dl->icon_font, ICON_SUN,  noon_off,
+                    graph_x, bar_w, bounds.size.w);
+  prv_draw_col_icon(ctx, dl->icon_font, ICON_MOON, midn_off,
+                    graph_x, bar_w, bounds.size.w);
+
+  // Vertical separator — drawn on top so it cleanly clips the left-edge icon
   graph_draw_separator(ctx, graph_x, lh);
 
-  // Battery icon in left column
-  graphics_context_set_text_color(ctx, GColorWhite);
+  // Battery icon in left column (above separator, so also drawn after)
   graphics_draw_text(ctx,
                      prv_battery_icon(dl->battery_percent, dl->battery_charging),
                      dl->icon_font,
                      GRect(0, 0, GRAPH_OFFSET_X, 14),
                      GTextOverflowModeTrailingEllipsis,
                      GTextAlignmentCenter, NULL);
-
-  // Sun icon at noon column, moon icon at midnight column
-  int noon_off = (12 - (int)dl->current_hour + 24) % 24;
-  int midn_off = (24 - (int)dl->current_hour)      % 24;
-  if (noon_off > 0) {
-    int x = graph_x + noon_off * bar_w;
-    graphics_draw_text(ctx, ICON_SUN, dl->icon_font,
-                       GRect(x - 7, 0, 14, 14),
-                       GTextOverflowModeTrailingEllipsis,
-                       GTextAlignmentCenter, NULL);
-  }
-  if (midn_off > 0) {
-    int x = graph_x + midn_off * bar_w;
-    graphics_draw_text(ctx, ICON_MOON, dl->icon_font,
-                       GRect(x - 7, 0, 14, 14),
-                       GTextOverflowModeTrailingEllipsis,
-                       GTextAlignmentCenter, NULL);
-  }
 
   // Daylight line
   graphics_context_set_stroke_color(ctx, GColorWhite);
