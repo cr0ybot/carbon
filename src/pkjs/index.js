@@ -309,4 +309,3 @@ Pebble.addEventListener('appmessage', function(e) {
     getWeather();
   }
 });
-

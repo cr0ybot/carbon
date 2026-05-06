@@ -84,11 +84,11 @@ TimeLayer *time_layer_create(GRect frame) {
 
   // Date — below time
   int date_y = time_y + time_h + 2;
-  tl->date_label = text_layer_create(GRect(0, date_y, w, 28));
+  tl->date_label = text_layer_create(GRect(0, date_y, w, 22));
   text_layer_set_background_color(tl->date_label, GColorClear);
   text_layer_set_text_color(tl->date_label, GColorWhite);
   text_layer_set_font(tl->date_label,
-                      fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+                      fonts_get_system_font(FONT_KEY_GOTHIC_18));
   text_layer_set_text_alignment(tl->date_label, GTextAlignmentCenter);
   text_layer_set_text(tl->date_label, tl->date_buf);
   layer_add_child(tl->container, text_layer_get_layer(tl->date_label));

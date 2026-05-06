@@ -50,7 +50,7 @@
         },
         {
           "type": "font",
-          "name": "CARBON_ICONS_20",
+          "name": "CARBON_ICONS_18",
           "file": "fonts/IcoMoon-Regular.ttf",
           "characterRegex": "[\\uE000-\\uF8FF]"
         }

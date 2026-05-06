@@ -36,7 +36,7 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_text_color(ctx, GColorWhite);
   graphics_draw_text(ctx, prv_condition_icon(pl->condition),
                      pl->icon_font,
-                     GRect(0, (layer_h - 20) / 2, graph_x - 2, 20),
+                     GRect(0, (layer_h - 18) / 2, graph_x - 2, 18),
                      GTextOverflowModeTrailingEllipsis,
                      GTextAlignmentCenter, NULL);
 
@@ -62,7 +62,7 @@ PrecipLayer *precip_layer_create(GRect frame) {
   pl->current_hour = 0;
   pl->condition    = WEATHER_CONDITION_UNKNOWN;
   pl->icon_font    = fonts_load_custom_font(
-    resource_get_handle(RESOURCE_ID_CARBON_ICONS_20));
+    resource_get_handle(RESOURCE_ID_CARBON_ICONS_18));
 
   pl->layer = layer_create_with_data(frame, sizeof(PrecipLayer *));
   *(PrecipLayer **)layer_get_data(pl->layer) = pl;
