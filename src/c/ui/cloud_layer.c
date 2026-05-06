@@ -26,18 +26,6 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int cy = bounds.size.h / 2;
   int lh = bounds.size.h;
 
-  // Bluetooth disconnected indicator in left column
-  if (!cl->bt_connected) {
-    graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, ICON_BLUETOOTH_OFF, cl->icon_font,
-                       GRect(0, 0, GRAPH_OFFSET_X, lh),
-                       GTextOverflowModeTrailingEllipsis,
-                       GTextAlignmentCenter, NULL);
-  }
-
-  // Vertical separator
-  graph_draw_separator(ctx, graph_x, lh);
-
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_context_set_antialiased(ctx, false);
 
@@ -55,6 +43,19 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
       r = 4;
     }
     prv_draw_cloud(ctx, cx, cy, r);
+  }
+
+  // Clip any cloud bleed into the label column, then separator, then BT icon on top
+  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_fill_rect(ctx, GRect(0, 0, graph_x - 1, lh), 0, GCornerNone);
+  graph_draw_separator(ctx, graph_x, lh);
+
+  if (!cl->bt_connected) {
+    graphics_context_set_text_color(ctx, GColorWhite);
+    graphics_draw_text(ctx, ICON_BLUETOOTH_OFF, cl->icon_font,
+                       GRect(0, 0, GRAPH_OFFSET_X, lh),
+                       GTextOverflowModeTrailingEllipsis,
+                       GTextAlignmentCenter, NULL);
   }
 }
 

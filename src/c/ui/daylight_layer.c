@@ -111,17 +111,19 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int lh      = bounds.size.h;
   int line_y  = lh / 2;
 
-  // Markers drawn before separator so the separator clips the left-edge bleed
+  // Markers drawn first; label column filled black after to clip any bleed
   int noon_off = (12 - (int)dl->current_hour + 24) % 24;
   int midn_off = (24 - (int)dl->current_hour)      % 24;
   int moon_phase = prv_moon_phase();
   prv_draw_col_marker(ctx, noon_off, 4,          graph_x, bar_w, line_y, bounds.size.w);
   prv_draw_col_marker(ctx, midn_off, moon_phase, graph_x, bar_w, line_y, bounds.size.w);
 
-  // Vertical separator — drawn on top to clip any marker bleeding into label column
+  // Clip any marker bleed into the label column, then draw separator on top
+  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_fill_rect(ctx, GRect(0, 0, graph_x - 1, lh), 0, GCornerNone);
   graph_draw_separator(ctx, graph_x, lh);
 
-  // Battery icon in left column
+  // Battery icon drawn last so it sits on top of the clipped column
   graphics_context_set_text_color(ctx, GColorWhite);
   graphics_draw_text(ctx,
                      prv_battery_icon(dl->battery_percent, dl->battery_charging),
