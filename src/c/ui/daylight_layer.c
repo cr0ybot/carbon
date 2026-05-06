@@ -41,14 +41,18 @@ static int prv_moon_phase(void) {
   return (b >= 8) ? 0 : b;
 }
 
-// Draw a small circle marker at the given column offset on the daylight line.
-// phase 4 (noon marker): solid white dot.
-// phase 0-7 (midnight marker): styled by moon phase —
-//   0,1,7 dark (new/crescent), 2 waxing half, 3-5 full/gibbous, 6 waning half.
-// When col==0 the event is at the left edge; also draws peeking from the right
-// to wrap around the 24-hour cycle.
+// Draw a circle marker styled by phase:
+//   phase 4 (noon): solid white.
+//   phase 0-7 (moon): 0=new (dark outline), 4=full (solid white),
+//     partial phases fill interior pixel columns from the lit side.
+//     r=3 gives interior dx range [-2..+2]; thresholds per phase:
+//       waxing  1→dx>=+2  2→dx>=+1  3→dx>=-1
+//       waning  5→dx<=+1  6→dx<=-1  7→dx<=-2
+// When col==0 also draws the marker peeking from the right edge (wrap).
 static void prv_draw_col_marker(GContext *ctx, int col, int phase,
                                 int graph_x, int bar_w, int line_y, int layer_w) {
+  // Lit-side threshold indexed by phase (0 and 4 are special-cased below)
+  static const int s_thr[8] = { 0, 2, 1, -1, 0, 1, -1, -2 };
   const int r = 3;
   int xs[2], n = 1;
   xs[0] = graph_x + col * bar_w;
@@ -58,33 +62,42 @@ static void prv_draw_col_marker(GContext *ctx, int col, int phase,
   }
   for (int i = 0; i < n; i++) {
     GPoint pt = GPoint(xs[i], line_y);
-    if (phase >= 3 && phase <= 5) {
-      // Full / gibbous: solid white circle
+
+    // Base: black fill + white outline
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_circle(ctx, pt, r);
+    graphics_context_set_stroke_color(ctx, GColorWhite);
+    graphics_context_set_stroke_width(ctx, 1);
+    graphics_draw_circle(ctx, pt, r);
+
+    if (phase == 0) continue;  // new moon: all dark, done
+
+    if (phase == 4) {
+      // Full / noon: solid white on top of outline
       graphics_context_set_fill_color(ctx, GColorWhite);
       graphics_fill_circle(ctx, pt, r);
-    } else if (phase == 2 || phase == 6) {
-      // Quarter: half lit — right half for waxing (2), left for waning (6)
-      graphics_context_set_fill_color(ctx, GColorBlack);
-      graphics_fill_circle(ctx, pt, r);
-      graphics_context_set_stroke_color(ctx, GColorWhite);
-      graphics_context_set_stroke_width(ctx, 1);
-      graphics_draw_circle(ctx, pt, r);
-      for (int dy = -(r - 1); dy <= (r - 1); dy++) {
-        int dx = 0;
-        while ((dx + 1) * (dx + 1) + dy * dy <= r * r) dx++;
-        if (dx <= 0) continue;
-        if (phase == 2)
-          graphics_draw_line(ctx, GPoint(pt.x, pt.y + dy), GPoint(pt.x + dx, pt.y + dy));
-        else
-          graphics_draw_line(ctx, GPoint(pt.x - dx, pt.y + dy), GPoint(pt.x, pt.y + dy));
-      }
-    } else {
-      // New / crescent (0, 1, 7): dark circle with white outline
-      graphics_context_set_fill_color(ctx, GColorBlack);
-      graphics_fill_circle(ctx, pt, r);
-      graphics_context_set_stroke_color(ctx, GColorWhite);
-      graphics_context_set_stroke_width(ctx, 1);
-      graphics_draw_circle(ctx, pt, r);
+      continue;
+    }
+
+    // Partial phases: paint lit interior columns with white horizontal lines.
+    // Interior pixels satisfy dx^2 + dy^2 < r^2 (strictly inside outline).
+    bool waxing = (phase >= 1 && phase <= 3);
+    int thr = s_thr[phase];
+
+    graphics_context_set_stroke_color(ctx, GColorWhite);
+    graphics_context_set_stroke_width(ctx, 1);
+    for (int dy = -(r - 1); dy <= r - 1; dy++) {
+      // Find max dx strictly inside the circle at this row
+      int dx_max = 0;
+      while ((dx_max + 1) * (dx_max + 1) + dy * dy < r * r) dx_max++;
+      // Lit x range: waxing fills [thr..+dx_max], waning fills [-dx_max..thr]
+      int x_lo = waxing ? thr     : -dx_max;
+      int x_hi = waxing ? dx_max  : thr;
+      if (x_lo < -dx_max) x_lo = -dx_max;
+      if (x_hi >  dx_max) x_hi =  dx_max;
+      if (x_lo > x_hi) continue;
+      graphics_draw_line(ctx, GPoint(pt.x + x_lo, pt.y + dy),
+                              GPoint(pt.x + x_hi, pt.y + dy));
     }
   }
 }
