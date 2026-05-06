@@ -12,7 +12,6 @@
   "pebble": {
     "displayName": "Carbon",
     "uuid": "4a34b9c0-93b3-43ff-b1ba-a19d00cbcc60",
-    "projectType": "moddable",
     "sdkVersion": "3",
     "enableMultiJS": true,
     "targetPlatforms": [
@@ -23,26 +22,24 @@
       "watchface": true
     },
     "capabilities": [
-      "location",
-      "health"
+      "location"
     ],
     "messageKeys": [
       "WEATHER_REQUEST",
       "WEATHER_TEMP",
-      "WEATHER_TEMP_LOW",
       "WEATHER_TEMP_HIGH",
-      "WEATHER_TEMP_HOURLY_0",
-      "WEATHER_TEMP_HOURLY_1",
-      "WEATHER_TEMP_HOURLY_2",
+      "WEATHER_TEMP_LOW",
       "WEATHER_CODE",
-      "WEATHER_PRECIP_0",
-      "WEATHER_PRECIP_1",
-      "WEATHER_PRECIP_2",
-      "WEATHER_SUNRISE",
-      "WEATHER_SUNSET",
-      "WEATHER_ERROR",
-      "HEALTH_STEPS",
-      "HEART_RATE_BPM"
+      "WEATHER_PRECIP_PROB",
+      "WEATHER_TEMP_HOURLY",
+      "WEATHER_CLOUD_COVER",
+      "WEATHER_SUNRISE_HOUR",
+      "WEATHER_SUNSET_HOUR",
+      "CITY_NAME",
+      "SETTING_TEMP_UNIT",
+      "SETTING_TIME_FORMAT",
+      "SETTING_DATE_FORMAT",
+      "SETTING_ACCENT_COLOR"
     ],
     "resources": {
       "media": []
@@ -52,16 +49,10 @@
     "clean": "pebble clean",
     "gen-icon-ref": "node scripts/gen-icon-ref.js",
     "build": "pebble build",
-    "build:dev": "ALLOY_INSTRUMENTATION=1 npm run build",
-    "build-run:emery": "npm run build:dev && pebble install --emulator emery --logs",
-    "build-run:gabbro": "npm run build:dev && pebble install --emulator gabbro --logs",
+    "build-run:emery": "npm run build && pebble install --emulator emery --logs",
+    "build-run:gabbro": "npm run build && pebble install --emulator gabbro --logs",
     "device": "pebble install --cloudpebble",
     "fix-build": "echo '{}' > '~/Library/Application Support/Pebble SDK/settings.json'"
   },
-  "devDependencies": {
-    "@moddable/typings": "^8.0.1"
-  },
-  "dependencies": {
-    "@moddable/pebbleproxy": "^0.1.8"
-  }
+  "dependencies": {}
 }

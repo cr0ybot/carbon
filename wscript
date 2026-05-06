@@ -29,18 +29,12 @@ def build(ctx):
     build_worker = os.path.exists('worker_src')
     binaries = []
 
-    instrumentation = os.environ.get('ALLOY_INSTRUMENTATION')
-    extra_cflags = ['-DALLOY_INSTRUMENTATION=1'] if instrumentation else []
-    if instrumentation:
-        print('### Instrumentation logging ENABLED')
-
     cached_env = ctx.env
     for platform in ctx.env.TARGET_PLATFORMS:
         ctx.env = ctx.all_envs[platform]
         ctx.set_group(ctx.env.PLATFORM_NAME)
         app_elf = '{}/pebble-app.elf'.format(ctx.env.BUILD_DIR)
-        ctx.pbl_build(source=ctx.path.ant_glob('src/c/**/*.c'), target=app_elf, bin_type='app',
-                      cflags=extra_cflags)
+        ctx.pbl_build(source=ctx.path.ant_glob('src/c/**/*.c'), target=app_elf, bin_type='app')
 
         if build_worker:
             worker_elf = '{}/pebble-worker.elf'.format(ctx.env.BUILD_DIR)
