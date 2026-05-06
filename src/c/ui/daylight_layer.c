@@ -20,22 +20,31 @@ static const char *prv_battery_icon(int pct, bool charging) {
   return ICON_BATTERY_WARNING;
 }
 
-// Draw a 14px icon centered at the given graph column.
-// When col == 0 the event is at the left edge — also draw it peeking in
-// from the right so it appears to wrap around the 24-hour cycle.
-static void prv_draw_col_icon(GContext *ctx, GFont font, const char *icon,
-                               int col, int graph_x, int bar_w, int layer_w) {
-  int x = graph_x + col * bar_w;
-  graphics_draw_text(ctx, icon, font,
-                     GRect(x - 7, 0, 14, 14),
-                     GTextOverflowModeTrailingEllipsis,
-                     GTextAlignmentCenter, NULL);
+// Draw a small circle marker at the given column offset on the daylight line.
+// filled=true → white filled (noon); filled=false → black fill, white outline (midnight).
+// When col==0 the event is at the left edge; also draw it peeking from the right
+// so it appears to wrap around the 24-hour cycle.
+static void prv_draw_col_marker(GContext *ctx, int col, bool filled,
+                                int graph_x, int bar_w, int line_y, int layer_w) {
+  const int r = 3;
+  int xs[2];
+  int n = 1;
+  xs[0] = graph_x + col * bar_w;
   if (col == 0) {
-    // Wrap: center the icon on the true right edge so the layer clips the right half
-    graphics_draw_text(ctx, icon, font,
-                       GRect(layer_w - 7, 0, 14, 14),
-                       GTextOverflowModeTrailingEllipsis,
-                       GTextAlignmentCenter, NULL);
+    xs[1] = layer_w;  // right-edge wrap — layer clips to left half
+    n = 2;
+  }
+  for (int i = 0; i < n; i++) {
+    if (!filled) {
+      graphics_context_set_fill_color(ctx, GColorBlack);
+      graphics_fill_circle(ctx, GPoint(xs[i], line_y), r);
+      graphics_context_set_stroke_color(ctx, GColorWhite);
+      graphics_context_set_stroke_width(ctx, 1);
+      graphics_draw_circle(ctx, GPoint(xs[i], line_y), r);
+    } else {
+      graphics_context_set_fill_color(ctx, GColorWhite);
+      graphics_fill_circle(ctx, GPoint(xs[i], line_y), r);
+    }
   }
 }
 
@@ -46,21 +55,19 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int graph_w = bounds.size.w - graph_x;
   int bar_w   = graph_w / GRAPH_HOURS;
   int lh      = bounds.size.h;
-  int line_y  = lh - 3;  // line near bottom; vertical caps fit in ±2px
+  int line_y  = lh / 2;
 
-  // Sun/moon icons drawn first so the separator line renders on top of them
-  graphics_context_set_text_color(ctx, GColorWhite);
+  // Markers drawn before separator so the separator clips the left-edge bleed
   int noon_off = (12 - (int)dl->current_hour + 24) % 24;
   int midn_off = (24 - (int)dl->current_hour)      % 24;
-  prv_draw_col_icon(ctx, dl->icon_font, ICON_SUN,  noon_off,
-                    graph_x, bar_w, bounds.size.w);
-  prv_draw_col_icon(ctx, dl->icon_font, ICON_MOON, midn_off,
-                    graph_x, bar_w, bounds.size.w);
+  prv_draw_col_marker(ctx, noon_off, true,  graph_x, bar_w, line_y, bounds.size.w);
+  prv_draw_col_marker(ctx, midn_off, false, graph_x, bar_w, line_y, bounds.size.w);
 
-  // Vertical separator — drawn on top so it cleanly clips the left-edge icon
+  // Vertical separator — drawn on top to clip any marker bleeding into label column
   graph_draw_separator(ctx, graph_x, lh);
 
-  // Battery icon in left column (above separator, so also drawn after)
+  // Battery icon in left column
+  graphics_context_set_text_color(ctx, GColorWhite);
   graphics_draw_text(ctx,
                      prv_battery_icon(dl->battery_percent, dl->battery_charging),
                      dl->icon_font,

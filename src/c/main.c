@@ -12,7 +12,7 @@
 
 // Emery layout constants (200x228)
 // Round (gabbro, 260x260) values are provided via PBL_IF_RECT_ELSE
-#define DAYLIGHT_H    18
+#define DAYLIGHT_H    14
 #define CLOUD_H       22
 #define PRECIP_H      23
 #define TIME_BLOCK_H  PBL_IF_RECT_ELSE(102, 96)
