@@ -20,30 +20,71 @@ static const char *prv_battery_icon(int pct, bool charging) {
   return ICON_BATTERY_WARNING;
 }
 
+// Calculate the current moon phase (0=new, 1=wax crescent, 2=first quarter,
+// 3=wax gibbous, 4=full, 5=wan gibbous, 6=last quarter, 7=wan crescent).
+// Integer-only adaptation of the classic algorithm, scaled x10000 and
+// epoch-offset to year 2000 so all values fit in 32-bit long.
+static int prv_moon_phase(void) {
+  time_t now = time(NULL);
+  struct tm *t = localtime(&now);
+  if (!t) return 0;
+  int year = t->tm_year + 1900;
+  int month = t->tm_mon + 1;
+  int day = t->tm_mday;
+  if (month < 3) { year--; month += 12; }
+  month++;
+  int yp = year - 2000;
+  long jd = 3652500L * yp + 306000L * month + 10000L * day + 364609100L;
+  long denom = 295306L;  // 29.5305882 * 10000 (lunar cycle)
+  long rem = jd % denom;
+  int b = (int)((rem * 8L + denom / 2L) / denom);
+  return (b >= 8) ? 0 : b;
+}
+
 // Draw a small circle marker at the given column offset on the daylight line.
-// filled=true → white filled (noon); filled=false → black fill, white outline (midnight).
-// When col==0 the event is at the left edge; also draw it peeking from the right
-// so it appears to wrap around the 24-hour cycle.
-static void prv_draw_col_marker(GContext *ctx, int col, bool filled,
+// phase 4 (noon marker): solid white dot.
+// phase 0-7 (midnight marker): styled by moon phase —
+//   0,1,7 dark (new/crescent), 2 waxing half, 3-5 full/gibbous, 6 waning half.
+// When col==0 the event is at the left edge; also draws peeking from the right
+// to wrap around the 24-hour cycle.
+static void prv_draw_col_marker(GContext *ctx, int col, int phase,
                                 int graph_x, int bar_w, int line_y, int layer_w) {
   const int r = 3;
-  int xs[2];
-  int n = 1;
+  int xs[2], n = 1;
   xs[0] = graph_x + col * bar_w;
   if (col == 0) {
-    xs[1] = layer_w;  // right-edge wrap — layer clips to left half
+    xs[1] = layer_w;
     n = 2;
   }
   for (int i = 0; i < n; i++) {
-    if (!filled) {
+    GPoint pt = GPoint(xs[i], line_y);
+    if (phase >= 3 && phase <= 5) {
+      // Full / gibbous: solid white circle
+      graphics_context_set_fill_color(ctx, GColorWhite);
+      graphics_fill_circle(ctx, pt, r);
+    } else if (phase == 2 || phase == 6) {
+      // Quarter: half lit — right half for waxing (2), left for waning (6)
       graphics_context_set_fill_color(ctx, GColorBlack);
-      graphics_fill_circle(ctx, GPoint(xs[i], line_y), r);
+      graphics_fill_circle(ctx, pt, r);
       graphics_context_set_stroke_color(ctx, GColorWhite);
       graphics_context_set_stroke_width(ctx, 1);
-      graphics_draw_circle(ctx, GPoint(xs[i], line_y), r);
+      graphics_draw_circle(ctx, pt, r);
+      for (int dy = -(r - 1); dy <= (r - 1); dy++) {
+        int dx = 0;
+        while ((dx + 1) * (dx + 1) + dy * dy <= r * r) dx++;
+        if (dx <= 0) continue;
+        if (phase == 2)
+          graphics_draw_line(ctx, GPoint(pt.x, pt.y + dy), GPoint(pt.x + dx, pt.y + dy));
+        else
+          graphics_draw_line(ctx, GPoint(pt.x - dx, pt.y + dy), GPoint(pt.x, pt.y + dy));
+      }
     } else {
-      graphics_context_set_fill_color(ctx, GColorWhite);
-      graphics_fill_circle(ctx, GPoint(xs[i], line_y), r);
+      // New / crescent (0, 1, 7): dark circle with white outline
+      graphics_context_set_fill_color(ctx, GColorBlack);
+      graphics_fill_circle(ctx, pt, r);
+      graphics_context_set_stroke_color(ctx, GColorWhite);
+      graphics_context_set_stroke_width(ctx, 1);
+      graphics_draw_circle(ctx, pt, r);
     }
   }
 }
@@ -60,8 +101,9 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   // Markers drawn before separator so the separator clips the left-edge bleed
   int noon_off = (12 - (int)dl->current_hour + 24) % 24;
   int midn_off = (24 - (int)dl->current_hour)      % 24;
-  prv_draw_col_marker(ctx, noon_off, true,  graph_x, bar_w, line_y, bounds.size.w);
-  prv_draw_col_marker(ctx, midn_off, false, graph_x, bar_w, line_y, bounds.size.w);
+  int moon_phase = prv_moon_phase();
+  prv_draw_col_marker(ctx, noon_off, 4,          graph_x, bar_w, line_y, bounds.size.w);
+  prv_draw_col_marker(ctx, midn_off, moon_phase, graph_x, bar_w, line_y, bounds.size.w);
 
   // Vertical separator — drawn on top to clip any marker bleeding into label column
   graph_draw_separator(ctx, graph_x, lh);
