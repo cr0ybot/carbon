@@ -62,7 +62,7 @@ TimeLayer *time_layer_create(GRect frame) {
 #elif PBL_DISPLAY_HEIGHT <= 168
   GFont time_font = fonts_get_system_font(FONT_KEY_LECO_36_BOLD_NUMBERS);
   int time_y = 13;
-  int time_h = 44;
+  int time_h = 40;
 #else
   GFont time_font = PBL_IF_RECT_ELSE(
     fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS),
@@ -80,7 +80,12 @@ TimeLayer *time_layer_create(GRect frame) {
 
   // Timezone — small font, left side of time row
   GFont small_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-  tl->tz_label = text_layer_create(GRect(2, time_y + (time_h - 18) / 2 + 8, 32, 18));
+#if PBL_DISPLAY_HEIGHT <= 168
+  int tz_ampm_y = time_y + (time_h - 18) / 2 + 2;
+#else
+  int tz_ampm_y = time_y + (time_h - 18) / 2 + 8;
+#endif
+  tl->tz_label = text_layer_create(GRect(2, tz_ampm_y, 32, 18));
   text_layer_set_background_color(tl->tz_label, GColorClear);
   text_layer_set_text_color(tl->tz_label, GColorLightGray);
   text_layer_set_font(tl->tz_label, small_font);
@@ -89,7 +94,7 @@ TimeLayer *time_layer_create(GRect frame) {
   layer_add_child(tl->container, text_layer_get_layer(tl->tz_label));
 
   // AM/PM — small font, right side of time row
-  tl->ampm_label = text_layer_create(GRect(w - 34, time_y + (time_h - 18) / 2 + 8, 32, 18));
+  tl->ampm_label = text_layer_create(GRect(w - 34, tz_ampm_y, 32, 18));
   text_layer_set_background_color(tl->ampm_label, GColorClear);
   text_layer_set_text_color(tl->ampm_label, GColorLightGray);
   text_layer_set_font(tl->ampm_label, small_font);

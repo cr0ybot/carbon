@@ -12,9 +12,16 @@
 
 // Emery layout constants (200x228)
 // Round (gabbro, 260x260) values are provided via PBL_IF_RECT_ELSE
+// Small screens (<=168px) use trimmed heights to center the time block
+#if PBL_DISPLAY_HEIGHT <= 168
+#define DAYLIGHT_H    12
+#define CLOUD_H       17
+#define PRECIP_H      16
+#else
 #define DAYLIGHT_H    14
 #define CLOUD_H       22
 #define PRECIP_H      23
+#endif
 #if PBL_DISPLAY_HEIGHT >= 228
 #define TIME_BLOCK_H  116
 #elif PBL_DISPLAY_HEIGHT <= 168
