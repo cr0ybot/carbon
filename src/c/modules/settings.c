@@ -6,7 +6,6 @@ static Settings s_settings;
 
 static const Settings s_defaults = {
   .temp_unit_celsius = true,
-  .time_24h = false,
   .date_format = DATE_FORMAT_WEEKDAY_M_D,
   .accent_color = { .argb = 0b11111111 },  // GColorWhite
 };
@@ -31,9 +30,6 @@ void settings_apply_from_message(DictionaryIterator *iter) {
 
   t = dict_find(iter, MESSAGE_KEY_SETTING_TEMP_UNIT);
   if (t) s_settings.temp_unit_celsius = (t->value->int8 == 0);
-
-  t = dict_find(iter, MESSAGE_KEY_SETTING_TIME_FORMAT);
-  if (t) s_settings.time_24h = (t->value->int8 == 1);
 
   t = dict_find(iter, MESSAGE_KEY_SETTING_DATE_FORMAT);
   if (t) {

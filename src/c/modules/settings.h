@@ -12,7 +12,6 @@ typedef enum {
 
 typedef struct {
   bool       temp_unit_celsius;
-  bool       time_24h;
   DateFormat date_format;
   GColor     accent_color;
 } Settings;
