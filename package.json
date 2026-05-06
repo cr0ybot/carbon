@@ -14,10 +14,6 @@
     "uuid": "4a34b9c0-93b3-43ff-b1ba-a19d00cbcc60",
     "sdkVersion": "3",
     "enableMultiJS": true,
-    "targetPlatforms": [
-      "emery",
-      "gabbro"
-    ],
     "watchapp": {
       "watchface": true
     },
