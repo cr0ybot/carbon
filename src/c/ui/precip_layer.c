@@ -1,142 +1,68 @@
 #include "precip_layer.h"
-
-#define HOURS 24
-#define ICON_COL_W 18
+#include "graph_common.h"
+#include "../generated/icons.h"
 
 struct PrecipLayer {
   Layer            *layer;
-  uint8_t           prob[HOURS];
-  uint8_t           sunrise_hour;
-  uint8_t           sunset_hour;
+  GFont             icon_font;
+  uint8_t           prob[GRAPH_HOURS];
+  uint8_t           current_hour;
   WeatherCondition  condition;
 };
 
-static void prv_draw_weather_icon(GContext *ctx, GRect bounds, WeatherCondition cond) {
-  int cx = bounds.size.w / 2;
-  int cy = bounds.size.h / 2;
-
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_context_set_fill_color(ctx, GColorWhite);
-  graphics_context_set_stroke_width(ctx, 1);
-
+// Map WeatherCondition to the appropriate icon string
+static const char *prv_condition_icon(WeatherCondition cond) {
   switch (cond) {
-    case WEATHER_CONDITION_CLEAR:
-      // Sun: circle
-      graphics_draw_circle(ctx, GPoint(cx, cy), 5);
-      // Four rays
-      graphics_draw_line(ctx, GPoint(cx, cy - 8), GPoint(cx, cy - 6));
-      graphics_draw_line(ctx, GPoint(cx, cy + 6), GPoint(cx, cy + 8));
-      graphics_draw_line(ctx, GPoint(cx - 8, cy), GPoint(cx - 6, cy));
-      graphics_draw_line(ctx, GPoint(cx + 6, cy), GPoint(cx + 8, cy));
-      break;
-
-    case WEATHER_CONDITION_PARTLY_CLOUDY:
-      // Sun peeking behind cloud
-      graphics_draw_circle(ctx, GPoint(cx - 2, cy - 2), 4);
-      // Cloud bumps
-      graphics_fill_circle(ctx, GPoint(cx - 1, cy + 3), 3);
-      graphics_fill_circle(ctx, GPoint(cx + 4, cy + 2), 4);
-      graphics_fill_circle(ctx, GPoint(cx + 5, cy + 5), 3);
-      graphics_fill_rect(ctx,
-        GRect(cx - 4, cy + 4, 14, 4), 0, GCornerNone);
-      break;
-
-    case WEATHER_CONDITION_CLOUDY:
-      graphics_fill_circle(ctx, GPoint(cx - 2, cy), 4);
-      graphics_fill_circle(ctx, GPoint(cx + 3, cy - 1), 5);
-      graphics_fill_circle(ctx, GPoint(cx + 4, cy + 2), 4);
-      graphics_fill_rect(ctx,
-        GRect(cx - 6, cy + 1, 14, 5), 0, GCornerNone);
-      break;
-
-    case WEATHER_CONDITION_FOG:
-      // Horizontal lines
-      for (int y = cy - 3; y <= cy + 3; y += 3) {
-        graphics_draw_line(ctx, GPoint(cx - 7, y), GPoint(cx + 7, y));
-      }
-      break;
-
-    case WEATHER_CONDITION_DRIZZLE:
-    case WEATHER_CONDITION_RAIN:
-      // Cloud
-      graphics_fill_circle(ctx, GPoint(cx - 1, cy - 2), 3);
-      graphics_fill_circle(ctx, GPoint(cx + 3, cy - 3), 4);
-      graphics_fill_rect(ctx,
-        GRect(cx - 4, cy - 1, 11, 3), 0, GCornerNone);
-      // Rain drops
-      graphics_draw_line(ctx, GPoint(cx - 3, cy + 3), GPoint(cx - 5, cy + 7));
-      graphics_draw_line(ctx, GPoint(cx,     cy + 3), GPoint(cx - 2, cy + 7));
-      graphics_draw_line(ctx, GPoint(cx + 3, cy + 3), GPoint(cx + 1, cy + 7));
-      break;
-
-    case WEATHER_CONDITION_SNOW:
-      // Cloud
-      graphics_fill_circle(ctx, GPoint(cx - 1, cy - 3), 3);
-      graphics_fill_circle(ctx, GPoint(cx + 3, cy - 4), 4);
-      graphics_fill_rect(ctx,
-        GRect(cx - 4, cy - 2, 11, 3), 0, GCornerNone);
-      // Snow dots
-      graphics_fill_circle(ctx, GPoint(cx - 3, cy + 4), 1);
-      graphics_fill_circle(ctx, GPoint(cx,     cy + 5), 1);
-      graphics_fill_circle(ctx, GPoint(cx + 3, cy + 4), 1);
-      break;
-
-    case WEATHER_CONDITION_STORM:
-      // Cloud
-      graphics_fill_circle(ctx, GPoint(cx - 1, cy - 4), 3);
-      graphics_fill_circle(ctx, GPoint(cx + 3, cy - 5), 4);
-      graphics_fill_rect(ctx,
-        GRect(cx - 4, cy - 3, 11, 3), 0, GCornerNone);
-      // Lightning bolt
-      graphics_draw_line(ctx, GPoint(cx + 1, cy),     GPoint(cx - 2, cy + 4));
-      graphics_draw_line(ctx, GPoint(cx - 2, cy + 4), GPoint(cx + 1, cy + 4));
-      graphics_draw_line(ctx, GPoint(cx + 1, cy + 4), GPoint(cx - 2, cy + 8));
-      break;
-
-    default:
-      // Question mark substitute: just a small circle
-      graphics_draw_circle(ctx, GPoint(cx, cy), 4);
-      break;
+    case WEATHER_CONDITION_CLEAR:         return ICON_SUN;
+    case WEATHER_CONDITION_PARTLY_CLOUDY: return ICON_CLOUD_SUN;
+    case WEATHER_CONDITION_CLOUDY:        return ICON_CLOUDY;
+    case WEATHER_CONDITION_FOG:           return ICON_CLOUD_FOG;
+    case WEATHER_CONDITION_DRIZZLE:       return ICON_CLOUD_DRIZZLE;
+    case WEATHER_CONDITION_RAIN:          return ICON_CLOUD_RAIN;
+    case WEATHER_CONDITION_SNOW:          return ICON_CLOUD_SNOW;
+    case WEATHER_CONDITION_STORM:         return ICON_CLOUD_LIGHTNING;
+    default:                              return ICON_CLOUD;
   }
 }
 
 static void prv_update_proc(Layer *layer, GContext *ctx) {
   PrecipLayer *pl = *(PrecipLayer **)layer_get_data(layer);
   GRect bounds = layer_get_bounds(layer);
-  int bar_area_x = ICON_COL_W;
-  int bar_area_w = bounds.size.w - ICON_COL_W;
-  int bar_w = bar_area_w / HOURS;
+  int graph_x = GRAPH_OFFSET_X;
+  int graph_w = bounds.size.w - graph_x;
   int layer_h = bounds.size.h;
 
-  // Weather icon in left column
-  prv_draw_weather_icon(ctx, GRect(0, 0, ICON_COL_W, layer_h), pl->condition);
+  // Weather icon in left column, centered vertically
+  graphics_context_set_text_color(ctx, GColorWhite);
+  graphics_draw_text(ctx, prv_condition_icon(pl->condition),
+                     pl->icon_font,
+                     GRect(0, (layer_h - 20) / 2, graph_x - 2, 20),
+                     GTextOverflowModeTrailingEllipsis,
+                     GTextAlignmentCenter, NULL);
 
-  // Precipitation bars (down from top)
+  // Vertical separator
+  graph_draw_separator(ctx, graph_x, layer_h);
+
+  // Precipitation bars — proportional x so bars fill to the right edge
   graphics_context_set_fill_color(ctx, GColorWhite);
-  for (int i = 0; i < HOURS; i++) {
+  for (int i = 0; i < GRAPH_HOURS; i++) {
     if (pl->prob[i] == 0) continue;
+    int x0 = graph_x + (long)i       * graph_w / GRAPH_HOURS;
+    int x1 = graph_x + (long)(i + 1) * graph_w / GRAPH_HOURS;
     int bar_h = (pl->prob[i] * (layer_h - 2)) / 100;
-    int x = bar_area_x + i * bar_w;
-    graphics_fill_rect(ctx, GRect(x, 0, bar_w - 1, bar_h), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(x0, 0, x1 - x0 - 1, bar_h), 0, GCornerNone);
   }
-
-  // Daylight line: thin horizontal line at y=2 spanning sunrise→sunset columns
-  if (pl->sunrise_hour < pl->sunset_hour && pl->sunset_hour <= HOURS) {
-    int x0 = bar_area_x + pl->sunrise_hour * bar_w;
-    int x1 = bar_area_x + pl->sunset_hour  * bar_w;
-    graphics_context_set_stroke_color(ctx, GColorWhite);
-    graphics_context_set_stroke_width(ctx, 1);
-    graphics_draw_line(ctx, GPoint(x0, 1), GPoint(x1, 1));
-  }
+  // No tick marks — precip is a middle layer
 }
 
 PrecipLayer *precip_layer_create(GRect frame) {
   PrecipLayer *pl = malloc(sizeof(PrecipLayer));
   if (!pl) return NULL;
   memset(pl->prob, 0, sizeof(pl->prob));
-  pl->sunrise_hour = 6;
-  pl->sunset_hour  = 20;
+  pl->current_hour = 0;
   pl->condition    = WEATHER_CONDITION_UNKNOWN;
+  pl->icon_font    = fonts_load_custom_font(
+    resource_get_handle(RESOURCE_ID_CARBON_ICONS_20));
 
   pl->layer = layer_create_with_data(frame, sizeof(PrecipLayer *));
   *(PrecipLayer **)layer_get_data(pl->layer) = pl;
@@ -146,6 +72,7 @@ PrecipLayer *precip_layer_create(GRect frame) {
 
 void precip_layer_destroy(PrecipLayer *layer) {
   if (!layer) return;
+  fonts_unload_custom_font(layer->icon_font);
   layer_destroy(layer->layer);
   free(layer);
 }
@@ -156,12 +83,10 @@ Layer *precip_layer_get_layer(PrecipLayer *layer) {
 
 void precip_layer_set_data(PrecipLayer *layer,
                            const uint8_t prob[24],
-                           uint8_t sunrise_hour,
-                           uint8_t sunset_hour) {
+                           uint8_t current_hour) {
   if (!layer) return;
-  memcpy(layer->prob, prob, HOURS);
-  layer->sunrise_hour = sunrise_hour;
-  layer->sunset_hour  = sunset_hour;
+  memcpy(layer->prob, prob, GRAPH_HOURS);
+  layer->current_hour = current_hour;
   layer_mark_dirty(layer->layer);
 }
 

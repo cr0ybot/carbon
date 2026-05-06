@@ -2,6 +2,7 @@
 #include "modules/weather.h"
 #include "modules/settings.h"
 #include "ui/top_bar.h"
+#include "ui/daylight_layer.h"
 #include "ui/cloud_layer.h"
 #include "ui/precip_layer.h"
 #include "ui/time_layer.h"
@@ -12,18 +13,20 @@
 
 // Emery layout constants (200x228)
 // Round (gabbro, 260x260) values are provided via PBL_IF_RECT_ELSE
-#define TOP_BAR_H      14
-#define CLOUD_H        22
-#define PRECIP_H       46
-#define TIME_BLOCK_H   PBL_IF_RECT_ELSE(102, 96)
-#define TEMP_H         44
+#define TOP_BAR_H     14
+#define DAYLIGHT_H     8
+#define CLOUD_H       22
+#define PRECIP_H      23
+#define TIME_BLOCK_H  PBL_IF_RECT_ELSE(102, 96)
+#define TEMP_H        44
 
-static Window       *s_main_window;
-static TopBarLayer  *s_top_bar;
-static CloudLayer   *s_cloud_layer;
-static PrecipLayer  *s_precip_layer;
-static TimeLayer    *s_time_layer;
-static TempLayer    *s_temp_layer;
+static Window         *s_main_window;
+static TopBarLayer    *s_top_bar;
+static DaylightLayer  *s_daylight_layer;
+static CloudLayer     *s_cloud_layer;
+static PrecipLayer    *s_precip_layer;
+static TimeLayer      *s_time_layer;
+static TempLayer      *s_temp_layer;
 
 static WeatherData s_weather;
 
@@ -106,13 +109,14 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   struct tm *t_now = localtime(&now);
   uint8_t current_hour = t_now ? (uint8_t)t_now->tm_hour : 0;
 
-  precip_layer_set_data(s_precip_layer,
-                        s_weather.precip_prob,
-                        s_weather.sunrise_hour,
-                        s_weather.sunset_hour);
+  daylight_layer_set_data(s_daylight_layer,
+                          s_weather.sunrise_hour,
+                          s_weather.sunset_hour,
+                          current_hour);
+  cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
+  precip_layer_set_data(s_precip_layer, s_weather.precip_prob, current_hour);
   precip_layer_set_condition(s_precip_layer,
                              weather_code_to_condition(s_weather.weather_code));
-  cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover);
   temp_layer_set_data(s_temp_layer,
                       s_weather.current_temp,
                       s_weather.high_temp,
@@ -164,6 +168,11 @@ static void prv_window_load(Window *window) {
   layer_add_child(root, top_bar_layer_get_layer(s_top_bar));
   y += TOP_BAR_H;
 
+  // Daylight line (above cloud layer)
+  s_daylight_layer = daylight_layer_create(GRect(0, y, w, DAYLIGHT_H));
+  layer_add_child(root, daylight_layer_get_layer(s_daylight_layer));
+  y += DAYLIGHT_H;
+
   // Cloud cover layer
   s_cloud_layer = cloud_layer_create(GRect(0, y, w, CLOUD_H));
   layer_add_child(root, cloud_layer_get_layer(s_cloud_layer));
@@ -192,13 +201,14 @@ static void prv_window_load(Window *window) {
   // Restore cached weather if available
   if (s_weather.is_valid) {
     uint8_t current_hour = now ? (uint8_t)now->tm_hour : 0;
-    precip_layer_set_data(s_precip_layer,
-                          s_weather.precip_prob,
-                          s_weather.sunrise_hour,
-                          s_weather.sunset_hour);
+    daylight_layer_set_data(s_daylight_layer,
+                            s_weather.sunrise_hour,
+                            s_weather.sunset_hour,
+                            current_hour);
+    cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
+    precip_layer_set_data(s_precip_layer, s_weather.precip_prob, current_hour);
     precip_layer_set_condition(s_precip_layer,
                                weather_code_to_condition(s_weather.weather_code));
-    cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover);
     temp_layer_set_data(s_temp_layer,
                         s_weather.current_temp,
                         s_weather.high_temp,
@@ -211,6 +221,7 @@ static void prv_window_load(Window *window) {
 
 static void prv_window_unload(Window *window) {
   top_bar_layer_destroy(s_top_bar);
+  daylight_layer_destroy(s_daylight_layer);
   cloud_layer_destroy(s_cloud_layer);
   precip_layer_destroy(s_precip_layer);
   time_layer_destroy(s_time_layer);
