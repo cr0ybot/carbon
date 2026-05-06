@@ -22,31 +22,39 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   GFont font_md = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
   graphics_context_set_text_color(ctx, GColorWhite);
 
-  // Left column: H, current, L — values are already in the display unit
-  static char curr_buf[8], high_buf[8], low_buf[8];
-  snprintf(curr_buf, sizeof(curr_buf), "%d",   (int)tl->current);
-  snprintf(high_buf, sizeof(high_buf), "H%d",  (int)tl->high);
-  snprintf(low_buf,  sizeof(low_buf),  "L%d",  (int)tl->low);
+  // Left column: high, current, low
+  // Right-aligned, no ellipsis, manually positioned for even vertical spacing.
+  // sm rects are 14px tall, md rect is 20px; positions chosen so gaps are equal.
+  static char curr_buf[10], high_buf[8], low_buf[8];
+  snprintf(high_buf, sizeof(high_buf), "%d", (int)tl->high);
+  snprintf(curr_buf, sizeof(curr_buf), "%d", (int)tl->current);
+  snprintf(low_buf,  sizeof(low_buf),  "%d", (int)tl->low);
 
-  int label_row_h = lh / 3;
+  // Right-aligned, 4px right padding, no ellipsis
+  // high: y=-1 to compensate for font's internal top leading
   graphics_draw_text(ctx, high_buf, font_sm,
-                     GRect(0, 0, GRAPH_OFFSET_X - 2, label_row_h),
-                     GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+                     GRect(0, -1, GRAPH_OFFSET_X - 4, 15),
+                     GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
   graphics_draw_text(ctx, curr_buf, font_md,
-                     GRect(0, label_row_h, GRAPH_OFFSET_X - 2, label_row_h),
-                     GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+                     GRect(0, 12, GRAPH_OFFSET_X - 4, 20),
+                     GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
   graphics_draw_text(ctx, low_buf, font_sm,
-                     GRect(0, label_row_h * 2, GRAPH_OFFSET_X - 2, label_row_h),
-                     GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+                     GRect(0, 30, GRAPH_OFFSET_X - 4, 14),
+                     GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
 
   // Vertical separator
   graph_draw_separator(ctx, graph_x, lh);
 
-  // Find min/max of hourly data for y-axis scaling
-  int8_t t_min = tl->hourly[0], t_max = tl->hourly[0];
-  for (int i = 1; i < GRAPH_HOURS; i++) {
-    if (tl->hourly[i] < t_min) t_min = tl->hourly[i];
-    if (tl->hourly[i] > t_max) t_max = tl->hourly[i];
+  // Sparkline — 25 points: current temp followed by 24 hourly forecasts.
+  // Point 0 is at the left edge, point 24 at the right edge.
+  int16_t pts[25];
+  pts[0] = tl->current;
+  for (int i = 0; i < GRAPH_HOURS; i++) pts[i + 1] = tl->hourly[i];
+
+  int16_t t_min = pts[0], t_max = pts[0];
+  for (int i = 1; i < 25; i++) {
+    if (pts[i] < t_min) t_min = pts[i];
+    if (pts[i] > t_max) t_max = pts[i];
   }
   int t_range = t_max - t_min;
   if (t_range < 1) t_range = 1;
@@ -54,13 +62,12 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int pad = 4;
   int graph_h = lh - pad * 2;
 
-  // Sparkline polyline — proportional x so line fills to right edge
   graphics_context_set_stroke_color(ctx, GColorWhite);
   graphics_context_set_stroke_width(ctx, 1);
   GPoint prev = GPoint(0, 0);
-  for (int i = 0; i < GRAPH_HOURS; i++) {
-    int x = graph_x + (long)(i * 2 + 1) * graph_w / (GRAPH_HOURS * 2);
-    int y = pad + graph_h - ((tl->hourly[i] - t_min) * graph_h / t_range);
+  for (int i = 0; i < 25; i++) {
+    int x = graph_x + i * graph_w / 24;
+    int y = pad + graph_h - ((pts[i] - t_min) * graph_h / t_range);
     GPoint pt = GPoint(x, y);
     if (i > 0) graphics_draw_line(ctx, prev, pt);
     prev = pt;
