@@ -1,10 +1,8 @@
 #include "precip_layer.h"
 #include "graph_common.h"
-#include "../generated/icons.h"
 
 struct PrecipLayer {
   Layer   *layer;
-  GFont    icon_font;
   uint8_t  prob[GRAPH_HOURS];
   uint8_t  hourly_code[GRAPH_HOURS];
   uint8_t  current_hour;
@@ -63,14 +61,14 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
     uint8_t cat = prv_precip_category(pl->hourly_code[i]);
     GColor bar_color;
     switch (cat) {
-      case 1:  bar_color = GColorOxfordBlue;    break;  // light rain
+      case 1:  bar_color = GColorCobaltBlue;    break;  // light rain
       case 2:  bar_color = GColorVividCerulean; break;  // heavy rain
-      case 3:  bar_color = GColorCadetBlue;     break;  // sleet/freeze
+      case 3:  bar_color = GColorCeleste;       break;  // sleet/freeze
       case 4:  bar_color = GColorLightGray;     break;  // light snow
       case 5:  bar_color = GColorWhite;         break;  // heavy snow
-      case 6:  bar_color = GColorVividCerulean; break;  // storm
-      case 7:  bar_color = GColorVividCerulean; break;  // heavy storm
-      case 8:  bar_color = GColorWhite;         break;  // hail storm
+      case 6:  bar_color = GColorVeryLightBlue; break;  // storm
+      case 7:  bar_color = GColorLiberty;       break;  // heavy storm
+      case 8:  bar_color = GColorBabyBlueEyes;  break;  // hail storm
       default: bar_color = GColorVividCerulean; break;  // fallback
     }
     graphics_context_set_fill_color(ctx, bar_color);
@@ -78,19 +76,6 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_fill_color(ctx, GColorWhite);
 #endif
     graphics_fill_rect(ctx, GRect(x0, 0, bar_w, bar_h), 0, GCornerNone);
-
-#if defined(PBL_COLOR)
-    // Lightning bolt icon above storm bars
-    if (cat >= 6 && pl->icon_font) {
-      int icon_size = 14;
-      int icon_y = bar_h;  // just below the top of the bar
-      if (icon_y + icon_size > layer_h) icon_y = layer_h - icon_size;
-      graphics_context_set_text_color(ctx, GColorYellow);
-      graphics_draw_text(ctx, ICON_LIGHTNING, pl->icon_font,
-                         GRect(x0, icon_y, bar_w + 1, icon_size),
-                         GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
-    }
-#endif
   }
 }
 
@@ -100,8 +85,6 @@ PrecipLayer *precip_layer_create(GRect frame) {
   memset(pl->prob,         0, sizeof(pl->prob));
   memset(pl->hourly_code,  0, sizeof(pl->hourly_code));
   pl->current_hour = 0;
-  pl->icon_font = fonts_load_custom_font(
-    resource_get_handle(RESOURCE_ID_CARBON_ICONS_14));
 
   pl->layer = layer_create_with_data(frame, sizeof(PrecipLayer *));
   *(PrecipLayer **)layer_get_data(pl->layer) = pl;
@@ -111,7 +94,6 @@ PrecipLayer *precip_layer_create(GRect frame) {
 
 void precip_layer_destroy(PrecipLayer *layer) {
   if (!layer) return;
-  if (layer->icon_font) fonts_unload_custom_font(layer->icon_font);
   layer_destroy(layer->layer);
   free(layer);
 }

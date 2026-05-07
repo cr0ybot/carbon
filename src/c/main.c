@@ -5,6 +5,7 @@
 #include "ui/daylight_layer.h"
 #include "ui/cloud_layer.h"
 #include "ui/precip_layer.h"
+#include "ui/event_layer.h"
 #include "ui/time_layer.h"
 #include "ui/temp_layer.h"
 #include "ui/icon_bar_layer.h"
@@ -38,6 +39,7 @@ static Window         *s_main_window;
 static DaylightLayer  *s_daylight_layer;
 static CloudLayer     *s_cloud_layer;
 static PrecipLayer    *s_precip_layer;
+static EventLayer     *s_event_layer;
 static TimeLayer      *s_time_layer;
 static TempLayer      *s_temp_layer;
 static IconBarLayer   *s_icon_bar_layer;
@@ -52,14 +54,18 @@ static void prv_request_weather(void);
 // ==========================================================================
 
 static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+#if defined(DEMO_SCENARIO)
+  // Demo mode: time display is frozen at the scenario's hour and date.
+  (void)tick_time;
+  (void)units_changed;
+#else
   time_layer_update(s_time_layer, tick_time, settings_get());
 
   // Request fresh weather every hour
   if (units_changed & HOUR_UNIT) {
-#if !defined(DEMO_SCENARIO)
     prv_request_weather();
-#endif
   }
+#endif
 }
 
 // ==========================================================================
@@ -139,9 +145,11 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
                           s_weather.sunrise_hour,
                           s_weather.sunset_hour,
                           current_hour);
-  cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
+  cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover,
+                       s_weather.hourly_weather_code, current_hour);
   precip_layer_set_data(s_precip_layer, s_weather.precip_prob,
                         s_weather.hourly_weather_code, current_hour);
+  event_layer_set_data(s_event_layer, s_weather.hourly_weather_code, CLOUD_H);
   bool is_day = (current_hour >= s_weather.sunrise_hour &&
                  current_hour < s_weather.sunset_hour);
   icon_bar_layer_set_condition(s_icon_bar_layer,
@@ -209,6 +217,10 @@ static void prv_window_load(Window *window) {
   layer_add_child(root, precip_layer_get_layer(s_precip_layer));
   y += PRECIP_H;
 
+  // Event overlay — straddles the cloud/precip boundary
+  s_event_layer = event_layer_create(GRect(0, DAYLIGHT_H, w, CLOUD_H + PRECIP_H));
+  layer_add_child(root, event_layer_get_layer(s_event_layer));
+
   // Icon bar — overlaid on top of daylight/cloud/precip, owns the left column
   s_icon_bar_layer = icon_bar_layer_create(GRect(0, 0, w, GRAPH_LAYERS_H));
   layer_add_child(root, icon_bar_layer_get_layer(s_icon_bar_layer));
@@ -224,8 +236,14 @@ static void prv_window_load(Window *window) {
   layer_add_child(root, temp_layer_get_layer(s_temp_layer));
 
   // Seed time display immediately
+#if defined(DEMO_SCENARIO)
+  struct tm demo_now;
+  demo_get_tm(&demo_now);
+  struct tm *now = &demo_now;
+#else
   time_t now_t = time(NULL);
   struct tm *now = localtime(&now_t);
+#endif
   if (now) time_layer_update(s_time_layer, now, settings_get());
 
   // Restore cached weather if available
@@ -235,9 +253,11 @@ static void prv_window_load(Window *window) {
                             s_weather.sunrise_hour,
                             s_weather.sunset_hour,
                             current_hour);
-    cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
+    cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover,
+                         s_weather.hourly_weather_code, current_hour);
     precip_layer_set_data(s_precip_layer, s_weather.precip_prob,
                           s_weather.hourly_weather_code, current_hour);
+    event_layer_set_data(s_event_layer, s_weather.hourly_weather_code, CLOUD_H);
     bool is_day = (current_hour >= s_weather.sunrise_hour &&
                    current_hour < s_weather.sunset_hour);
     icon_bar_layer_set_condition(s_icon_bar_layer,
@@ -262,6 +282,7 @@ static void prv_window_unload(Window *window) {
   daylight_layer_destroy(s_daylight_layer);
   cloud_layer_destroy(s_cloud_layer);
   precip_layer_destroy(s_precip_layer);
+  event_layer_destroy(s_event_layer);
   icon_bar_layer_destroy(s_icon_bar_layer);
   time_layer_destroy(s_time_layer);
   temp_layer_destroy(s_temp_layer);

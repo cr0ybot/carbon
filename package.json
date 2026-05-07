@@ -51,21 +51,27 @@
       "media": [
         {
           "type": "font",
+          "name": "CARBON_ICONS_12",
+          "file": "fonts/IcoMoon-Regular.ttf",
+          "characterRegex": "[\\uE000-\\uF9FF]"
+        },
+        {
+          "type": "font",
           "name": "CARBON_ICONS_14",
           "file": "fonts/IcoMoon-Regular.ttf",
-          "characterRegex": "[\\uE000-\\uF8FF]"
+          "characterRegex": "[\\uE000-\\uF9FF]"
         },
         {
           "type": "font",
           "name": "CARBON_ICONS_18",
           "file": "fonts/IcoMoon-Regular.ttf",
-          "characterRegex": "[\\uE000-\\uF8FF]"
+          "characterRegex": "[\\uE000-\\uF9FF]"
         },
         {
           "type": "font",
           "name": "CARBON_ICONS_22",
           "file": "fonts/IcoMoon-Regular.ttf",
-          "characterRegex": "[\\uE000-\\uF8FF]"
+          "characterRegex": "[\\uE000-\\uF9FF]"
         }
       ]
     }

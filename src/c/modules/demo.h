@@ -30,4 +30,8 @@ void demo_data_load(WeatherData *weather, Settings *settings);
 // (e.g. "CDT" or "CST"). Used to seed time_layer when strftime %Z is
 // unavailable in the emulator.
 const char *demo_get_timezone(void);
+
+// Fills *out with a fake struct tm for the scenario's demo time and date.
+// Use this to seed the time display and compute current_hour in demo mode.
+void demo_get_tm(struct tm *out);
 #endif
