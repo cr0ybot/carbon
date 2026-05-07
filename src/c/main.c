@@ -16,19 +16,19 @@
 // Must be tall enough to fit the icon slots: >= 228 uses 22px icons (need 66px+),
 // middle tier uses 18px icons (56px gives zone_h=18), small uses 14px icons.
 #if PBL_DISPLAY_HEIGHT >= 228
-#define DAYLIGHT_H  15
-#define CLOUD_H     26
-#define PRECIP_H    25
+#define DAYLIGHT_H  12
+#define CLOUD_H     18
+#define PRECIP_H    36
 // Sums to 66
 #elif PBL_DISPLAY_HEIGHT <= 168
-#define DAYLIGHT_H  12
-#define CLOUD_H     17
-#define PRECIP_H    16
+#define DAYLIGHT_H  10
+#define CLOUD_H     15
+#define PRECIP_H    20
 // Sums to 45
 #else
-#define DAYLIGHT_H  13
-#define CLOUD_H     21
-#define PRECIP_H    22
+#define DAYLIGHT_H  12
+#define CLOUD_H     18
+#define PRECIP_H    26
 // Sums to 56
 #endif
 #define GRAPH_LAYERS_H  (DAYLIGHT_H + CLOUD_H + PRECIP_H)
