@@ -157,12 +157,12 @@ function sendToWatch(payload) {
   var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
 
   var dict = {
-    'WEATHER_TEMP':              Math.round(payload.current_temp       || 0),
-    'WEATHER_TEMP_HIGH':         Math.round(payload.high_temp           || 0),
-    'WEATHER_TEMP_LOW':          Math.round(payload.low_temp            || 0),
-    'WEATHER_CODE':              payload.weather_code                   || 0,
-    'WEATHER_SUNRISE_HOUR': payload.sunrise_hour            || 6,
-    'WEATHER_SUNSET_HOUR':  payload.sunset_hour             || 20,
+    'WEATHER_TEMP':                  Math.round(payload.current_temp || 0),
+    'WEATHER_TEMP_HIGH':             Math.round(payload.high_temp    || 0),
+    'WEATHER_TEMP_LOW':              Math.round(payload.low_temp     || 0),
+    'WEATHER_CODE':                  payload.weather_code            || 0,
+    'WEATHER_SUNRISE_HOUR':          payload.sunrise_hour            || 6,
+    'WEATHER_SUNSET_HOUR':           payload.sunset_hour             || 20,
     'WEATHER_PRECIP_PROB':           packUint8Array(precipProb),
     'WEATHER_TEMP_HOURLY':           packInt8Array(tempHourly),
     'WEATHER_APPARENT_TEMP_HOURLY':  packInt8Array(apparentHourly),

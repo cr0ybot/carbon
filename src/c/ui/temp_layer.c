@@ -112,8 +112,8 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   // lighter accent at the line and a darker mass below, making the white
   // apparent-temp line legible across all temperature conditions.
   //
-  // Thresholds (°F): <=10 pink  <=32 purple  <=45 cyan  <=59 teal
-  //                  <=76 green <=84 yellow   <=96 orange >96 red
+  // Thresholds (°F): <=10 pink  <=32 purple <=45 cyan   <=59 teal
+  //                  <=76 green <=84 yellow <=96 orange >96 red
   #define TEMP_TO_F(t) (tl->celsius ? ((t) * 9 / 5 + 32) : (t))
   #define DARK_TEMP_COLOR(tf) ( \
     (tf) <= 10 ? GColorPurple            : \
