@@ -11,11 +11,11 @@ struct TopBarLayer {
 
 // Select battery icon based on charge level and charging state
 static const char *prv_battery_icon(int pct, bool charging) {
-  if (charging)  return ICON_BATTERY_CHARGING;
-  if (pct >= 70) return ICON_BATTERY_FULL;
-  if (pct >= 35) return ICON_BATTERY_MEDIUM;
-  if (pct >= 10) return ICON_BATTERY_LOW;
-  return ICON_BATTERY_WARNING;
+  if (charging)  return ICON_BATTERY__CHARGING;
+  if (pct >= 70) return ICON_BATTERY__FULL;
+  if (pct >= 35) return ICON_BATTERY__HALF;
+  if (pct >= 10) return ICON_BATTERY__LOW;
+  return ICON_BATTERY__EMPTY;
 }
 
 static void prv_update_proc(Layer *layer, GContext *ctx) {
@@ -36,7 +36,7 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   // Bluetooth icon — only shown when disconnected
   if (!tbl->bt_connected) {
     graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, ICON_BLUETOOTH_OFF, font,
+    graphics_draw_text(ctx, ICON_BLUETOOTH__OFF, font,
                        GRect(2, 0, 16, bounds.size.h),
                        GTextOverflowModeTrailingEllipsis,
                        GTextAlignmentLeft, NULL);

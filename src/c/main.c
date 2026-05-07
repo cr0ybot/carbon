@@ -128,8 +128,11 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
                           current_hour);
   cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
   precip_layer_set_data(s_precip_layer, s_weather.precip_prob, current_hour);
+  bool is_day = (current_hour >= s_weather.sunrise_hour &&
+                 current_hour < s_weather.sunset_hour);
   icon_bar_layer_set_condition(s_icon_bar_layer,
                                weather_code_to_condition(s_weather.weather_code));
+  icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
   temp_layer_set_data(s_temp_layer,
                       s_weather.current_temp,
                       s_weather.high_temp,
@@ -219,8 +222,11 @@ static void prv_window_load(Window *window) {
                             current_hour);
     cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
     precip_layer_set_data(s_precip_layer, s_weather.precip_prob, current_hour);
+    bool is_day = (current_hour >= s_weather.sunrise_hour &&
+                   current_hour < s_weather.sunset_hour);
     icon_bar_layer_set_condition(s_icon_bar_layer,
                                  weather_code_to_condition(s_weather.weather_code));
+    icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
     temp_layer_set_data(s_temp_layer,
                         s_weather.current_temp,
                         s_weather.high_temp,

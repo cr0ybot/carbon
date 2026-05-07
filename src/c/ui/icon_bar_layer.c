@@ -9,27 +9,43 @@ struct IconBarLayer {
   bool              battery_charging;
   bool              bt_connected;
   WeatherCondition  condition;
+  bool              is_day;
 };
 
 static const char *prv_battery_icon(int pct, bool charging) {
-  if (charging)  return ICON_BATTERY_CHARGING;
-  if (pct >= 70) return ICON_BATTERY_FULL;
-  if (pct >= 35) return ICON_BATTERY_MEDIUM;
-  if (pct >= 10) return ICON_BATTERY_LOW;
-  return ICON_BATTERY_WARNING;
+  if (charging)  return ICON_BATTERY__CHARGING;
+  if (pct >= 70) return ICON_BATTERY__FULL;
+  if (pct >= 35) return ICON_BATTERY__HALF;
+  if (pct >= 10) return ICON_BATTERY__LOW;
+  return ICON_BATTERY__EMPTY;
 }
 
-static const char *prv_condition_icon(WeatherCondition cond) {
+static const char *prv_condition_icon(WeatherCondition cond, bool is_day) {
   switch (cond) {
-    case WEATHER_CONDITION_CLEAR:         return ICON_SUN;
-    case WEATHER_CONDITION_PARTLY_CLOUDY: return ICON_CLOUD_SUN;
-    case WEATHER_CONDITION_CLOUDY:        return ICON_CLOUDY;
-    case WEATHER_CONDITION_FOG:           return ICON_CLOUD_FOG;
-    case WEATHER_CONDITION_DRIZZLE:       return ICON_CLOUD_DRIZZLE;
-    case WEATHER_CONDITION_RAIN:          return ICON_CLOUD_RAIN;
-    case WEATHER_CONDITION_SNOW:          return ICON_CLOUD_SNOW;
-    case WEATHER_CONDITION_STORM:         return ICON_CLOUD_LIGHTNING;
-    default:                              return ICON_CLOUD;
+    case WEATHER_CONDITION_CLEAR:
+      return is_day ? ICON_SUN : ICON_MOON;
+    case WEATHER_CONDITION_PARTLY_CLOUDY:
+      return is_day ? ICON_PARTLY_CLOUDY : ICON_PARTLY_CLOUDY__NIGHT;
+    case WEATHER_CONDITION_MOSTLY_CLOUDY:
+      return is_day ? ICON_MOSTLY_CLOUDY : ICON_MOSTLY_CLOUDY__NIGHT;
+    case WEATHER_CONDITION_CLOUDY:       return ICON_CLOUDY;
+    case WEATHER_CONDITION_FOG:
+      return is_day ? ICON_CLOUD : ICON_HAZE__NIGHT;
+    case WEATHER_CONDITION_WINDY:        return ICON_WINDY;
+    case WEATHER_CONDITION_DRIZZLE:      return ICON_RAIN__DRIZZLE;
+    case WEATHER_CONDITION_RAIN:
+      return is_day ? ICON_RAIN : ICON_RAIN__SCATTERED__NIGHT;
+    case WEATHER_CONDITION_RAIN_HEAVY:   return ICON_RAIN__HEAVY;
+    case WEATHER_CONDITION_SLEET:        return ICON_SLEET;
+    case WEATHER_CONDITION_SNOW:
+      return is_day ? ICON_SNOW : ICON_SNOW__SCATTERED__NIGHT;
+    case WEATHER_CONDITION_SNOW_HEAVY:   return ICON_SNOW__HEAVY;
+    case WEATHER_CONDITION_HAIL:         return ICON_HAIL;
+    case WEATHER_CONDITION_STORM:
+      return is_day ? ICON_THUNDERSTORM__SCATTERED : ICON_THUNDERSTORM__SCATTERED__NIGHT;
+    case WEATHER_CONDITION_STORM_SEVERE: return ICON_THUNDERSTORM__STRONG;
+    case WEATHER_CONDITION_TORNADO:      return ICON_TORNADO;
+    default:                             return ICON_CLOUD__OFFLINE;
   }
 }
 
@@ -68,14 +84,14 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   // Slot 1: bluetooth (only when disconnected)
   if (!sl->bt_connected) {
     int y1 = zone_h + (zone_h - icon_size) / 2;
-    graphics_draw_text(ctx, ICON_BLUETOOTH_OFF, sl->icon_font,
+    graphics_draw_text(ctx, ICON_BLUETOOTH__OFF, sl->icon_font,
                        GRect(0, y1, graph_x, icon_size),
                        GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
   }
 
   // Slot 2: current weather condition
   int y2 = 2 * zone_h + (zone_h - icon_size) / 2;
-  graphics_draw_text(ctx, prv_condition_icon(sl->condition), sl->icon_font,
+  graphics_draw_text(ctx, prv_condition_icon(sl->condition, sl->is_day), sl->icon_font,
                      GRect(0, y2, graph_x, icon_size),
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 }
@@ -89,6 +105,7 @@ IconBarLayer *icon_bar_layer_create(GRect frame) {
   sl->battery_charging = batt.is_charging;
   sl->bt_connected     = true;
   sl->condition        = WEATHER_CONDITION_UNKNOWN;
+  sl->is_day           = true;
 
 #if PBL_DISPLAY_HEIGHT >= 228
   sl->icon_font = fonts_load_custom_font(
@@ -136,5 +153,11 @@ void icon_bar_layer_set_condition(IconBarLayer *layer,
                                     WeatherCondition condition) {
   if (!layer) return;
   layer->condition = condition;
+  layer_mark_dirty(layer->layer);
+}
+
+void icon_bar_layer_set_daytime(IconBarLayer *layer, bool is_day) {
+  if (!layer) return;
+  layer->is_day = is_day;
   layer_mark_dirty(layer->layer);
 }

@@ -45,8 +45,8 @@ function getWeatherDescription(code) {
 }
 
 //
-// WMO weather code to Lucide icon codepoint (from IcoMoon)
-// Reference: Lucide icons mapped to Unicode codepoints
+// WMO weather code to Carbon icon codepoint (from IcoMoon)
+// Reference: Carbon icons mapped to Unicode codepoints
 //
 
 function getWeatherIcon(code) {

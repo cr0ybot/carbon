@@ -13,3 +13,4 @@ void          icon_bar_layer_notify_battery(IconBarLayer *layer,
 void          icon_bar_layer_notify_bt(IconBarLayer *layer, bool connected);
 void          icon_bar_layer_set_condition(IconBarLayer *layer,
                                            WeatherCondition condition);
+void          icon_bar_layer_set_daytime(IconBarLayer *layer, bool is_day);
