@@ -13,7 +13,7 @@ struct EventLayer {
 // Returns NULL for codes that don't warrant a special icon.
 static const char *prv_event_icon(uint8_t code, GColor *out_color) {
   if (code == 19 || code == 99) {
-    *out_color = GColorLightGray;
+    *out_color = GColorOrange;
     return ICON_TORNADO;
   }
   if (code >= 95 && code <= 98) {
