@@ -109,26 +109,41 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 
 #if defined(PBL_COLOR)
   int line_bottom = lh - 1;
-  // Each segment uses the comfort color of the average of its two endpoint temps.
-  // Values are converted to °F before the threshold test when unit is Celsius.
+  // Two-pass color rendering:
+  //   Pass 1 — dark fill from the line position down to the bottom of the layer.
+  //   Pass 2 — light-colored 1px line drawn on top at the actual-temp position.
+  //   Pass 3 — white 1px line for apparent temperature over everything.
   //
-  // Thresholds (°F):  <=10 PINK  <=32 PURPLE  <=45 CYAN  <=59 TEAL
-  //                   <=76 GREEN <=84 YELLOW   <=96 ORANGE  >96 RED
-  #define TEMP_TO_F(t)   (tl->celsius ? ((t) * 9 / 5 + 32) : (t))
-  #define TEMP_COLOR(tf) ( \
-    (tf) <= 10 ? GColorShockingPink     : \
-    (tf) <= 32 ? GColorPurpureus        : \
-    (tf) <= 45 ? GColorCyan             : \
-    (tf) <= 59 ? GColorMediumAquamarine : \
-    (tf) <= 76 ? GColorYellow           : \
-    (tf) <= 84 ? GColorChromeYellow     : \
-    (tf) <= 96 ? GColorOrange           : \
+  // Using paired dark/light shades for each comfort band gives the effect of a
+  // lighter accent at the line and a darker mass below, making the white
+  // apparent-temp line legible across all temperature conditions.
+  //
+  // Thresholds (°F): <=10 pink  <=32 purple  <=45 cyan  <=59 teal
+  //                  <=76 green <=84 yellow   <=96 orange >96 red
+  #define TEMP_TO_F(t) (tl->celsius ? ((t) * 9 / 5 + 32) : (t))
+  #define DARK_TEMP_COLOR(tf) ( \
+    (tf) <= 10 ? GColorPurple            : \
+    (tf) <= 32 ? GColorImperialPurple    : \
+    (tf) <= 45 ? GColorTiffanyBlue       : \
+    (tf) <= 59 ? GColorCadetBlue         : \
+    (tf) <= 76 ? GColorKellyGreen        : \
+    (tf) <= 84 ? GColorBrass             : \
+    (tf) <= 96 ? GColorWindsorTan        : \
+                 GColorDarkCandyAppleRed)
+  #define LIGHT_TEMP_COLOR(tf) ( \
+    (tf) <= 10 ? GColorShockingPink      : \
+    (tf) <= 32 ? GColorLavenderIndigo    : \
+    (tf) <= 45 ? GColorCyan              : \
+    (tf) <= 59 ? GColorMediumAquamarine  : \
+    (tf) <= 76 ? GColorSpringBud         : \
+    (tf) <= 84 ? GColorIcterine          : \
+    (tf) <= 96 ? GColorChromeYellow      : \
                  GColorRed)
 
+  // Pass 1: dark fills
   for (int i = 1; i < 25; i++) {
     int avg = ((int)pts[i - 1] + (int)pts[i]) / 2;
-    graphics_context_set_fill_color(ctx, TEMP_COLOR(TEMP_TO_F(avg)));
-    // Step pixel-by-pixel along the segment; at each column fill down to bottom
+    graphics_context_set_fill_color(ctx, DARK_TEMP_COLOR(TEMP_TO_F(avg)));
     int x0 = spx[i - 1], y0 = spy[i - 1], x1 = spx[i], y1 = spy[i];
     int dx = x1 - x0, dy = y1 - y0;
     int steps = (abs(dx) > abs(dy)) ? abs(dx) : abs(dy);
@@ -142,15 +157,24 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
       }
     }
   }
-  #undef TEMP_COLOR
-  #undef TEMP_TO_F
 
-  // Apparent temperature — grey line drawn over the filled color area
-  graphics_context_set_stroke_color(ctx, GColorLightGray);
+  // Pass 2: light-colored actual-temp line on top of the fill
   graphics_context_set_stroke_width(ctx, 1);
+  for (int i = 1; i < 25; i++) {
+    int avg = ((int)pts[i - 1] + (int)pts[i]) / 2;
+    graphics_context_set_stroke_color(ctx, LIGHT_TEMP_COLOR(TEMP_TO_F(avg)));
+    graphics_draw_line(ctx, GPoint(spx[i - 1], spy[i - 1]), GPoint(spx[i], spy[i]));
+  }
+
+  // Pass 3: white apparent-temp line over everything
+  graphics_context_set_stroke_color(ctx, GColorWhite);
   for (int i = 1; i < 25; i++) {
     graphics_draw_line(ctx, GPoint(apx[i - 1], apy[i - 1]), GPoint(apx[i], apy[i]));
   }
+
+  #undef DARK_TEMP_COLOR
+  #undef LIGHT_TEMP_COLOR
+  #undef TEMP_TO_F
 #else
   // B&W: white actual-temp line + light-grey apparent-temp line
   graphics_context_set_stroke_width(ctx, 1);
