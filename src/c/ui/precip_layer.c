@@ -16,7 +16,8 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int layer_h = bounds.size.h;
 
   // Precipitation bars — proportional x so bars fill to the right edge
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  // Color platforms use blue (#00AAFF → GColorVividCerulean) matching the JS graphBar palette.
+  graphics_context_set_fill_color(ctx, PBL_IF_COLOR_ELSE(GColorVividCerulean, GColorWhite));
   for (int i = 0; i < GRAPH_HOURS; i++) {
     if (pl->prob[i] == 0) continue;
     int x0 = graph_x + (long)i       * graph_w / GRAPH_HOURS;

@@ -133,7 +133,8 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 #endif
 
   // Noon/midnight ticks — temp is the bottommost graph layer, draw bottom only
-  graphics_context_set_stroke_color(ctx, GColorWhite);
+  // Black ticks on color platforms so they contrast against the filled color area.
+  graphics_context_set_stroke_color(ctx, PBL_IF_COLOR_ELSE(GColorBlack, GColorWhite));
   graph_draw_ticks(ctx, graph_x, graph_w, lh, tl->current_hour, 4, false, true);
 }
 
