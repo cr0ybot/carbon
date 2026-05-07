@@ -22,24 +22,28 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   GFont font_md = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
   graphics_context_set_text_color(ctx, GColorWhite);
 
-  // Left column: high, current, low
-  // Right-aligned, no ellipsis, manually positioned for even vertical spacing.
-  // sm rects are 14px tall, md rect is 20px; positions chosen so gaps are equal.
+  // Left column: high, current, low — three equal zones matching icon_bar_layer.
+  // Each item is centered in its zone; sm_lead compensates for GOTHIC_14's internal top leading.
   static char curr_buf[10], high_buf[8], low_buf[8];
   snprintf(high_buf, sizeof(high_buf), "%d", (int)tl->high);
   snprintf(curr_buf, sizeof(curr_buf), "%d", (int)tl->current);
   snprintf(low_buf,  sizeof(low_buf),  "%d", (int)tl->low);
 
-  // Right-aligned, 4px right padding, no ellipsis
-  // high: y=-1 to compensate for font's internal top leading
+  int sm_h    = 15;  // GOTHIC_14 rect height
+  int md_h    = 20;  // GOTHIC_18_BOLD rect height
+  int sm_lead = 1;   // GOTHIC_14 internal top leading
+  int md_lead = 2;   // GOTHIC_18_BOLD internal top leading
+  int zone_h  = lh / 3;
+  int label_x = GRAPH_OFFSET_X - 4;
+
   graphics_draw_text(ctx, high_buf, font_sm,
-                     GRect(0, -1, GRAPH_OFFSET_X - 4, 15),
+                     GRect(0, (zone_h - sm_h) / 2 - sm_lead, label_x, sm_h),
                      GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
   graphics_draw_text(ctx, curr_buf, font_md,
-                     GRect(0, 12, GRAPH_OFFSET_X - 4, 20),
+                     GRect(0, zone_h + (zone_h - md_h) / 2 - md_lead, label_x, md_h),
                      GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
   graphics_draw_text(ctx, low_buf, font_sm,
-                     GRect(0, 30, GRAPH_OFFSET_X - 4, 14),
+                     GRect(0, 2 * zone_h + (zone_h - (sm_h - sm_lead)) / 2, label_x, sm_h - sm_lead),
                      GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
 
   // Vertical separator
