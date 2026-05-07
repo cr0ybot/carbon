@@ -45,7 +45,7 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int sm_lead = 1;   // GOTHIC_14 internal top leading
   int md_lead = 2;   // GOTHIC_18_BOLD internal top leading
 #endif
-  int zone_h  = lh / 3;
+  int zone_h  = (lh - 2) / 3;  // 2px bottom padding keeps low label off the edge
   int label_x = GRAPH_OFFSET_X - 4;
 
   graphics_draw_text(ctx, high_buf, font_sm,
