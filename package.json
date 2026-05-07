@@ -58,6 +58,12 @@
           "name": "CARBON_ICONS_18",
           "file": "fonts/IcoMoon-Regular.ttf",
           "characterRegex": "[\\uE000-\\uF8FF]"
+        },
+        {
+          "type": "font",
+          "name": "CARBON_ICONS_22",
+          "file": "fonts/IcoMoon-Regular.ttf",
+          "characterRegex": "[\\uE000-\\uF8FF]"
         }
       ]
     }

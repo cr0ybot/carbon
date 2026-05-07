@@ -11,11 +11,16 @@
 // Storage key for persisting last-received weather across cold starts
 #define STORAGE_KEY_WEATHER 1
 
-// Emery layout constants (200x228)
-// Round (gabbro, 260x260) values are provided via PBL_IF_RECT_ELSE
 // GRAPH_LAYERS_H is the combined height of daylight+cloud+precip — also used
 // for the icon bar overlay and the temp layer so all three match.
-#if PBL_DISPLAY_HEIGHT <= 168
+// Must be tall enough to fit the icon slots: >= 228 uses 22px icons (need 66px+),
+// middle tier uses 18px icons (56px gives zone_h=18), small uses 14px icons.
+#if PBL_DISPLAY_HEIGHT >= 228
+#define DAYLIGHT_H  15
+#define CLOUD_H     26
+#define PRECIP_H    25
+// Sums to 66
+#elif PBL_DISPLAY_HEIGHT <= 168
 #define DAYLIGHT_H  12
 #define CLOUD_H     17
 #define PRECIP_H    16

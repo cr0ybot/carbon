@@ -18,8 +18,13 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int graph_x = GRAPH_OFFSET_X;
   int graph_w = bounds.size.w - graph_x;
 
+#if PBL_DISPLAY_HEIGHT >= 228
+  GFont font_sm = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+  GFont font_md = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+#else
   GFont font_sm = fonts_get_system_font(FONT_KEY_GOTHIC_14);
   GFont font_md = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+#endif
   graphics_context_set_text_color(ctx, GColorWhite);
 
   // Left column: high, current, low — three equal zones matching icon_bar_layer.
@@ -29,10 +34,17 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   snprintf(curr_buf, sizeof(curr_buf), "%d", (int)tl->current);
   snprintf(low_buf,  sizeof(low_buf),  "%d", (int)tl->low);
 
+#if PBL_DISPLAY_HEIGHT >= 228
+  int sm_h    = 20;  // GOTHIC_18 rect height
+  int md_h    = 28;  // GOTHIC_24_BOLD rect height
+  int sm_lead = 2;   // GOTHIC_18 internal top leading
+  int md_lead = 2;   // GOTHIC_24_BOLD internal top leading
+#else
   int sm_h    = 15;  // GOTHIC_14 rect height
   int md_h    = 20;  // GOTHIC_18_BOLD rect height
   int sm_lead = 1;   // GOTHIC_14 internal top leading
   int md_lead = 2;   // GOTHIC_18_BOLD internal top leading
+#endif
   int zone_h  = lh / 3;
   int label_x = GRAPH_OFFSET_X - 4;
 

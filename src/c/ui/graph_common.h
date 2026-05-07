@@ -3,7 +3,12 @@
 
 // Horizontal pixel offset shared by all graph layers (daylight, cloud,
 // precip, temp). The left column is reserved for icons / labels.
+// Wider on emery to accommodate larger fonts and icons.
+#if PBL_DISPLAY_HEIGHT >= 228
+#define GRAPH_OFFSET_X 32
+#else
 #define GRAPH_OFFSET_X 24
+#endif
 
 // Number of hourly slots displayed across all graph layers
 #define GRAPH_HOURS 24

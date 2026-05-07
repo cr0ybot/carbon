@@ -40,7 +40,9 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int lh      = bounds.size.h;
   int zone_h  = lh / 3;
 
-#if PBL_DISPLAY_HEIGHT <= 168
+#if PBL_DISPLAY_HEIGHT >= 228
+  int icon_size = 22;
+#elif PBL_DISPLAY_HEIGHT <= 168
   int icon_size = 14;
 #else
   int icon_size = 18;
@@ -88,7 +90,10 @@ IconBarLayer *icon_bar_layer_create(GRect frame) {
   sl->bt_connected     = true;
   sl->condition        = WEATHER_CONDITION_UNKNOWN;
 
-#if PBL_DISPLAY_HEIGHT <= 168
+#if PBL_DISPLAY_HEIGHT >= 228
+  sl->icon_font = fonts_load_custom_font(
+    resource_get_handle(RESOURCE_ID_CARBON_ICONS_22));
+#elif PBL_DISPLAY_HEIGHT <= 168
   sl->icon_font = fonts_load_custom_font(
     resource_get_handle(RESOURCE_ID_CARBON_ICONS_14));
 #else
