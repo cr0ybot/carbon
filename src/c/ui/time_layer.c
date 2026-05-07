@@ -40,13 +40,8 @@ TimeLayer *time_layer_create(GRect frame) {
   int w = frame.size.w;
 
   // City name — top, small font, full width centered
-#if PBL_DISPLAY_HEIGHT <= 168
-  GFont city_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-  tl->city_label = text_layer_create(GRect(0, 1, w, 14));
-#else
-  GFont city_font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
-  tl->city_label = text_layer_create(GRect(0, 2, w, 20));
-#endif
+  GFont city_font = fonts_get_system_font(TL_SMALL_FONT_KEY);
+  tl->city_label = text_layer_create(GRect(0, 0, w, TL_SMALL_H));
   text_layer_set_background_color(tl->city_label, GColorClear);
   text_layer_set_text_color(tl->city_label, GColorWhite);
   text_layer_set_font(tl->city_label, city_font);
@@ -54,23 +49,12 @@ TimeLayer *time_layer_create(GRect frame) {
   text_layer_set_text(tl->city_label, tl->city_buf);
   layer_add_child(tl->container, text_layer_get_layer(tl->city_label));
 
-  // Time — large, centered. LECO_60 on tall (>=228px) displays; smaller fonts elsewhere.
-#if PBL_DISPLAY_HEIGHT >= 228
-  GFont time_font = fonts_get_system_font(FONT_KEY_LECO_60_NUMBERS_AM_PM);
-  int time_y = 10;
-  int time_h = 62;
-#elif PBL_DISPLAY_HEIGHT <= 168
-  GFont time_font = fonts_get_system_font(FONT_KEY_LECO_36_BOLD_NUMBERS);
-  int time_y = 13;
-  int time_h = 40;
-#else
-  GFont time_font = PBL_IF_RECT_ELSE(
-    fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS),
-    fonts_get_system_font(FONT_KEY_LECO_36_BOLD_NUMBERS));
-  int time_y = PBL_IF_RECT_ELSE(24, 22);
-  int time_h = PBL_IF_RECT_ELSE(50, 44);
-#endif
-  tl->time_label = text_layer_create(GRect(0, time_y, w, time_h));
+  // Time — large centered. LECO_60 on emery (>=228px); LECO_36_BOLD everywhere else.
+  // TL_TIME_PAD is the internal top gap measured from each font's line metrics.
+  GFont time_font = fonts_get_system_font(TL_TIME_FONT_KEY);
+  // Shift the time label up by TL_TIME_PAD so visible digits start flush with city text
+  int time_y = TL_SMALL_H - TL_TIME_PAD;
+  tl->time_label = text_layer_create(GRect(0, time_y, w, TL_TIME_H));
   text_layer_set_background_color(tl->time_label, GColorClear);
   text_layer_set_text_color(tl->time_label, GColorWhite);
   text_layer_set_font(tl->time_label, time_font);
@@ -80,12 +64,9 @@ TimeLayer *time_layer_create(GRect frame) {
 
   // Timezone — small font, left side of time row
   GFont small_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-#if PBL_DISPLAY_HEIGHT <= 168
-  int tz_ampm_y = time_y + (time_h - 18) / 2 + 2;
-#else
-  int tz_ampm_y = time_y + (time_h - 18) / 2 + 8;
-#endif
-  tl->tz_label = text_layer_create(GRect(2, tz_ampm_y, 32, 18));
+  // Center TZ/AMPM label within the visible digit area, skipping internal font padding
+  int tz_ampm_y = time_y + TL_TIME_PAD + (TL_TIME_H - TL_TIME_PAD - TL_TZ_H) / 2;
+  tl->tz_label = text_layer_create(GRect(2, tz_ampm_y, 32, TL_TZ_H));
   text_layer_set_background_color(tl->tz_label, GColorClear);
   text_layer_set_text_color(tl->tz_label, GColorLightGray);
   text_layer_set_font(tl->tz_label, small_font);
@@ -94,7 +75,7 @@ TimeLayer *time_layer_create(GRect frame) {
   layer_add_child(tl->container, text_layer_get_layer(tl->tz_label));
 
   // AM/PM — small font, right side of time row
-  tl->ampm_label = text_layer_create(GRect(w - 34, tz_ampm_y, 32, 18));
+  tl->ampm_label = text_layer_create(GRect(w - 34, tz_ampm_y, 32, TL_TZ_H));
   text_layer_set_background_color(tl->ampm_label, GColorClear);
   text_layer_set_text_color(tl->ampm_label, GColorLightGray);
   text_layer_set_font(tl->ampm_label, small_font);
@@ -103,14 +84,9 @@ TimeLayer *time_layer_create(GRect frame) {
   layer_add_child(tl->container, text_layer_get_layer(tl->ampm_label));
 
   // Date — below time
-  int date_y = time_y + time_h;
-#if PBL_DISPLAY_HEIGHT <= 168
-  GFont date_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-  tl->date_label = text_layer_create(GRect(0, date_y, w, 16));
-#else
-  GFont date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
-  tl->date_label = text_layer_create(GRect(0, date_y, w, 22));
-#endif
+  int date_y = time_y + TL_TIME_H;
+  GFont date_font = fonts_get_system_font(TL_SMALL_FONT_KEY);
+  tl->date_label = text_layer_create(GRect(0, date_y, w, TL_SMALL_H));
   text_layer_set_background_color(tl->date_label, GColorClear);
   text_layer_set_text_color(tl->date_label, GColorWhite);
   text_layer_set_font(tl->date_label, date_font);

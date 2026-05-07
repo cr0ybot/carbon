@@ -13,24 +13,20 @@
 
 // Emery layout constants (200x228)
 // Round (gabbro, 260x260) values are provided via PBL_IF_RECT_ELSE
-// Small screens (<=168px) use trimmed heights to center the time block
+// GRAPH_LAYERS_H is the combined height of daylight+cloud+precip — also used
+// for the icon bar overlay and the temp layer so all three match.
 #if PBL_DISPLAY_HEIGHT <= 168
-#define DAYLIGHT_H    12
-#define CLOUD_H       17
-#define PRECIP_H      16
+#define DAYLIGHT_H  12
+#define CLOUD_H     17
+#define PRECIP_H    16
+// Sums to 45
 #else
-#define DAYLIGHT_H    14
-#define CLOUD_H       22
-#define PRECIP_H      23
+#define DAYLIGHT_H  13
+#define CLOUD_H     21
+#define PRECIP_H    22
+// Sums to 56
 #endif
-#if PBL_DISPLAY_HEIGHT >= 228
-#define TIME_BLOCK_H  116
-#elif PBL_DISPLAY_HEIGHT <= 168
-#define TIME_BLOCK_H  78
-#else
-#define TIME_BLOCK_H  PBL_IF_RECT_ELSE(102, 96)
-#endif
-#define TEMP_H        44
+#define GRAPH_LAYERS_H  (DAYLIGHT_H + CLOUD_H + PRECIP_H)
 
 static Window         *s_main_window;
 static DaylightLayer  *s_daylight_layer;
@@ -191,17 +187,17 @@ static void prv_window_load(Window *window) {
   y += PRECIP_H;
 
   // Icon bar — overlaid on top of daylight/cloud/precip, owns the left column
-  s_icon_bar_layer = icon_bar_layer_create(GRect(0, 0, w, DAYLIGHT_H + CLOUD_H + PRECIP_H));
+  s_icon_bar_layer = icon_bar_layer_create(GRect(0, 0, w, GRAPH_LAYERS_H));
   layer_add_child(root, icon_bar_layer_get_layer(s_icon_bar_layer));
 
-  // Time block (city + time + date)
-  s_time_layer = time_layer_create(GRect(0, y, w, TIME_BLOCK_H));
+  // Time block (city + time + date) — vertically centered on the screen
+  int time_y = (bounds.size.h - TL_TIME_BLOCK_H) / 2;
+  s_time_layer = time_layer_create(GRect(0, time_y, w, TL_TIME_BLOCK_H));
   layer_add_child(root, time_layer_get_layer(s_time_layer));
-  y += TIME_BLOCK_H + 4;
 
-  // Temp info + sparkline
-  int temp_y = bounds.size.h - TEMP_H - 2;  // pin to bottom with 2px margin
-  s_temp_layer = temp_layer_create(GRect(0, temp_y, w, TEMP_H));
+  // Temp info + sparkline — same height as the top graph group, pinned to bottom
+  int temp_y = bounds.size.h - GRAPH_LAYERS_H;
+  s_temp_layer = temp_layer_create(GRect(0, temp_y, w, GRAPH_LAYERS_H));
   layer_add_child(root, temp_layer_get_layer(s_temp_layer));
 
   // Seed time display immediately
