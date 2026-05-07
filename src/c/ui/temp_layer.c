@@ -9,6 +9,7 @@ struct TempLayer {
   int16_t  low;
   int8_t   hourly[GRAPH_HOURS];
   uint8_t  current_hour;
+  bool     celsius;
 };
 
 static void prv_update_proc(Layer *layer, GContext *ctx) {
@@ -78,16 +79,58 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int pad = 4;
   int graph_h = lh - pad * 2;
 
+  // Pre-compute pixel positions for all 25 points
+  int spx[25], spy[25];
+  for (int i = 0; i < 25; i++) {
+    spx[i] = graph_x + i * graph_w / 24;
+    spy[i] = pad + graph_h - ((pts[i] - t_min) * graph_h / t_range);
+  }
+
+#if defined(PBL_COLOR)
+  int line_bottom = lh - 1;
+  // Each segment uses the comfort color of the average of its two endpoint temps.
+  // Values are converted to °F before the threshold test when unit is Celsius.
+  //
+  // Thresholds (°F):  <=10 PINK  <=32 PURPLE  <=45 CYAN  <=59 TEAL
+  //                   <=76 GREEN <=84 YELLOW   <=96 ORANGE  >96 RED
+  #define TEMP_TO_F(t)   (tl->celsius ? ((t) * 9 / 5 + 32) : (t))
+  #define TEMP_COLOR(tf) ( \
+    (tf) <= 10 ? GColorShockingPink     : \
+    (tf) <= 32 ? GColorPurpureus        : \
+    (tf) <= 45 ? GColorCyan             : \
+    (tf) <= 59 ? GColorMediumAquamarine : \
+    (tf) <= 76 ? GColorYellow           : \
+    (tf) <= 84 ? GColorChromeYellow     : \
+    (tf) <= 96 ? GColorOrange           : \
+                 GColorRed)
+
+  for (int i = 1; i < 25; i++) {
+    int avg = ((int)pts[i - 1] + (int)pts[i]) / 2;
+    graphics_context_set_fill_color(ctx, TEMP_COLOR(TEMP_TO_F(avg)));
+    // Step pixel-by-pixel along the segment; at each column fill down to bottom
+    int x0 = spx[i - 1], y0 = spy[i - 1], x1 = spx[i], y1 = spy[i];
+    int dx = x1 - x0, dy = y1 - y0;
+    int steps = (abs(dx) > abs(dy)) ? abs(dx) : abs(dy);
+    if (steps == 0) steps = 1;
+    for (int s = 0; s <= steps; s++) {
+      int col_x = x0 + dx * s / steps;
+      int col_y = y0 + dy * s / steps;
+      int col_h = line_bottom - col_y + 1;
+      if (col_h > 0) {
+        graphics_fill_rect(ctx, GRect(col_x, col_y, 1, col_h), 0, GCornerNone);
+      }
+    }
+  }
+  #undef TEMP_COLOR
+  #undef TEMP_TO_F
+#else
+  // B&W: white line only
   graphics_context_set_stroke_color(ctx, GColorWhite);
   graphics_context_set_stroke_width(ctx, 1);
-  GPoint prev = GPoint(0, 0);
-  for (int i = 0; i < 25; i++) {
-    int x = graph_x + i * graph_w / 24;
-    int y = pad + graph_h - ((pts[i] - t_min) * graph_h / t_range);
-    GPoint pt = GPoint(x, y);
-    if (i > 0) graphics_draw_line(ctx, prev, pt);
-    prev = pt;
+  for (int i = 1; i < 25; i++) {
+    graphics_draw_line(ctx, GPoint(spx[i - 1], spy[i - 1]), GPoint(spx[i], spy[i]));
   }
+#endif
 
   // Noon/midnight ticks — temp is the bottommost graph layer, draw bottom only
   graphics_context_set_stroke_color(ctx, GColorWhite);
@@ -101,6 +144,7 @@ TempLayer *temp_layer_create(GRect frame) {
   tl->high         = 0;
   tl->low          = 0;
   tl->current_hour = 0;
+  tl->celsius      = false;
   memset(tl->hourly, 0, sizeof(tl->hourly));
 
   tl->layer = layer_create_with_data(frame, sizeof(TempLayer *));
@@ -132,7 +176,7 @@ void temp_layer_set_data(TempLayer *layer,
 }
 
 void temp_layer_set_unit(TempLayer *layer, bool celsius) {
-  // Unit is determined by pkjs and baked into the values; stored for
-  // potential future display use only.
-  (void)layer; (void)celsius;
+  if (!layer) return;
+  layer->celsius = celsius;
+  layer_mark_dirty(layer->layer);
 }
