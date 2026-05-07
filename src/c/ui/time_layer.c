@@ -11,6 +11,7 @@ struct TimeLayer {
   char        city_buf[24];
   char        time_buf[8];
   char        tz_buf[8];
+  char        tz_override[8];  // set by time_layer_set_timezone; overrides strftime
   char        ampm_buf[4];
   char        date_buf[32];
 };
@@ -30,11 +31,12 @@ TimeLayer *time_layer_create(GRect frame) {
   TimeLayer *tl = malloc(sizeof(TimeLayer));
   if (!tl) return NULL;
 
-  tl->city_buf[0] = '\0';
-  tl->time_buf[0] = '\0';
-  tl->tz_buf[0]   = '\0';
-  tl->ampm_buf[0] = '\0';
-  tl->date_buf[0] = '\0';
+  tl->city_buf[0]     = '\0';
+  tl->time_buf[0]     = '\0';
+  tl->tz_buf[0]       = '\0';
+  tl->tz_override[0]  = '\0';
+  tl->ampm_buf[0]     = '\0';
+  tl->date_buf[0]     = '\0';
 
   tl->container = layer_create(frame);
   int w = frame.size.w;
@@ -112,6 +114,14 @@ Layer *time_layer_get_layer(TimeLayer *layer) {
   return layer ? layer->container : NULL;
 }
 
+void time_layer_set_timezone(TimeLayer *layer, const char *tz) {
+  if (!layer || !tz) return;
+  strncpy(layer->tz_override, tz, sizeof(layer->tz_override) - 1);
+  layer->tz_override[sizeof(layer->tz_override) - 1] = '\0';
+  // Immediately update the label so it shows even before the next tick
+  text_layer_set_text(layer->tz_label, layer->tz_override[0] ? layer->tz_override : layer->tz_buf);
+}
+
 void time_layer_set_city(TimeLayer *layer, const char *city) {
   if (!layer || !city) return;
   strncpy(layer->city_buf, city, sizeof(layer->city_buf) - 1);
@@ -143,12 +153,16 @@ void time_layer_update(TimeLayer *layer, struct tm *tick_time,
   text_layer_set_text(layer->time_label, layer->time_buf);
   text_layer_set_text(layer->ampm_label, layer->ampm_buf);
 
-  // Timezone abbreviation — hide if unavailable or numeric offset
-  strftime(layer->tz_buf, sizeof(layer->tz_buf), "%Z", tick_time);
-  // Only show known alphabetic abbreviations; hide "N/A", "", "+HHMM" etc.
-  bool tz_valid = (layer->tz_buf[0] >= 'A' && layer->tz_buf[0] <= 'Z') &&
-                  (layer->tz_buf[1] >= 'A' && layer->tz_buf[1] <= 'Z');
-  text_layer_set_text(layer->tz_label, tz_valid ? layer->tz_buf : "");
+  // Timezone abbreviation — use manual override if set (e.g. demo mode),
+  // otherwise derive from strftime and hide numeric offsets or empty values.
+  if (layer->tz_override[0]) {
+    text_layer_set_text(layer->tz_label, layer->tz_override);
+  } else {
+    strftime(layer->tz_buf, sizeof(layer->tz_buf), "%Z", tick_time);
+    bool tz_valid = (layer->tz_buf[0] >= 'A' && layer->tz_buf[0] <= 'Z') &&
+                    (layer->tz_buf[1] >= 'A' && layer->tz_buf[1] <= 'Z');
+    text_layer_set_text(layer->tz_label, tz_valid ? layer->tz_buf : "");
+  }
 
   // Date — build without strftime's unreliable %-m/%-d flags
   const char *iso_fmt = prv_date_format(settings->date_format);

@@ -34,6 +34,9 @@ TimeLayer *time_layer_create(GRect frame);
 void       time_layer_destroy(TimeLayer *layer);
 Layer     *time_layer_get_layer(TimeLayer *layer);
 void       time_layer_set_city(TimeLayer *layer, const char *city);
+// Override the timezone abbreviation shown left of the clock. Pass an empty
+// string to revert to the system-derived value from strftime.
+void       time_layer_set_timezone(TimeLayer *layer, const char *tz);
 // settings is used for date_format only; 24h is read from clock_is_24h_style()
 void       time_layer_update(TimeLayer *layer, struct tm *tick_time,
                              const Settings *settings);

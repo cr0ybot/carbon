@@ -92,7 +92,6 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
     }
 #endif
   }
-  // No tick marks — precip is a middle layer
 }
 
 PrecipLayer *precip_layer_create(GRect frame) {

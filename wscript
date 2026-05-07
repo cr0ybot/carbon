@@ -30,9 +30,12 @@ def build(ctx):
     binaries = []
 
     cached_env = ctx.env
+    demo_scenario = os.environ.get('DEMO', '')
     for platform in ctx.env.TARGET_PLATFORMS:
         ctx.env = ctx.all_envs[platform]
         ctx.set_group(ctx.env.PLATFORM_NAME)
+        if demo_scenario:
+            ctx.env.append_value('CFLAGS', ['-DDEMO_SCENARIO=' + demo_scenario])
         app_elf = '{}/pebble-app.elf'.format(ctx.env.BUILD_DIR)
         ctx.pbl_build(source=ctx.path.ant_glob('src/c/**/*.c'), target=app_elf, bin_type='app')
 

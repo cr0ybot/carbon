@@ -1,6 +1,7 @@
 #include <pebble.h>
 #include "modules/weather.h"
 #include "modules/settings.h"
+#include "modules/demo.h"
 #include "ui/daylight_layer.h"
 #include "ui/cloud_layer.h"
 #include "ui/precip_layer.h"
@@ -55,7 +56,9 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
   // Request fresh weather every hour
   if (units_changed & HOUR_UNIT) {
+#if !defined(DEMO_SCENARIO)
     prv_request_weather();
+#endif
   }
 }
 
@@ -240,6 +243,7 @@ static void prv_window_load(Window *window) {
     icon_bar_layer_set_condition(s_icon_bar_layer,
                                  weather_code_to_condition(s_weather.weather_code));
     icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
+    temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
     temp_layer_set_data(s_temp_layer,
                         s_weather.current_temp,
                         s_weather.high_temp,
@@ -249,6 +253,9 @@ static void prv_window_load(Window *window) {
                         current_hour);
     time_layer_set_city(s_time_layer, s_weather.city_name);
   }
+#if defined(DEMO_SCENARIO)
+  time_layer_set_timezone(s_time_layer, demo_get_timezone());
+#endif
 }
 
 static void prv_window_unload(Window *window) {
@@ -269,9 +276,13 @@ static void init(void) {
 
   // Restore persisted weather before anything renders
   memset(&s_weather, 0, sizeof(s_weather));
+#if defined(DEMO_SCENARIO)
+  demo_data_load(&s_weather, settings_get());
+#else
   if (persist_exists(STORAGE_KEY_WEATHER)) {
     persist_read_data(STORAGE_KEY_WEATHER, &s_weather, sizeof(s_weather));
   }
+#endif
 
   s_main_window = window_create();
   window_set_background_color(s_main_window, GColorBlack);
@@ -288,12 +299,16 @@ static void init(void) {
   });
 
   // AppMessage: register callbacks BEFORE opening
+#if !defined(DEMO_SCENARIO)
   app_message_register_inbox_received(prv_inbox_received);
   app_message_register_inbox_dropped(prv_inbox_dropped);
   app_message_open(512, 64);
+#endif
 
   // Trigger initial weather fetch
+#if !defined(DEMO_SCENARIO)
   prv_request_weather();
+#endif
 }
 
 static void deinit(void) {
