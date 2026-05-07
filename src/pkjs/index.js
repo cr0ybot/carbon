@@ -141,28 +141,36 @@ function writeCache(payload) {
 function sendToWatch(payload) {
   var hourlyCount = 24;
 
-  var precipProb = (payload.precip_prob || []).slice(0, hourlyCount);
-  var tempHourly = (payload.temp_hourly || []).slice(0, hourlyCount);
-  var cloudCover = (payload.cloud_cover || []).slice(0, hourlyCount);
+  var precipProb    = (payload.precip_prob            || []).slice(0, hourlyCount);
+  var tempHourly    = (payload.temp_hourly             || []).slice(0, hourlyCount);
+  var apparentHourly = (payload.apparent_temp_hourly   || []).slice(0, hourlyCount);
+  var cloudCover    = (payload.cloud_cover             || []).slice(0, hourlyCount);
+  var hourlyCode    = (payload.hourly_weather_code     || []).slice(0, hourlyCount);
 
-  while (precipProb.length < hourlyCount) precipProb.push(0);
-  while (tempHourly.length < hourlyCount) tempHourly.push(0);
-  while (cloudCover.length < hourlyCount) cloudCover.push(0);
+  while (precipProb.length     < hourlyCount) precipProb.push(0);
+  while (tempHourly.length     < hourlyCount) tempHourly.push(0);
+  while (apparentHourly.length < hourlyCount) apparentHourly.push(0);
+  while (cloudCover.length     < hourlyCount) cloudCover.push(0);
+  while (hourlyCode.length     < hourlyCount) hourlyCode.push(0);
 
   // 0 = celsius, 1 = fahrenheit  (matches settings.c convention)
   var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
 
   var dict = {
-    'WEATHER_TEMP':         Math.round(payload.current_temp || 0),
-    'WEATHER_TEMP_HIGH':    Math.round(payload.high_temp    || 0),
-    'WEATHER_TEMP_LOW':     Math.round(payload.low_temp     || 0),
-    'WEATHER_CODE':         payload.weather_code            || 0,
+    'WEATHER_TEMP':              Math.round(payload.current_temp       || 0),
+    'WEATHER_TEMP_HIGH':         Math.round(payload.high_temp           || 0),
+    'WEATHER_TEMP_LOW':          Math.round(payload.low_temp            || 0),
+    'WEATHER_APPARENT_TEMP_HIGH': Math.round(payload.apparent_high_temp || 0),
+    'WEATHER_APPARENT_TEMP_LOW':  Math.round(payload.apparent_low_temp  || 0),
+    'WEATHER_CODE':              payload.weather_code                   || 0,
     'WEATHER_SUNRISE_HOUR': payload.sunrise_hour            || 6,
     'WEATHER_SUNSET_HOUR':  payload.sunset_hour             || 20,
-    'WEATHER_PRECIP_PROB':  packUint8Array(precipProb),
-    'WEATHER_TEMP_HOURLY':  packInt8Array(tempHourly),
-    'WEATHER_CLOUD_COVER':  packUint8Array(cloudCover),
-    'CITY_NAME':            (payload.city_name || 'Unknown').substring(0, 23),
+    'WEATHER_PRECIP_PROB':           packUint8Array(precipProb),
+    'WEATHER_TEMP_HOURLY':           packInt8Array(tempHourly),
+    'WEATHER_APPARENT_TEMP_HOURLY':  packInt8Array(apparentHourly),
+    'WEATHER_CLOUD_COVER':           packUint8Array(cloudCover),
+    'WEATHER_HOURLY_CODE':           packUint8Array(hourlyCode),
+    'CITY_NAME':                     (payload.city_name || 'Unknown').substring(0, 23),
     'SETTING_TEMP_UNIT':    tempUnitFlag,
   };
 
@@ -197,9 +205,9 @@ function fetchAndSend(lat, lon) {
     '?latitude='  + lat +
     '&longitude=' + lon +
     '&current=temperature_2m,weather_code' +
-    '&hourly=precipitation_probability,temperature_2m,cloud_cover' +
+    '&hourly=precipitation_probability,temperature_2m,apparent_temperature,cloud_cover,weather_code' +
     '&forecast_hours=24' +
-    '&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max' +
+    '&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max,apparent_temperature_min,apparent_temperature_max' +
     '&forecast_days=1' +
     '&temperature_unit=' + tempUnit +
     '&timeformat=unixtime' +
@@ -220,8 +228,10 @@ function fetchAndSend(lat, lon) {
 
       payload.current_temp = cur.temperature_2m;
       payload.weather_code = cur.weather_code;
-      payload.high_temp    = dly && dly.temperature_2m_max ? dly.temperature_2m_max[0] : cur.temperature_2m;
-      payload.low_temp     = dly && dly.temperature_2m_min ? dly.temperature_2m_min[0] : cur.temperature_2m;
+      payload.high_temp    = dly && dly.temperature_2m_max       ? dly.temperature_2m_max[0]       : cur.temperature_2m;
+      payload.low_temp     = dly && dly.temperature_2m_min       ? dly.temperature_2m_min[0]       : cur.temperature_2m;
+      payload.apparent_high_temp = dly && dly.apparent_temperature_max ? dly.apparent_temperature_max[0] : cur.temperature_2m;
+      payload.apparent_low_temp  = dly && dly.apparent_temperature_min ? dly.apparent_temperature_min[0] : cur.temperature_2m;
 
       // Sunrise/sunset are Unix timestamps with timeformat=unixtime
       payload.sunrise_hour = dly && dly.sunrise ? extractHourFromUnix(dly.sunrise[0]) : 6;
@@ -229,9 +239,11 @@ function fetchAndSend(lat, lon) {
 
       // forecast_hours=24 returns exactly 24 entries starting from now
       if (hrly) {
-        payload.precip_prob = hrly.precipitation_probability || [];
-        payload.temp_hourly = hrly.temperature_2m            || [];
-        payload.cloud_cover = hrly.cloud_cover               || [];
+        payload.precip_prob          = hrly.precipitation_probability || [];
+        payload.temp_hourly           = hrly.temperature_2m            || [];
+        payload.apparent_temp_hourly  = hrly.apparent_temperature      || [];
+        payload.cloud_cover           = hrly.cloud_cover               || [];
+        payload.hourly_weather_code   = hrly.weather_code              || [];
       }
     } catch (e) {
       console.log('Carbon: weather parse error: ' + e);

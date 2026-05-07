@@ -7,7 +7,10 @@ struct TempLayer {
   int16_t  current;
   int16_t  high;
   int16_t  low;
+  int16_t  apparent_high;
+  int16_t  apparent_low;
   int8_t   hourly[GRAPH_HOURS];
+  int8_t   apparent_hourly[GRAPH_HOURS];
   uint8_t  current_hour;
   bool     celsius;
 };
@@ -64,14 +67,29 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 
   // Sparkline — 25 points: current temp followed by 24 hourly forecasts.
   // Point 0 is at the left edge, point 24 at the right edge.
+  // The sparkline min/max is based on both actual and apparent temps so the
+  // two lines share the same y-scale.
   int16_t pts[25];
   pts[0] = tl->current;
   for (int i = 0; i < GRAPH_HOURS; i++) pts[i + 1] = tl->hourly[i];
 
-  int16_t t_min = pts[0], t_max = pts[0];
-  for (int i = 1; i < 25; i++) {
+  int16_t apt[25];
+  apt[0] = tl->apparent_hourly[0];  // no separate "current apparent"; use first hourly
+  for (int i = 0; i < GRAPH_HOURS; i++) apt[i + 1] = tl->apparent_hourly[i];
+
+  // Seed scale from all four daily bounds so both lines are always visible
+  // within the day's full actual + apparent temperature range.
+  // The hourly scan below can only expand the range further.
+  int16_t t_min = tl->low < tl->apparent_low   ? tl->low  : tl->apparent_low;
+  int16_t t_max = tl->high > tl->apparent_high  ? tl->high : tl->apparent_high;
+  // Seed with current so pts[0] is always in range even before the scan
+  if (tl->current < t_min) t_min = tl->current;
+  if (tl->current > t_max) t_max = tl->current;
+  for (int i = 0; i < 25; i++) {
     if (pts[i] < t_min) t_min = pts[i];
     if (pts[i] > t_max) t_max = pts[i];
+    if (apt[i] < t_min) t_min = apt[i];
+    if (apt[i] > t_max) t_max = apt[i];
   }
   int t_range = t_max - t_min;
   if (t_range < 1) t_range = 1;
@@ -79,11 +97,14 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   int pad = 4;
   int graph_h = lh - pad * 2;
 
-  // Pre-compute pixel positions for all 25 points
+  // Pre-compute pixel positions for both lines
   int spx[25], spy[25];
+  int apx[25], apy[25];
   for (int i = 0; i < 25; i++) {
     spx[i] = graph_x + i * graph_w / 24;
     spy[i] = pad + graph_h - ((pts[i] - t_min) * graph_h / t_range);
+    apx[i] = spx[i];
+    apy[i] = pad + graph_h - ((apt[i] - t_min) * graph_h / t_range);
   }
 
 #if defined(PBL_COLOR)
@@ -123,12 +144,23 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   }
   #undef TEMP_COLOR
   #undef TEMP_TO_F
-#else
-  // B&W: white line only
-  graphics_context_set_stroke_color(ctx, GColorWhite);
+
+  // Apparent temperature — grey line drawn over the filled color area
+  graphics_context_set_stroke_color(ctx, GColorLightGray);
   graphics_context_set_stroke_width(ctx, 1);
   for (int i = 1; i < 25; i++) {
+    graphics_draw_line(ctx, GPoint(apx[i - 1], apy[i - 1]), GPoint(apx[i], apy[i]));
+  }
+#else
+  // B&W: white actual-temp line + light-grey apparent-temp line
+  graphics_context_set_stroke_width(ctx, 1);
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+  for (int i = 1; i < 25; i++) {
     graphics_draw_line(ctx, GPoint(spx[i - 1], spy[i - 1]), GPoint(spx[i], spy[i]));
+  }
+  graphics_context_set_stroke_color(ctx, GColorLightGray);
+  for (int i = 1; i < 25; i++) {
+    graphics_draw_line(ctx, GPoint(apx[i - 1], apy[i - 1]), GPoint(apx[i], apy[i]));
   }
 #endif
 
@@ -141,12 +173,15 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 TempLayer *temp_layer_create(GRect frame) {
   TempLayer *tl = malloc(sizeof(TempLayer));
   if (!tl) return NULL;
-  tl->current      = 0;
-  tl->high         = 0;
-  tl->low          = 0;
-  tl->current_hour = 0;
-  tl->celsius      = false;
-  memset(tl->hourly, 0, sizeof(tl->hourly));
+  tl->current       = 0;
+  tl->high          = 0;
+  tl->low           = 0;
+  tl->apparent_high = 0;
+  tl->apparent_low  = 0;
+  tl->current_hour  = 0;
+  tl->celsius       = false;
+  memset(tl->hourly,          0, sizeof(tl->hourly));
+  memset(tl->apparent_hourly, 0, sizeof(tl->apparent_hourly));
 
   tl->layer = layer_create_with_data(frame, sizeof(TempLayer *));
   *(TempLayer **)layer_get_data(tl->layer) = tl;
@@ -166,13 +201,19 @@ Layer *temp_layer_get_layer(TempLayer *layer) {
 
 void temp_layer_set_data(TempLayer *layer,
                          int16_t current, int16_t high, int16_t low,
-                         const int8_t hourly[24], uint8_t current_hour) {
+                         int16_t apparent_high, int16_t apparent_low,
+                         const int8_t hourly[24],
+                         const int8_t apparent_hourly[24],
+                         uint8_t current_hour) {
   if (!layer) return;
-  layer->current      = current;
-  layer->high         = high;
-  layer->low          = low;
-  layer->current_hour = current_hour;
-  memcpy(layer->hourly, hourly, GRAPH_HOURS);
+  layer->current       = current;
+  layer->high          = high;
+  layer->low           = low;
+  layer->apparent_high = apparent_high;
+  layer->apparent_low  = apparent_low;
+  layer->current_hour  = current_hour;
+  memcpy(layer->hourly,          hourly,          GRAPH_HOURS);
+  memcpy(layer->apparent_hourly, apparent_hourly, GRAPH_HOURS);
   layer_mark_dirty(layer->layer);
 }
 

@@ -80,6 +80,12 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   t = dict_find(iter, MESSAGE_KEY_WEATHER_TEMP_LOW);
   if (t) s_weather.low_temp = (int16_t)t->value->int32;
 
+  t = dict_find(iter, MESSAGE_KEY_WEATHER_APPARENT_TEMP_HIGH);
+  if (t) s_weather.apparent_high_temp = (int16_t)t->value->int32;
+
+  t = dict_find(iter, MESSAGE_KEY_WEATHER_APPARENT_TEMP_LOW);
+  if (t) s_weather.apparent_low_temp = (int16_t)t->value->int32;
+
   t = dict_find(iter, MESSAGE_KEY_WEATHER_CODE);
   if (t) s_weather.weather_code = (uint8_t)t->value->int32;
 
@@ -100,9 +106,19 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
     memcpy(s_weather.temp_hourly, t->value->data, 24);
   }
 
+  t = dict_find(iter, MESSAGE_KEY_WEATHER_APPARENT_TEMP_HOURLY);
+  if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= 24) {
+    memcpy(s_weather.apparent_temp_hourly, t->value->data, 24);
+  }
+
   t = dict_find(iter, MESSAGE_KEY_WEATHER_CLOUD_COVER);
   if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= 24) {
     memcpy(s_weather.cloud_cover, t->value->data, 24);
+  }
+
+  t = dict_find(iter, MESSAGE_KEY_WEATHER_HOURLY_CODE);
+  if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= 24) {
+    memcpy(s_weather.hourly_weather_code, t->value->data, 24);
   }
 
   t = dict_find(iter, MESSAGE_KEY_CITY_NAME);
@@ -127,7 +143,8 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
                           s_weather.sunset_hour,
                           current_hour);
   cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
-  precip_layer_set_data(s_precip_layer, s_weather.precip_prob, current_hour);
+  precip_layer_set_data(s_precip_layer, s_weather.precip_prob,
+                        s_weather.hourly_weather_code, current_hour);
   bool is_day = (current_hour >= s_weather.sunrise_hour &&
                  current_hour < s_weather.sunset_hour);
   icon_bar_layer_set_condition(s_icon_bar_layer,
@@ -137,7 +154,10 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
                       s_weather.current_temp,
                       s_weather.high_temp,
                       s_weather.low_temp,
+                      s_weather.apparent_high_temp,
+                      s_weather.apparent_low_temp,
                       s_weather.temp_hourly,
+                      s_weather.apparent_temp_hourly,
                       current_hour);
   time_layer_set_city(s_time_layer, s_weather.city_name);
 }
@@ -221,7 +241,8 @@ static void prv_window_load(Window *window) {
                             s_weather.sunset_hour,
                             current_hour);
     cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover, current_hour);
-    precip_layer_set_data(s_precip_layer, s_weather.precip_prob, current_hour);
+    precip_layer_set_data(s_precip_layer, s_weather.precip_prob,
+                          s_weather.hourly_weather_code, current_hour);
     bool is_day = (current_hour >= s_weather.sunrise_hour &&
                    current_hour < s_weather.sunset_hour);
     icon_bar_layer_set_condition(s_icon_bar_layer,
@@ -231,7 +252,10 @@ static void prv_window_load(Window *window) {
                         s_weather.current_temp,
                         s_weather.high_temp,
                         s_weather.low_temp,
+                        s_weather.apparent_high_temp,
+                        s_weather.apparent_low_temp,
                         s_weather.temp_hourly,
+                        s_weather.apparent_temp_hourly,
                         current_hour);
     time_layer_set_city(s_time_layer, s_weather.city_name);
   }
