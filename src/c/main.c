@@ -80,12 +80,6 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   t = dict_find(iter, MESSAGE_KEY_WEATHER_TEMP_LOW);
   if (t) s_weather.low_temp = (int16_t)t->value->int32;
 
-  t = dict_find(iter, MESSAGE_KEY_WEATHER_APPARENT_TEMP_HIGH);
-  if (t) s_weather.apparent_high_temp = (int16_t)t->value->int32;
-
-  t = dict_find(iter, MESSAGE_KEY_WEATHER_APPARENT_TEMP_LOW);
-  if (t) s_weather.apparent_low_temp = (int16_t)t->value->int32;
-
   t = dict_find(iter, MESSAGE_KEY_WEATHER_CODE);
   if (t) s_weather.weather_code = (uint8_t)t->value->int32;
 
@@ -154,8 +148,6 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
                       s_weather.current_temp,
                       s_weather.high_temp,
                       s_weather.low_temp,
-                      s_weather.apparent_high_temp,
-                      s_weather.apparent_low_temp,
                       s_weather.temp_hourly,
                       s_weather.apparent_temp_hourly,
                       current_hour);
@@ -252,8 +244,6 @@ static void prv_window_load(Window *window) {
                         s_weather.current_temp,
                         s_weather.high_temp,
                         s_weather.low_temp,
-                        s_weather.apparent_high_temp,
-                        s_weather.apparent_low_temp,
                         s_weather.temp_hourly,
                         s_weather.apparent_temp_hourly,
                         current_hour);

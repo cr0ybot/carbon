@@ -160,8 +160,6 @@ function sendToWatch(payload) {
     'WEATHER_TEMP':              Math.round(payload.current_temp       || 0),
     'WEATHER_TEMP_HIGH':         Math.round(payload.high_temp           || 0),
     'WEATHER_TEMP_LOW':          Math.round(payload.low_temp            || 0),
-    'WEATHER_APPARENT_TEMP_HIGH': Math.round(payload.apparent_high_temp || 0),
-    'WEATHER_APPARENT_TEMP_LOW':  Math.round(payload.apparent_low_temp  || 0),
     'WEATHER_CODE':              payload.weather_code                   || 0,
     'WEATHER_SUNRISE_HOUR': payload.sunrise_hour            || 6,
     'WEATHER_SUNSET_HOUR':  payload.sunset_hour             || 20,
@@ -207,7 +205,7 @@ function fetchAndSend(lat, lon) {
     '&current=temperature_2m,weather_code' +
     '&hourly=precipitation_probability,temperature_2m,apparent_temperature,cloud_cover,weather_code' +
     '&forecast_hours=24' +
-    '&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max,apparent_temperature_min,apparent_temperature_max' +
+    '&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max' +
     '&forecast_days=1' +
     '&temperature_unit=' + tempUnit +
     '&timeformat=unixtime' +
@@ -228,10 +226,8 @@ function fetchAndSend(lat, lon) {
 
       payload.current_temp = cur.temperature_2m;
       payload.weather_code = cur.weather_code;
-      payload.high_temp    = dly && dly.temperature_2m_max       ? dly.temperature_2m_max[0]       : cur.temperature_2m;
-      payload.low_temp     = dly && dly.temperature_2m_min       ? dly.temperature_2m_min[0]       : cur.temperature_2m;
-      payload.apparent_high_temp = dly && dly.apparent_temperature_max ? dly.apparent_temperature_max[0] : cur.temperature_2m;
-      payload.apparent_low_temp  = dly && dly.apparent_temperature_min ? dly.apparent_temperature_min[0] : cur.temperature_2m;
+      payload.high_temp    = dly && dly.temperature_2m_max ? dly.temperature_2m_max[0] : cur.temperature_2m;
+      payload.low_temp     = dly && dly.temperature_2m_min ? dly.temperature_2m_min[0] : cur.temperature_2m;
 
       // Sunrise/sunset are Unix timestamps with timeformat=unixtime
       payload.sunrise_hour = dly && dly.sunrise ? extractHourFromUnix(dly.sunrise[0]) : 6;

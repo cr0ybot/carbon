@@ -7,8 +7,6 @@ struct TempLayer {
   int16_t  current;
   int16_t  high;
   int16_t  low;
-  int16_t  apparent_high;
-  int16_t  apparent_low;
   int8_t   hourly[GRAPH_HOURS];
   int8_t   apparent_hourly[GRAPH_HOURS];
   uint8_t  current_hour;
@@ -77,15 +75,11 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   apt[0] = tl->apparent_hourly[0];  // no separate "current apparent"; use first hourly
   for (int i = 0; i < GRAPH_HOURS; i++) apt[i + 1] = tl->apparent_hourly[i];
 
-  // Seed scale from all four daily bounds so both lines are always visible
-  // within the day's full actual + apparent temperature range.
-  // The hourly scan below can only expand the range further.
-  int16_t t_min = tl->low < tl->apparent_low   ? tl->low  : tl->apparent_low;
-  int16_t t_max = tl->high > tl->apparent_high  ? tl->high : tl->apparent_high;
-  // Seed with current so pts[0] is always in range even before the scan
-  if (tl->current < t_min) t_min = tl->current;
-  if (tl->current > t_max) t_max = tl->current;
-  for (int i = 0; i < 25; i++) {
+  // Bound the scale to the actual values in the two 24-hour arrays so the
+  // lines always fill the available vertical space correctly.
+  int16_t t_min = pts[0] < apt[0] ? pts[0] : apt[0];
+  int16_t t_max = pts[0] > apt[0] ? pts[0] : apt[0];
+  for (int i = 1; i < 25; i++) {
     if (pts[i] < t_min) t_min = pts[i];
     if (pts[i] > t_max) t_max = pts[i];
     if (apt[i] < t_min) t_min = apt[i];
@@ -200,8 +194,6 @@ TempLayer *temp_layer_create(GRect frame) {
   tl->current       = 0;
   tl->high          = 0;
   tl->low           = 0;
-  tl->apparent_high = 0;
-  tl->apparent_low  = 0;
   tl->current_hour  = 0;
   tl->celsius       = false;
   memset(tl->hourly,          0, sizeof(tl->hourly));
@@ -225,7 +217,6 @@ Layer *temp_layer_get_layer(TempLayer *layer) {
 
 void temp_layer_set_data(TempLayer *layer,
                          int16_t current, int16_t high, int16_t low,
-                         int16_t apparent_high, int16_t apparent_low,
                          const int8_t hourly[24],
                          const int8_t apparent_hourly[24],
                          uint8_t current_hour) {
@@ -233,8 +224,6 @@ void temp_layer_set_data(TempLayer *layer,
   layer->current       = current;
   layer->high          = high;
   layer->low           = low;
-  layer->apparent_high = apparent_high;
-  layer->apparent_low  = apparent_low;
   layer->current_hour  = current_hour;
   memcpy(layer->hourly,          hourly,          GRAPH_HOURS);
   memcpy(layer->apparent_hourly, apparent_hourly, GRAPH_HOURS);

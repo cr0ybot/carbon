@@ -28,8 +28,6 @@ typedef struct {
   int16_t current_temp;
   int16_t high_temp;
   int16_t low_temp;
-  int16_t apparent_high_temp;
-  int16_t apparent_low_temp;
   uint8_t weather_code;
   uint8_t sunrise_hour;
   uint8_t sunset_hour;
