@@ -79,6 +79,20 @@ This will enable the `--cloudpebble` option:
 pebble install --cloudpebble
 ```
 
+### Demo Build & Screenshots
+
+Demo builds with different weather conditions can be created with the `DEMO` environment variable. See [src/c/modules/demo.c](./src/c/modules/demo.c) for the available demo scenarios.
+
+```sh
+DEMO=1 pebble build
+```
+
+To take screenshots of a particular demo scenario you can use the Pebble CLI's screenshot command, which saves to `./screenshots`:
+
+```sh
+DEMO=1 pebble build && pebble screenshot --all-platforms
+```
+
 ### Project Structure
 
 ```
