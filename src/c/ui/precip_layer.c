@@ -1,3 +1,12 @@
+/**
+ * Precipitation layer
+ *
+ * @author    Cory Hughart <cory@coryhughart.com>
+ * @copyright 2026 Cory Hughart
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
+ * @link      https://cr0ybot.com/project/pebble-watchface-carbon
+ */
+
 #include "precip_layer.h"
 #include "graph_common.h"
 

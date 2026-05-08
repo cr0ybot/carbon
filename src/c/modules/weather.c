@@ -1,5 +1,18 @@
+/**
+ * Weather module
+ *
+ * @author    Cory Hughart <cory@coryhughart.com>
+ * @copyright 2026 Cory Hughart
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
+ * @link      https://cr0ybot.com/project/pebble-watchface-carbon
+ */
+
 #include "weather.h"
 
+/**
+ * Converts a WMO weather code (0-99) to a WeatherCondition enum.
+ * Codes are defined here: https://open-meteo.com/en/docs#weather_variable_documentation
+ */
 WeatherCondition weather_code_to_condition(uint8_t wmo_code) {
   if (wmo_code == 0)  return WEATHER_CONDITION_CLEAR;
   if (wmo_code == 1)  return WEATHER_CONDITION_PARTLY_CLOUDY;   // mainly clear

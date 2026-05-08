@@ -7,6 +7,11 @@
  *
  * Uses XMLHttpRequest (fetch() is not available in PebbleKit JS).
  * Uses localStorage to cache weather between refreshes.
+ *
+ * @author    Cory Hughart <cory@coryhughart.com>
+ * @copyright 2026 Cory Hughart
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
+ * @link      https://cr0ybot.com/project/pebble-watchface-carbon
  */
 
 var WEATHER_BASE_URL = 'https://api.open-meteo.com/v1/forecast';

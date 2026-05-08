@@ -1,7 +1,9 @@
 #
-# This file is the default set of rules to compile a Pebble application.
+# This file is modified from the default set of rules to compile a Pebble
+# application.
 #
-# Feel free to customize this to your needs.
+# It includes a DEMO env var directive for compiling the watchface with a static
+# set of demo data.
 #
 import os.path
 

@@ -1,3 +1,12 @@
+/**
+ * Weather module
+ *
+ * @author    Cory Hughart <cory@coryhughart.com>
+ * @copyright 2026 Cory Hughart
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
+ * @link      https://cr0ybot.com/project/pebble-watchface-carbon
+ */
+
 #pragma once
 #include <pebble.h>
 
@@ -40,4 +49,7 @@ typedef struct {
   bool    is_valid;
 } WeatherData;
 
+/**
+ * Converts a WMO weather code (0-99) to a WeatherCondition enum.
+ */
 WeatherCondition weather_code_to_condition(uint8_t wmo_code);
