@@ -94,8 +94,8 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   EventSpan spans[GRAPH_HOURS];
   int span_count = prv_find_spans(el->hourly_code, spans);
 
-  // Draw each span
-  for (int s = 0; s < span_count; s++) {
+  // Draw each span in reverse order so earlier spans are on top of later ones in case of overlap.
+  for (int s = span_count - 1; s >= 0; s--) {
     EventSpan *span = &spans[s];
 
     // Calculate x-position for the center of each hour
@@ -105,47 +105,39 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 
     // Center vertically in the layer
     int center_y = layer_h / 2;
-    int circle_radius = 6;
-    int circle_x = (x_start + x_end) / 2;
-    GColor fill_color;
+    int icon_x = (x_start + x_end) / 2;
+    int icon_size = 12;
+    int icon_gap = icon_size / 2 + 1; // Add gap between icon and extent lines.
     GColor icon_color;
 
     graphics_context_set_stroke_width(ctx, 1);
 
 #if defined(PBL_COLOR)
-    fill_color = span->color;
-    icon_color = GColorBlack;
+    icon_color = span->color;
 #else
-    fill_color = GColorWhite;
-    icon_color = GColorBlack;
+    icon_color = GColorWhite;
 #endif
 
-    graphics_context_set_stroke_color(ctx, fill_color);
-    graphics_context_set_fill_color(ctx, fill_color);
+    graphics_context_set_stroke_color(ctx, icon_color);
 
-    if (x_start < circle_x - circle_radius) {
+    if (x_start < icon_x - icon_gap) {
       graphics_draw_line(ctx,
                GPoint(x_start, center_y),
-               GPoint(circle_x - circle_radius, center_y));
+               GPoint(icon_x - icon_gap, center_y));
+      graphics_draw_line(ctx, GPoint(x_start, center_y - 2), GPoint(x_start, center_y + 2));
     }
-    if (x_end > circle_x + circle_radius) {
+    if (x_end > icon_x + icon_gap) {
       graphics_draw_line(ctx,
-               GPoint(circle_x + circle_radius, center_y),
+               GPoint(icon_x + icon_gap, center_y),
                GPoint(x_end, center_y));
+      graphics_draw_line(ctx, GPoint(x_end, center_y - 2), GPoint(x_end, center_y + 2));
     }
 
-    // Daylight-style 5px endcaps.
-    graphics_draw_line(ctx, GPoint(x_start, center_y - 2), GPoint(x_start, center_y + 2));
-    graphics_draw_line(ctx, GPoint(x_end, center_y - 2), GPoint(x_end, center_y + 2));
-
-    graphics_fill_circle(ctx, GPoint(circle_x, center_y), circle_radius);
-
-    // Draw the icon centered in the circle
+    // Draw the icon centered in the span.
     graphics_context_set_text_color(ctx, icon_color);
     if (span->icon != NULL) {
-      int icon_size = 12;
       graphics_draw_text(ctx, span->icon, el->icon_font,
-                         GRect(circle_x - icon_size / 2, center_y - icon_size / 2,
+                         GRect(icon_x - icon_size / 2, center_y - icon_size / 2,
                                icon_size, icon_size),
                          GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
     }
