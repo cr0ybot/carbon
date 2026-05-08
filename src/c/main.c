@@ -13,27 +13,30 @@
 // Storage key for persisting last-received weather across cold starts
 #define STORAGE_KEY_WEATHER 1
 
-// GRAPH_LAYERS_H is the combined height of daylight+cloud+precip — also used
+// GRAPH_LAYERS_H is the combined height of daylight+cloud+precip+event — also used
 // for the icon bar overlay and the temp layer so all three match.
 // Must be tall enough to fit the icon slots: >= 228 uses 22px icons (need 66px+),
 // middle tier uses 18px icons (56px gives zone_h=18), small uses 14px icons.
 #if PBL_DISPLAY_HEIGHT >= 228
-#define DAYLIGHT_H  12
-#define CLOUD_H     18
-#define PRECIP_H    36
+#define DAYLIGHT_H  11
+#define CLOUD_H     17
+#define PRECIP_H    26
+#define EVENT_H     12
 // Sums to 66
 #elif PBL_DISPLAY_HEIGHT <= 168
-#define DAYLIGHT_H  10
-#define CLOUD_H     15
-#define PRECIP_H    20
+#define DAYLIGHT_H  9
+#define CLOUD_H     13
+#define PRECIP_H    11
+#define EVENT_H     12
 // Sums to 45
 #else
-#define DAYLIGHT_H  12
-#define CLOUD_H     18
-#define PRECIP_H    26
+#define DAYLIGHT_H  11
+#define CLOUD_H     16
+#define PRECIP_H    17
+#define EVENT_H     12
 // Sums to 56
 #endif
-#define GRAPH_LAYERS_H  (DAYLIGHT_H + CLOUD_H + PRECIP_H)
+#define GRAPH_LAYERS_H  (DAYLIGHT_H + CLOUD_H + PRECIP_H + EVENT_H)
 
 static Window         *s_main_window;
 static DaylightLayer  *s_daylight_layer;
@@ -149,7 +152,7 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
                        s_weather.hourly_weather_code, current_hour);
   precip_layer_set_data(s_precip_layer, s_weather.precip_prob,
                         s_weather.hourly_weather_code, current_hour);
-  event_layer_set_data(s_event_layer, s_weather.hourly_weather_code, CLOUD_H);
+  event_layer_set_data(s_event_layer, s_weather.hourly_weather_code);
   bool is_day = (current_hour >= s_weather.sunrise_hour &&
                  current_hour < s_weather.sunset_hour);
   icon_bar_layer_set_condition(s_icon_bar_layer,
@@ -217,9 +220,10 @@ static void prv_window_load(Window *window) {
   layer_add_child(root, precip_layer_get_layer(s_precip_layer));
   y += PRECIP_H;
 
-  // Event overlay — straddles the cloud/precip boundary
-  s_event_layer = event_layer_create(GRect(0, DAYLIGHT_H, w, CLOUD_H + PRECIP_H));
+  // Event layer — positioned below precip, includes grouping visualization
+  s_event_layer = event_layer_create(GRect(0, y, w, EVENT_H));
   layer_add_child(root, event_layer_get_layer(s_event_layer));
+  y += EVENT_H;
 
   // Icon bar — overlaid on top of daylight/cloud/precip, owns the left column
   s_icon_bar_layer = icon_bar_layer_create(GRect(0, 0, w, GRAPH_LAYERS_H));
@@ -257,7 +261,7 @@ static void prv_window_load(Window *window) {
                          s_weather.hourly_weather_code, current_hour);
     precip_layer_set_data(s_precip_layer, s_weather.precip_prob,
                           s_weather.hourly_weather_code, current_hour);
-    event_layer_set_data(s_event_layer, s_weather.hourly_weather_code, CLOUD_H);
+    event_layer_set_data(s_event_layer, s_weather.hourly_weather_code);
     bool is_day = (current_hour >= s_weather.sunrise_hour &&
                    current_hour < s_weather.sunset_hour);
     icon_bar_layer_set_condition(s_icon_bar_layer,

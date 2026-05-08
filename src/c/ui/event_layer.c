@@ -6,25 +6,79 @@ struct EventLayer {
   Layer   *layer;
   GFont    icon_font;
   uint8_t  hourly_code[GRAPH_HOURS];
-  int      cloud_h;
 };
+
+typedef enum {
+  EVENT_KIND_NONE = 0,
+  EVENT_KIND_SNOW,
+  EVENT_KIND_STORM,
+  EVENT_KIND_TORNADO,
+} EventKind;
+
+// Represents a consecutive span of the same event type
+typedef struct {
+  int     start_hour;
+  int     end_hour;
+  EventKind kind;
+  GColor  color;
+  const char *icon;
+} EventSpan;
 
 // Returns the icon string and its display color for notable WMO codes.
 // Returns NULL for codes that don't warrant a special icon.
-static const char *prv_event_icon(uint8_t code, GColor *out_color) {
+static const char *prv_event_icon(uint8_t code, GColor *out_color, EventKind *out_kind) {
   if (code == 19 || code == 99) {
     *out_color = GColorOrange;
+    *out_kind = EVENT_KIND_TORNADO;
     return ICON_TORNADO;
   }
   if (code >= 95 && code <= 98) {
     *out_color = GColorYellow;
+    *out_kind = EVENT_KIND_STORM;
     return ICON_LIGHTNING;
   }
   if (code == 75 || code == 77 || code == 85 || code == 86) {
     *out_color = GColorCyan;
+    *out_kind = EVENT_KIND_SNOW;
     return ICON_SNOWFLAKE;
   }
+  *out_kind = EVENT_KIND_NONE;
   return NULL;
+}
+
+// Scan hourly_code to identify consecutive runs of the same event type.
+// Returns the number of spans found and populates the spans array.
+static int prv_find_spans(const uint8_t hourly_code[24], EventSpan spans[24]) {
+  int span_count = 0;
+  int i = 0;
+  while (i < GRAPH_HOURS) {
+    GColor color;
+    EventKind kind;
+    const char *icon = prv_event_icon(hourly_code[i], &color, &kind);
+    if (!icon) {
+      i++;
+      continue;
+    }
+
+    // Group consecutive hours that map to the same visual event type.
+    int start = i;
+    while (i < GRAPH_HOURS) {
+      GColor next_color;
+      EventKind next_kind;
+      if (!prv_event_icon(hourly_code[i], &next_color, &next_kind) || next_kind != kind) {
+        break;
+      }
+      i++;
+    }
+
+    spans[span_count].start_hour = start;
+    spans[span_count].end_hour = i - 1;
+    spans[span_count].kind = kind;
+    spans[span_count].color = color;
+    spans[span_count].icon = icon;
+    span_count++;
+  }
+  return span_count;
 }
 
 static void prv_update_proc(Layer *layer, GContext *ctx) {
@@ -32,29 +86,69 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   if (!el->icon_font) return;
 
   GRect bounds = layer_get_bounds(layer);
-  (void)bounds;
   int graph_x = GRAPH_OFFSET_X;
   int graph_w = bounds.size.w - graph_x;
-  int icon_size = 12;
-  // Center icon vertically on the cloud/precip boundary, nudged up 2px.
-  int icon_y = el->cloud_h - icon_size / 2 - 2;
+  int layer_h = bounds.size.h;
 
-  for (int i = GRAPH_HOURS - 1; i >= 0; i--) {
-    GColor icon_color = GColorWhite;
-    const char *icon = prv_event_icon(el->hourly_code[i], &icon_color);
-    if (!icon) continue;
+  // Find all event spans in the hourly data
+  EventSpan spans[GRAPH_HOURS];
+  int span_count = prv_find_spans(el->hourly_code, spans);
 
-    // Draw later hours first so sooner icons overlap them.
-    int cx = graph_x + (long)(i * 2 + 1) * graph_w / (GRAPH_HOURS * 2);
+  // Draw each span
+  for (int s = 0; s < span_count; s++) {
+    EventSpan *span = &spans[s];
+
+    // Calculate x-position for the center of each hour
+    // Formula: graph_x + (hour * 2 + 1) / (GRAPH_HOURS * 2) * graph_w
+    int x_start = graph_x + (long)(span->start_hour * 2 + 1) * graph_w / (GRAPH_HOURS * 2);
+    int x_end = graph_x + (long)(span->end_hour * 2 + 1) * graph_w / (GRAPH_HOURS * 2);
+
+    // Center vertically in the layer
+    int center_y = layer_h / 2;
+    int circle_radius = 6;
+    int circle_x = (x_start + x_end) / 2;
+    GColor fill_color;
+    GColor icon_color;
+
+    graphics_context_set_stroke_width(ctx, 1);
 
 #if defined(PBL_COLOR)
-    graphics_context_set_text_color(ctx, icon_color);
+    fill_color = span->color;
+    icon_color = GColorBlack;
 #else
-    graphics_context_set_text_color(ctx, GColorWhite);
+    fill_color = GColorWhite;
+    icon_color = GColorBlack;
 #endif
-    graphics_draw_text(ctx, icon, el->icon_font,
-                       GRect(cx - icon_size / 2, icon_y, icon_size, icon_size),
-                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+    graphics_context_set_stroke_color(ctx, fill_color);
+    graphics_context_set_fill_color(ctx, fill_color);
+
+    if (x_start < circle_x - circle_radius) {
+      graphics_draw_line(ctx,
+               GPoint(x_start, center_y),
+               GPoint(circle_x - circle_radius, center_y));
+    }
+    if (x_end > circle_x + circle_radius) {
+      graphics_draw_line(ctx,
+               GPoint(circle_x + circle_radius, center_y),
+               GPoint(x_end, center_y));
+    }
+
+    // Daylight-style 5px endcaps.
+    graphics_draw_line(ctx, GPoint(x_start, center_y - 2), GPoint(x_start, center_y + 2));
+    graphics_draw_line(ctx, GPoint(x_end, center_y - 2), GPoint(x_end, center_y + 2));
+
+    graphics_fill_circle(ctx, GPoint(circle_x, center_y), circle_radius);
+
+    // Draw the icon centered in the circle
+    graphics_context_set_text_color(ctx, icon_color);
+    if (span->icon != NULL) {
+      int icon_size = 12;
+      graphics_draw_text(ctx, span->icon, el->icon_font,
+                         GRect(circle_x - icon_size / 2, center_y - icon_size / 2,
+                               icon_size, icon_size),
+                         GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    }
   }
 }
 
@@ -62,7 +156,6 @@ EventLayer *event_layer_create(GRect frame) {
   EventLayer *el = malloc(sizeof(EventLayer));
   if (!el) return NULL;
   memset(el->hourly_code, 0, sizeof(el->hourly_code));
-  el->cloud_h = frame.size.h / 2;
   el->icon_font = fonts_load_custom_font(
     resource_get_handle(RESOURCE_ID_CARBON_ICONS_12));
   el->layer = layer_create_with_data(frame, sizeof(EventLayer *));
@@ -82,10 +175,8 @@ Layer *event_layer_get_layer(EventLayer *layer) {
   return layer ? layer->layer : NULL;
 }
 
-void event_layer_set_data(EventLayer *layer, const uint8_t hourly_code[24],
-                          int cloud_h) {
+void event_layer_set_data(EventLayer *layer, const uint8_t hourly_code[24]) {
   if (!layer) return;
   memcpy(layer->hourly_code, hourly_code, GRAPH_HOURS);
-  layer->cloud_h = cloud_h;
   layer_mark_dirty(layer->layer);
 }
