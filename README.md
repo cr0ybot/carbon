@@ -1,8 +1,11 @@
 # Carbon - Pebble Weather Watchface
 
-A feature-rich, highly readable-at-a-glance Pebble watchface focused on the day ahead, with live weather via the free [Open-Meteo](https://open-meteo.com) API.
+A weather-focused, highly readable-at-a-glance Pebble watchface for the day ahead, with live weather via the free [Open-Meteo](https://open-meteo.com) API.
 
-There are several other weather-focused Pebble watchfaces that might look similar, but I found most of those *too* maximal for my needs. I wanted something focused just on the things that are most relevant to me over the next 24-hour period that I can grok at a glance.
+![Screenshots of the color version of the watchface showing weather data](./info/screenshots.emery.png)
+![Screenshots of the monochrome version of the watchface showing weather data](./info/screenshots.flint.png)
+
+There are several other weather-focused Pebble watchfaces that might look similar, but I found most of those *too* maximal for my needs (forecast for more than 24 hours, too visually busy, etc.). I wanted something focused just on the things that are most relevant to me over the next 24-hour period that I can grok at a glance.
 
 ## Features
 
@@ -92,6 +95,8 @@ To take screenshots of a particular demo scenario you can use the Pebble CLI's s
 ```sh
 DEMO=1 pebble build && pebble screenshot --all-platforms
 ```
+
+Note: you may need to run `pebble wipe` if the emulator stalls and try again.
 
 ### Project Structure
 
