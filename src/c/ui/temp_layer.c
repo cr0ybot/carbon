@@ -170,15 +170,20 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
   #undef LIGHT_TEMP_COLOR
   #undef TEMP_TO_F
 #else
-  // B&W: white actual-temp line + light-grey apparent-temp line
+  // B&W: white actual-temp line + dotted apparent-temp line.
   graphics_context_set_stroke_width(ctx, 1);
   graphics_context_set_stroke_color(ctx, GColorWhite);
   for (int i = 1; i < 25; i++) {
     graphics_draw_line(ctx, GPoint(spx[i - 1], spy[i - 1]), GPoint(spx[i], spy[i]));
   }
-  graphics_context_set_stroke_color(ctx, GColorLightGray);
+
+  // Pebble's b&w path does not offer dashed strokes, so render the apparent
+  // temperature as sampled pixels along each segment instead.
   for (int i = 1; i < 25; i++) {
-    graphics_draw_line(ctx, GPoint(apx[i - 1], apy[i - 1]), GPoint(apx[i], apy[i]));
+    graph_draw_dotted_line(ctx,
+                           GPoint(apx[i - 1], apy[i - 1]),
+                           GPoint(apx[i], apy[i]),
+                           3);
   }
 #endif
 
