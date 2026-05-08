@@ -17,11 +17,9 @@
     "targetPlatforms": [
       "aplite",
       "basalt",
-      "chalk",
       "diorite",
       "emery",
-      "flint",
-      "gabbro"
+      "flint"
     ],
     "watchapp": {
       "watchface": true
@@ -77,13 +75,7 @@
     }
   },
   "scripts": {
-    "clean": "pebble clean",
-    "gen-icons": "node scripts/gen-icons.js",
-    "build": "pebble build",
-    "build-run:emery": "npm run build && pebble install --emulator emery --logs",
-    "build-run:gabbro": "npm run build && pebble install --emulator gabbro --logs",
-    "device": "pebble install --cloudpebble",
-    "fix-build": "echo '{}' > '~/Library/Application Support/Pebble SDK/settings.json'"
+    "gen-icons": "node scripts/gen-icons.js"
   },
   "dependencies": {}
 }
