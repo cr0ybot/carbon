@@ -25,15 +25,15 @@ var PREF_TEMP_UNIT_KEY = 'carbon.pref.tempUnit';  // 'celsius'|'fahrenheit'|null
 // ---------------------------------------------------------------------------
 
 function xhrGet(url, callback) {
-  var xhr = new XMLHttpRequest();
-  xhr.onload = function() {
-    callback(null, this.responseText);
-  };
-  xhr.onerror = function() {
-    callback('XHR error for ' + url);
-  };
-  xhr.open('GET', url);
-  xhr.send();
+	var xhr = new XMLHttpRequest();
+	xhr.onload = function() {
+		callback(null, this.responseText);
+	};
+	xhr.onerror = function() {
+		callback('XHR error for ' + url);
+	};
+	xhr.open('GET', url);
+	xhr.send();
 }
 
 // ---------------------------------------------------------------------------
@@ -43,23 +43,23 @@ function xhrGet(url, callback) {
 // Returns true if the watch/phone locale indicates Fahrenheit (en_US).
 // Checks the watch locale first (most reliable), then navigator.language.
 function shouldUseFahrenheit() {
-  try {
-    var info = Pebble.getActiveWatchInfo();
-    if (info && info.language) {
-      return info.language === 'en_US';
-    }
-  } catch (e) {}
-  var lang = (navigator && navigator.language) || '';
-  return lang === 'en-US' || lang === 'en_US';
+	try {
+		var info = Pebble.getActiveWatchInfo();
+		if (info && info.language) {
+			return info.language === 'en_US';
+		}
+	} catch (e) {}
+	var lang = (navigator && navigator.language) || '';
+	return lang === 'en-US' || lang === 'en_US';
 }
 
 // Returns 'celsius' or 'fahrenheit', respecting any stored preference.
 function getTempUnit() {
-  try {
-    var stored = localStorage.getItem(PREF_TEMP_UNIT_KEY);
-    if (stored === 'celsius' || stored === 'fahrenheit') return stored;
-  } catch (e) {}
-  return shouldUseFahrenheit() ? 'fahrenheit' : 'celsius';
+	try {
+		var stored = localStorage.getItem(PREF_TEMP_UNIT_KEY);
+		if (stored === 'celsius' || stored === 'fahrenheit') return stored;
+	} catch (e) {}
+	return shouldUseFahrenheit() ? 'fahrenheit' : 'celsius';
 }
 
 // ---------------------------------------------------------------------------
@@ -67,17 +67,17 @@ function getTempUnit() {
 // ---------------------------------------------------------------------------
 
 function conditionFromCode(code) {
-  if (code === 0) return 'Clear';
-  if (code <= 2)  return 'Partly Cloudy';
-  if (code === 3) return 'Cloudy';
-  if (code <= 48) return 'Fog';
-  if (code <= 57) return 'Drizzle';
-  if (code <= 67) return 'Rain';
-  if (code <= 77) return 'Snow';
-  if (code <= 82) return 'Rain';
-  if (code <= 86) return 'Snow';
-  if (code <= 99) return 'Storm';
-  return 'Unknown';
+	if (code === 0) return 'Clear';
+	if (code <= 2)  return 'Partly Cloudy';
+	if (code === 3) return 'Cloudy';
+	if (code <= 48) return 'Fog';
+	if (code <= 57) return 'Drizzle';
+	if (code <= 67) return 'Rain';
+	if (code <= 77) return 'Snow';
+	if (code <= 82) return 'Rain';
+	if (code <= 86) return 'Snow';
+	if (code <= 99) return 'Storm';
+	return 'Unknown';
 }
 
 // ---------------------------------------------------------------------------
@@ -85,22 +85,22 @@ function conditionFromCode(code) {
 // ---------------------------------------------------------------------------
 
 function packUint8Array(values) {
-  var arr = [];
-  for (var i = 0; i < 24; i++) {
-    arr.push(Math.min(255, Math.max(0, Math.round(values[i] || 0))));
-  }
-  return arr;
+	var arr = [];
+	for (var i = 0; i < 24; i++) {
+		arr.push(Math.min(255, Math.max(0, Math.round(values[i] || 0))));
+	}
+	return arr;
 }
 
 function packInt8Array(values) {
-  var arr = [];
-  for (var i = 0; i < 24; i++) {
-    var v = Math.round(values[i] || 0);
-    v = Math.min(127, Math.max(-128, v));
-    // Convert negative to unsigned byte (two's complement)
-    arr.push(v < 0 ? v + 256 : v);
-  }
-  return arr;
+	var arr = [];
+	for (var i = 0; i < 24; i++) {
+		var v = Math.round(values[i] || 0);
+		v = Math.min(127, Math.max(-128, v));
+		// Convert negative to unsigned byte (two's complement)
+		arr.push(v < 0 ? v + 256 : v);
+	}
+	return arr;
 }
 
 // ---------------------------------------------------------------------------
@@ -109,9 +109,9 @@ function packInt8Array(values) {
 // ---------------------------------------------------------------------------
 
 function extractHourFromUnix(timestamp) {
-  // timestamp is seconds since epoch; multiply by 1000 for JS Date
-  var d = new Date(timestamp * 1000);
-  return d.getHours();
+	// timestamp is seconds since epoch; multiply by 1000 for JS Date
+	var d = new Date(timestamp * 1000);
+	return d.getHours();
 }
 
 // ---------------------------------------------------------------------------
@@ -119,24 +119,24 @@ function extractHourFromUnix(timestamp) {
 // ---------------------------------------------------------------------------
 
 function readCache() {
-  try {
-    var raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    var obj = JSON.parse(raw);
-    if (!obj || !obj.payload || !obj.expiresAt) return null;
-    return obj;
-  } catch (e) {
-    return null;
-  }
+	try {
+		var raw = localStorage.getItem(CACHE_KEY);
+		if (!raw) return null;
+		var obj = JSON.parse(raw);
+		if (!obj || !obj.payload || !obj.expiresAt) return null;
+		return obj;
+	} catch (e) {
+		return null;
+	}
 }
 
 function writeCache(payload) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      expiresAt: Date.now() + CACHE_TTL_MS,
-      payload: payload
-    }));
-  } catch (e) {}
+	try {
+		localStorage.setItem(CACHE_KEY, JSON.stringify({
+			expiresAt: Date.now() + CACHE_TTL_MS,
+			payload: payload
+		}));
+	} catch (e) {}
 }
 
 // ---------------------------------------------------------------------------
@@ -144,43 +144,43 @@ function writeCache(payload) {
 // ---------------------------------------------------------------------------
 
 function sendToWatch(payload) {
-  var hourlyCount = 24;
+	var hourlyCount = 24;
 
-  var precipProb    = (payload.precip_prob            || []).slice(0, hourlyCount);
-  var tempHourly    = (payload.temp_hourly             || []).slice(0, hourlyCount);
-  var apparentHourly = (payload.apparent_temp_hourly   || []).slice(0, hourlyCount);
-  var cloudCover    = (payload.cloud_cover             || []).slice(0, hourlyCount);
-  var hourlyCode    = (payload.hourly_weather_code     || []).slice(0, hourlyCount);
+	var precipProb    = (payload.precip_prob            || []).slice(0, hourlyCount);
+	var tempHourly    = (payload.temp_hourly             || []).slice(0, hourlyCount);
+	var apparentHourly = (payload.apparent_temp_hourly   || []).slice(0, hourlyCount);
+	var cloudCover    = (payload.cloud_cover             || []).slice(0, hourlyCount);
+	var hourlyCode    = (payload.hourly_weather_code     || []).slice(0, hourlyCount);
 
-  while (precipProb.length     < hourlyCount) precipProb.push(0);
-  while (tempHourly.length     < hourlyCount) tempHourly.push(0);
-  while (apparentHourly.length < hourlyCount) apparentHourly.push(0);
-  while (cloudCover.length     < hourlyCount) cloudCover.push(0);
-  while (hourlyCode.length     < hourlyCount) hourlyCode.push(0);
+	while (precipProb.length     < hourlyCount) precipProb.push(0);
+	while (tempHourly.length     < hourlyCount) tempHourly.push(0);
+	while (apparentHourly.length < hourlyCount) apparentHourly.push(0);
+	while (cloudCover.length     < hourlyCount) cloudCover.push(0);
+	while (hourlyCode.length     < hourlyCount) hourlyCode.push(0);
 
-  // 0 = celsius, 1 = fahrenheit  (matches settings.c convention)
-  var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
+	// 0 = celsius, 1 = fahrenheit  (matches settings.c convention)
+	var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
 
-  var dict = {
-    'WEATHER_TEMP':                  Math.round(payload.current_temp || 0),
-    'WEATHER_TEMP_HIGH':             Math.round(payload.high_temp    || 0),
-    'WEATHER_TEMP_LOW':              Math.round(payload.low_temp     || 0),
-    'WEATHER_CODE':                  payload.weather_code            || 0,
-    'WEATHER_SUNRISE_HOUR':          payload.sunrise_hour            || 6,
-    'WEATHER_SUNSET_HOUR':           payload.sunset_hour             || 20,
-    'WEATHER_PRECIP_PROB':           packUint8Array(precipProb),
-    'WEATHER_TEMP_HOURLY':           packInt8Array(tempHourly),
-    'WEATHER_APPARENT_TEMP_HOURLY':  packInt8Array(apparentHourly),
-    'WEATHER_CLOUD_COVER':           packUint8Array(cloudCover),
-    'WEATHER_HOURLY_CODE':           packUint8Array(hourlyCode),
-    'CITY_NAME':                     (payload.city_name || 'Unknown').substring(0, 23),
-    'SETTING_TEMP_UNIT':    tempUnitFlag,
-  };
+	var dict = {
+		'WEATHER_TEMP':                  Math.round(payload.current_temp || 0),
+		'WEATHER_TEMP_HIGH':             Math.round(payload.high_temp    || 0),
+		'WEATHER_TEMP_LOW':              Math.round(payload.low_temp     || 0),
+		'WEATHER_CODE':                  payload.weather_code            || 0,
+		'WEATHER_SUNRISE_HOUR':          payload.sunrise_hour            || 6,
+		'WEATHER_SUNSET_HOUR':           payload.sunset_hour             || 20,
+		'WEATHER_PRECIP_PROB':           packUint8Array(precipProb),
+		'WEATHER_TEMP_HOURLY':           packInt8Array(tempHourly),
+		'WEATHER_APPARENT_TEMP_HOURLY':  packInt8Array(apparentHourly),
+		'WEATHER_CLOUD_COVER':           packUint8Array(cloudCover),
+		'WEATHER_HOURLY_CODE':           packUint8Array(hourlyCode),
+		'CITY_NAME':                     (payload.city_name || 'Unknown').substring(0, 23),
+		'SETTING_TEMP_UNIT':    tempUnitFlag,
+	};
 
-  Pebble.sendAppMessage(dict,
-    function() { console.log('Carbon: weather sent to watch'); },
-    function(e) { console.log('Carbon: sendAppMessage failed: ' + JSON.stringify(e)); }
-  );
+	Pebble.sendAppMessage(dict,
+		function() { console.log('Carbon: weather sent to watch'); },
+		function(e) { console.log('Carbon: sendAppMessage failed: ' + JSON.stringify(e)); }
+	);
 }
 
 // ---------------------------------------------------------------------------
@@ -188,93 +188,93 @@ function sendToWatch(payload) {
 // ---------------------------------------------------------------------------
 
 function fetchAndSend(lat, lon) {
-  var weatherDone = false;
-  var cityDone    = false;
-  var payload     = {};
+	var weatherDone = false;
+	var cityDone    = false;
+	var payload     = {};
 
-  var tempUnit = getTempUnit();
-  payload.temp_unit = tempUnit;
+	var tempUnit = getTempUnit();
+	payload.temp_unit = tempUnit;
 
-  function tryFinish() {
-    if (weatherDone && cityDone) {
-      writeCache(payload);
-      sendToWatch(payload);
-    }
-  }
+	function tryFinish() {
+		if (weatherDone && cityDone) {
+			writeCache(payload);
+			sendToWatch(payload);
+		}
+	}
 
-  // Open-Meteo weather — forecast_hours=24 returns exactly 24 hourly entries
-  // starting from the current hour; timeformat=unixtime for sunrise/sunset
-  var weatherUrl = WEATHER_BASE_URL +
-    '?latitude='  + lat +
-    '&longitude=' + lon +
-    '&current=temperature_2m,weather_code' +
-    '&hourly=precipitation_probability,temperature_2m,apparent_temperature,cloud_cover,weather_code' +
-    '&forecast_hours=24' +
-    '&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max' +
-    '&forecast_days=1' +
-    '&temperature_unit=' + tempUnit +
-    '&timeformat=unixtime' +
-    '&timezone=auto';
+	// Open-Meteo weather — forecast_hours=24 returns exactly 24 hourly entries
+	// starting from the current hour; timeformat=unixtime for sunrise/sunset
+	var weatherUrl = WEATHER_BASE_URL +
+		'?latitude='  + lat +
+		'&longitude=' + lon +
+		'&current=temperature_2m,weather_code' +
+		'&hourly=precipitation_probability,temperature_2m,apparent_temperature,cloud_cover,weather_code' +
+		'&forecast_hours=24' +
+		'&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max' +
+		'&forecast_days=1' +
+		'&temperature_unit=' + tempUnit +
+		'&timeformat=unixtime' +
+		'&timezone=auto';
 
-  xhrGet(weatherUrl, function(err, responseText) {
-    if (err) {
-      console.log('Carbon: weather fetch error: ' + err);
-      weatherDone = true;
-      tryFinish();
-      return;
-    }
-    try {
-      var json = JSON.parse(responseText);
-      var cur  = json.current;
-      var hrly = json.hourly;
-      var dly  = json.daily;
+	xhrGet(weatherUrl, function(err, responseText) {
+		if (err) {
+			console.log('Carbon: weather fetch error: ' + err);
+			weatherDone = true;
+			tryFinish();
+			return;
+		}
+		try {
+			var json = JSON.parse(responseText);
+			var cur  = json.current;
+			var hrly = json.hourly;
+			var dly  = json.daily;
 
-      payload.current_temp = cur.temperature_2m;
-      payload.weather_code = cur.weather_code;
-      payload.high_temp    = dly && dly.temperature_2m_max ? dly.temperature_2m_max[0] : cur.temperature_2m;
-      payload.low_temp     = dly && dly.temperature_2m_min ? dly.temperature_2m_min[0] : cur.temperature_2m;
+			payload.current_temp = cur.temperature_2m;
+			payload.weather_code = cur.weather_code;
+			payload.high_temp    = dly && dly.temperature_2m_max ? dly.temperature_2m_max[0] : cur.temperature_2m;
+			payload.low_temp     = dly && dly.temperature_2m_min ? dly.temperature_2m_min[0] : cur.temperature_2m;
 
-      // Sunrise/sunset are Unix timestamps with timeformat=unixtime
-      payload.sunrise_hour = dly && dly.sunrise ? extractHourFromUnix(dly.sunrise[0]) : 6;
-      payload.sunset_hour  = dly && dly.sunset  ? extractHourFromUnix(dly.sunset[0])  : 20;
+			// Sunrise/sunset are Unix timestamps with timeformat=unixtime
+			payload.sunrise_hour = dly && dly.sunrise ? extractHourFromUnix(dly.sunrise[0]) : 6;
+			payload.sunset_hour  = dly && dly.sunset  ? extractHourFromUnix(dly.sunset[0])  : 20;
 
-      // forecast_hours=24 returns exactly 24 entries starting from now
-      if (hrly) {
-        payload.precip_prob          = hrly.precipitation_probability || [];
-        payload.temp_hourly           = hrly.temperature_2m            || [];
-        payload.apparent_temp_hourly  = hrly.apparent_temperature      || [];
-        payload.cloud_cover           = hrly.cloud_cover               || [];
-        payload.hourly_weather_code   = hrly.weather_code              || [];
-      }
-    } catch (e) {
-      console.log('Carbon: weather parse error: ' + e);
-    }
-    weatherDone = true;
-    tryFinish();
-  });
+			// forecast_hours=24 returns exactly 24 entries starting from now
+			if (hrly) {
+				payload.precip_prob          = hrly.precipitation_probability || [];
+				payload.temp_hourly           = hrly.temperature_2m            || [];
+				payload.apparent_temp_hourly  = hrly.apparent_temperature      || [];
+				payload.cloud_cover           = hrly.cloud_cover               || [];
+				payload.hourly_weather_code   = hrly.weather_code              || [];
+			}
+		} catch (e) {
+			console.log('Carbon: weather parse error: ' + e);
+		}
+		weatherDone = true;
+		tryFinish();
+	});
 
-  // ArcGIS reverse geocode for city name
-  var geocodeUrl = GEOCODE_BASE_URL +
-    '?f=json&langCode=EN&location=' + lon + ',' + lat;
+	// ArcGIS reverse geocode for city name
+	var geocodeUrl = GEOCODE_BASE_URL +
+		'?f=json&langCode=EN&location=' + lon + ',' + lat;
 
-  xhrGet(geocodeUrl, function(err, responseText) {
-    if (err) {
-      console.log('Carbon: geocode error: ' + err);
-      payload.city_name = 'Unknown';
-      cityDone = true;
-      tryFinish();
-      return;
-    }
-    try {
-      var json = JSON.parse(responseText);
-      var addr = json && json.address;
-      payload.city_name = (addr && (addr.City || addr.ShortLabel)) || 'Unknown';
-    } catch (e) {
-      payload.city_name = 'Unknown';
-    }
-    cityDone = true;
-    tryFinish();
-  });
+	xhrGet(geocodeUrl, function(err, responseText) {
+		if (err) {
+			console.log('Carbon: geocode error: ' + err);
+			payload.city_name = 'Unknown';
+			cityDone = true;
+			tryFinish();
+			return;
+		}
+		try {
+			var json = JSON.parse(responseText);
+			var addr = json && json.address;
+			payload.city_name = (addr && (addr.City || addr.ShortLabel)) || 'Unknown';
+		} catch (e) {
+			payload.city_name = 'Unknown';
+		}
+		cityDone = true;
+		tryFinish();
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -282,43 +282,43 @@ function fetchAndSend(lat, lon) {
 // ---------------------------------------------------------------------------
 
 function getWeather() {
-  // Check cache first
-  var cache = readCache();
-  if (cache && cache.expiresAt > Date.now()) {
-    console.log('Carbon: using cached weather');
-    // Re-evaluate unit in case locale changed; re-fetch if unit differs
-    var cachedUnit = cache.payload && cache.payload.temp_unit;
-    if (cachedUnit && cachedUnit === getTempUnit()) {
-      sendToWatch(cache.payload);
-      return;
-    }
-    console.log('Carbon: temp unit changed, refreshing weather');
-  }
+	// Check cache first
+	var cache = readCache();
+	if (cache && cache.expiresAt > Date.now()) {
+		console.log('Carbon: using cached weather');
+		// Re-evaluate unit in case locale changed; re-fetch if unit differs
+		var cachedUnit = cache.payload && cache.payload.temp_unit;
+		if (cachedUnit && cachedUnit === getTempUnit()) {
+			sendToWatch(cache.payload);
+			return;
+		}
+		console.log('Carbon: temp unit changed, refreshing weather');
+	}
 
-  navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      fetchAndSend(pos.coords.latitude, pos.coords.longitude);
-    },
-    function(err) {
-      console.log('Carbon: geolocation error: ' + err.message);
-      // Fall back to stale cache if available
-      if (cache) {
-        console.log('Carbon: using stale cache');
-        sendToWatch(cache.payload);
-      }
-    },
-    { timeout: 15000, maximumAge: 300000 }
-  );
+	navigator.geolocation.getCurrentPosition(
+		function(pos) {
+			fetchAndSend(pos.coords.latitude, pos.coords.longitude);
+		},
+		function(err) {
+			console.log('Carbon: geolocation error: ' + err.message);
+			// Fall back to stale cache if available
+			if (cache) {
+				console.log('Carbon: using stale cache');
+				sendToWatch(cache.payload);
+			}
+		},
+		{ timeout: 15000, maximumAge: 300000 }
+	);
 }
 
 Pebble.addEventListener('ready', function() {
-  console.log('Carbon: PebbleKit JS ready');
-  getWeather();
+	console.log('Carbon: PebbleKit JS ready');
+	getWeather();
 });
 
 Pebble.addEventListener('appmessage', function(e) {
-  if (e.payload && e.payload['WEATHER_REQUEST']) {
-    console.log('Carbon: weather refresh requested');
-    getWeather();
-  }
+	if (e.payload && e.payload['WEATHER_REQUEST']) {
+		console.log('Carbon: weather refresh requested');
+		getWeather();
+	}
 });

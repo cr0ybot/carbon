@@ -44,11 +44,9 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - [Pebble SDK](https://developer.repebble.com/sdk/) (includes the `pebble` CLI tool)
 - [Node.js](https://nodejs.org) (for PKJS dependencies)
 
-### Install dependencies
+### Code completion
 
-```sh
-npm install
-```
+For C code completion, you need to [follow this workaround](https://github.com/coredevices/pebble-tool/issues/6#issuecomment-3134744369) as of 2026-05.
 
 ### Build & run in emulator
 

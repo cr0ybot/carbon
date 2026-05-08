@@ -1,5 +1,6 @@
 # Development files
 node_modules/
+.cache/
 
 # Build files
 build/

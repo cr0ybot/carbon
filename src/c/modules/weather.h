@@ -41,12 +41,12 @@ typedef struct {
   uint8_t sunrise_hour;
   uint8_t sunset_hour;
   uint8_t precip_prob[WEATHER_HOURLY_COUNT];
-  int8_t  temp_hourly[WEATHER_HOURLY_COUNT];
-  int8_t  apparent_temp_hourly[WEATHER_HOURLY_COUNT];
+  int8_t temp_hourly[WEATHER_HOURLY_COUNT];
+  int8_t apparent_temp_hourly[WEATHER_HOURLY_COUNT];
   uint8_t cloud_cover[WEATHER_HOURLY_COUNT];
   uint8_t hourly_weather_code[WEATHER_HOURLY_COUNT];
-  char    city_name[WEATHER_CITY_MAX_LEN];
-  bool    is_valid;
+  char city_name[WEATHER_CITY_MAX_LEN];
+  bool is_valid;
 } WeatherData;
 
 /**

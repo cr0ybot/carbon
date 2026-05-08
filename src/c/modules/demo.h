@@ -11,8 +11,8 @@
  */
 
 #pragma once
-#include "weather.h"
 #include "settings.h"
+#include "weather.h"
 
 // Scenario IDs — pass -DDEMO_SCENARIO=N at build time via the DEMO env var.
 //
@@ -27,10 +27,10 @@
 // Usage (device):
 //   DEMO=1 pebble build && pebble install
 
-#define DEMO_TEMPERATE  1
-#define DEMO_STORMY     2
-#define DEMO_BLIZZARD   3
-#define DEMO_TORNADO    4
+#define DEMO_TEMPERATE 1
+#define DEMO_STORMY 2
+#define DEMO_BLIZZARD 3
+#define DEMO_TORNADO 4
 
 #if defined(DEMO_SCENARIO)
 // Fills *weather with canned data for the selected scenario and forces

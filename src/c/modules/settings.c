@@ -14,9 +14,9 @@
 static Settings s_settings;
 
 static const Settings s_defaults = {
-  .temp_unit_celsius = true,
-  .date_format = DATE_FORMAT_WEEKDAY_M_D,
-  .accent_color = { .argb = 0b11111111 },  // GColorWhite
+    .temp_unit_celsius = true,
+    .date_format = DATE_FORMAT_WEEKDAY_M_D,
+    .accent_color = {.argb = 0b11111111}, // GColorWhite
 };
 
 void settings_init(void) {
@@ -26,9 +26,7 @@ void settings_init(void) {
   }
 }
 
-Settings *settings_get(void) {
-  return &s_settings;
-}
+Settings *settings_get(void) { return &s_settings; }
 
 void settings_save(void) {
   persist_write_data(STORAGE_KEY_SETTINGS, &s_settings, sizeof(s_settings));
@@ -38,7 +36,8 @@ void settings_apply_from_message(DictionaryIterator *iter) {
   Tuple *t;
 
   t = dict_find(iter, MESSAGE_KEY_SETTING_TEMP_UNIT);
-  if (t) s_settings.temp_unit_celsius = (t->value->int8 == 0);
+  if (t)
+    s_settings.temp_unit_celsius = (t->value->int8 == 0);
 
   t = dict_find(iter, MESSAGE_KEY_SETTING_DATE_FORMAT);
   if (t) {
