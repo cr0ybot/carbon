@@ -1,8 +1,10 @@
 # Development files
 node_modules/
+.cache/
 
 # Build files
 build/
+screenshots/
 .lock-*
 
 # OS files
