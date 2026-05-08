@@ -1,5 +1,6 @@
 {
   "name": "carbon",
+  "description": "24-hour weather graph watchface for Pebble smartwatches",
   "author": {
     "name": "Cory Hughart",
     "url": "https://coryhughart.com"
