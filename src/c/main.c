@@ -20,7 +20,7 @@
 #include <pebble.h>
 
 // Storage key for persisting last-received weather across cold starts
-#define STORAGE_KEY_WEATHER 1
+#define STORAGE_KEY_WEATHER 2
 
 // GRAPH_LAYERS_H is the combined height of daylight+cloud+precip+event — also
 // used for the icon bar overlay and the temp layer so all three match. Must be
@@ -78,6 +78,86 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 		prv_request_weather();
 	}
 #endif
+}
+
+// ==========================================================================
+// Layer data push
+//
+// Builds offset-shifted views of the hourly arrays so that column 0 always
+// represents the current hour, regardless of when the data was fetched.
+// ==========================================================================
+
+static void prv_push_weather_to_layers(struct tm *now) {
+	if (!s_weather.is_valid)
+		return;
+
+	uint8_t current_hour = now ? (uint8_t)now->tm_hour : 0;
+
+	// How many array slots separate the fetch hour from the current hour
+	int data_offset = 0;
+	if (s_weather.fetch_time > 0) {
+		time_t now_t = time(NULL);
+		long elapsed = (long)(now_t - s_weather.fetch_time);
+		if (elapsed > 0)
+			data_offset = (int)(elapsed / 3600);
+	}
+
+	// If the entire cached window is in the past, nothing useful to show
+	if (data_offset >= (int)s_weather.valid_hours ||
+	    data_offset >= WEATHER_HOURLY_COUNT) {
+		return;
+	}
+
+	uint8_t hours_remaining = (uint8_t)(s_weather.valid_hours - data_offset);
+	if (hours_remaining > WEATHER_HOURLY_COUNT)
+		hours_remaining = WEATHER_HOURLY_COUNT;
+
+	// Shifted views: index 0 == current hour's forecast
+	uint8_t precip_view[WEATHER_HOURLY_COUNT];
+	int8_t temp_view[WEATHER_HOURLY_COUNT];
+	int8_t appar_view[WEATHER_HOURLY_COUNT];
+	uint8_t cloud_view[WEATHER_HOURLY_COUNT];
+	uint8_t code_view[WEATHER_HOURLY_COUNT];
+	memset(precip_view, 0, sizeof(precip_view));
+	memset(temp_view, 0, sizeof(temp_view));
+	memset(appar_view, 0, sizeof(appar_view));
+	memset(cloud_view, 0, sizeof(cloud_view));
+	memset(code_view, 0, sizeof(code_view));
+
+	int copy_len = (int)hours_remaining;
+	if (data_offset + copy_len > WEATHER_HOURLY_COUNT)
+		copy_len = WEATHER_HOURLY_COUNT - data_offset;
+
+	memcpy(precip_view, &s_weather.precip_prob[data_offset], copy_len);
+	memcpy(temp_view, &s_weather.temp_hourly[data_offset], copy_len);
+	memcpy(appar_view, &s_weather.apparent_temp_hourly[data_offset], copy_len);
+	memcpy(cloud_view, &s_weather.cloud_cover[data_offset], copy_len);
+	memcpy(code_view, &s_weather.hourly_weather_code[data_offset], copy_len);
+
+	// When stale, use hourly forecast for current hour instead of scalar fields
+	int16_t display_temp = (data_offset > 0)
+	                           ? (int16_t)s_weather.temp_hourly[data_offset]
+	                           : s_weather.current_temp;
+	uint8_t display_code = (data_offset > 0)
+	                           ? s_weather.hourly_weather_code[data_offset]
+	                           : s_weather.weather_code;
+
+	bool is_day = (current_hour >= s_weather.sunrise_hour &&
+	               current_hour < s_weather.sunset_hour);
+	daylight_layer_set_data(s_daylight_layer, s_weather.sunrise_hour,
+	                        s_weather.sunset_hour, current_hour);
+	cloud_layer_set_data(s_cloud_layer, cloud_view, code_view, current_hour);
+	precip_layer_set_data(s_precip_layer, precip_view, code_view, current_hour,
+	                      hours_remaining);
+	event_layer_set_data(s_event_layer, code_view, hours_remaining);
+	icon_bar_layer_set_condition(s_icon_bar_layer,
+	                             weather_code_to_condition(display_code));
+	icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
+	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
+	temp_layer_set_data(s_temp_layer, display_temp, s_weather.high_temp,
+	                    s_weather.low_temp, temp_view, appar_view,
+	                    current_hour);
+	time_layer_set_city(s_time_layer, s_weather.city_name);
 }
 
 // ==========================================================================
@@ -150,32 +230,15 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 	}
 
 	s_weather.is_valid = true;
+	s_weather.fetch_time = time(NULL);
+	s_weather.valid_hours = 24;
 
 	// Persist for cold-start restoration
 	persist_write_data(STORAGE_KEY_WEATHER, &s_weather, sizeof(s_weather));
 
 	// Push data to layers
-	time_t now = time(NULL);
-	struct tm *t_now = localtime(&now);
-	uint8_t current_hour = t_now ? (uint8_t)t_now->tm_hour : 0;
-
-	daylight_layer_set_data(s_daylight_layer, s_weather.sunrise_hour,
-	                        s_weather.sunset_hour, current_hour);
-	cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover,
-	                     s_weather.hourly_weather_code, current_hour);
-	precip_layer_set_data(s_precip_layer, s_weather.precip_prob,
-	                      s_weather.hourly_weather_code, current_hour);
-	event_layer_set_data(s_event_layer, s_weather.hourly_weather_code);
-	bool is_day = (current_hour >= s_weather.sunrise_hour &&
-	               current_hour < s_weather.sunset_hour);
-	icon_bar_layer_set_condition(
-	    s_icon_bar_layer, weather_code_to_condition(s_weather.weather_code));
-	icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
-	temp_layer_set_data(s_temp_layer, s_weather.current_temp,
-	                    s_weather.high_temp, s_weather.low_temp,
-	                    s_weather.temp_hourly, s_weather.apparent_temp_hourly,
-	                    current_hour);
-	time_layer_set_city(s_time_layer, s_weather.city_name);
+	time_t now_push = time(NULL);
+	prv_push_weather_to_layers(localtime(&now_push));
 }
 
 static void prv_inbox_dropped(AppMessageResult reason, void *context) {
@@ -263,28 +326,7 @@ static void prv_window_load(Window *window) {
 		time_layer_update(s_time_layer, now, settings_get());
 
 	// Restore cached weather if available
-	if (s_weather.is_valid) {
-		uint8_t current_hour = now ? (uint8_t)now->tm_hour : 0;
-		daylight_layer_set_data(s_daylight_layer, s_weather.sunrise_hour,
-		                        s_weather.sunset_hour, current_hour);
-		cloud_layer_set_data(s_cloud_layer, s_weather.cloud_cover,
-		                     s_weather.hourly_weather_code, current_hour);
-		precip_layer_set_data(s_precip_layer, s_weather.precip_prob,
-		                      s_weather.hourly_weather_code, current_hour);
-		event_layer_set_data(s_event_layer, s_weather.hourly_weather_code);
-		bool is_day = (current_hour >= s_weather.sunrise_hour &&
-		               current_hour < s_weather.sunset_hour);
-		icon_bar_layer_set_condition(
-		    s_icon_bar_layer,
-		    weather_code_to_condition(s_weather.weather_code));
-		icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
-		temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
-		temp_layer_set_data(s_temp_layer, s_weather.current_temp,
-		                    s_weather.high_temp, s_weather.low_temp,
-		                    s_weather.temp_hourly,
-		                    s_weather.apparent_temp_hourly, current_hour);
-		time_layer_set_city(s_time_layer, s_weather.city_name);
-	}
+	prv_push_weather_to_layers(now);
 #if defined(DEMO_SCENARIO)
 	time_layer_set_timezone(s_time_layer, demo_get_timezone());
 #endif

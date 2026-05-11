@@ -15,6 +15,7 @@ struct EventLayer {
 	Layer *layer;
 	GFont icon_font;
 	uint8_t hourly_code[GRAPH_HOURS];
+	uint8_t hours_remaining;
 };
 
 typedef enum {
@@ -22,6 +23,7 @@ typedef enum {
 	EVENT_KIND_SNOW,
 	EVENT_KIND_STORM,
 	EVENT_KIND_TORNADO,
+	EVENT_KIND_MISSING,
 } EventKind;
 
 // Represents a consecutive span of the same event type
@@ -57,11 +59,13 @@ static const char *prv_event_icon(uint8_t code, GColor *out_color,
 }
 
 // Scan hourly_code to identify consecutive runs of the same event type.
+// Also appends a single MISSING span for hours >= hours_remaining.
 // Returns the number of spans found and populates the spans array.
-static int prv_find_spans(const uint8_t hourly_code[24], EventSpan spans[24]) {
+static int prv_find_spans(const uint8_t hourly_code[24],
+                          uint8_t hours_remaining, EventSpan spans[24]) {
 	int span_count = 0;
 	int i = 0;
-	while (i < GRAPH_HOURS) {
+	while (i < (int)hours_remaining && i < GRAPH_HOURS) {
 		GColor color;
 		EventKind kind;
 		const char *icon = prv_event_icon(hourly_code[i], &color, &kind);
@@ -72,7 +76,7 @@ static int prv_find_spans(const uint8_t hourly_code[24], EventSpan spans[24]) {
 
 		// Group consecutive hours that map to the same visual event type.
 		int start = i;
-		while (i < GRAPH_HOURS) {
+		while (i < (int)hours_remaining && i < GRAPH_HOURS) {
 			GColor next_color;
 			EventKind next_kind;
 			if (!prv_event_icon(hourly_code[i], &next_color, &next_kind) ||
@@ -89,6 +93,17 @@ static int prv_find_spans(const uint8_t hourly_code[24], EventSpan spans[24]) {
 		spans[span_count].icon = icon;
 		span_count++;
 	}
+
+	// Append a single span for any missing (out-of-range) hours
+	if ((int)hours_remaining < GRAPH_HOURS) {
+		spans[span_count].start_hour = (int)hours_remaining;
+		spans[span_count].end_hour   = GRAPH_HOURS - 1;
+		spans[span_count].kind  = EVENT_KIND_MISSING;
+		spans[span_count].color = GColorRed;
+		spans[span_count].icon  = ICON_CONNECTION_SIGNAL__OFF;
+		span_count++;
+	}
+
 	return span_count;
 }
 
@@ -104,7 +119,7 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 
 	// Find all event spans in the hourly data
 	EventSpan spans[GRAPH_HOURS];
-	int span_count = prv_find_spans(el->hourly_code, spans);
+	int span_count = prv_find_spans(el->hourly_code, el->hours_remaining, spans);
 
 	// Draw each span in reverse order so earlier spans are on top of later ones
 	// in case of overlap.
@@ -166,6 +181,7 @@ EventLayer *event_layer_create(GRect frame) {
 	if (!el)
 		return NULL;
 	memset(el->hourly_code, 0, sizeof(el->hourly_code));
+	el->hours_remaining = GRAPH_HOURS;
 	el->icon_font = fonts_load_custom_font(
 	    resource_get_handle(RESOURCE_ID_CARBON_ICONS_12));
 	el->layer = layer_create_with_data(frame, sizeof(EventLayer *));
@@ -187,9 +203,11 @@ Layer *event_layer_get_layer(EventLayer *layer) {
 	return layer ? layer->layer : NULL;
 }
 
-void event_layer_set_data(EventLayer *layer, const uint8_t hourly_code[24]) {
+void event_layer_set_data(EventLayer *layer, const uint8_t hourly_code[24],
+                          uint8_t hours_remaining) {
 	if (!layer)
 		return;
 	memcpy(layer->hourly_code, hourly_code, GRAPH_HOURS);
+	layer->hours_remaining = hours_remaining;
 	layer_mark_dirty(layer->layer);
 }

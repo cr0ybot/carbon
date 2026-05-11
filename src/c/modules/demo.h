@@ -20,6 +20,7 @@
 //   DEMO=2  Stormy     summer thunderstorms, Chicago CDT
 //   DEMO=3  Blizzard   winter storm with wind chill, Chicago CST
 //   DEMO=4  Tornado    severe spring outbreak, Chicago CDT
+//   DEMO=5  Partial    first 12 hours only (simulates fetch error), Chicago CDT
 //
 // Usage (emulator):
 //   DEMO=2 pebble build && pebble install --emulator basalt
@@ -31,6 +32,7 @@
 #define DEMO_STORMY 2
 #define DEMO_BLIZZARD 3
 #define DEMO_TORNADO 4
+#define DEMO_PARTIAL 5
 
 #if defined(DEMO_SCENARIO)
 // Fills *weather with canned data for the selected scenario and forces

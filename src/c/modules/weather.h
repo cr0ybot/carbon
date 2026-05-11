@@ -47,6 +47,8 @@ typedef struct {
   uint8_t hourly_weather_code[WEATHER_HOURLY_COUNT];
   char city_name[WEATHER_CITY_MAX_LEN];
   bool is_valid;
+  time_t  fetch_time;   // unix timestamp of last successful fetch
+  uint8_t valid_hours;  // hourly entries valid starting from fetch_time (0-24)
 } WeatherData;
 
 /**

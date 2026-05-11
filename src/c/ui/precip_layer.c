@@ -15,6 +15,7 @@ struct PrecipLayer {
 	uint8_t prob[GRAPH_HOURS];
 	uint8_t hourly_code[GRAPH_HOURS];
 	uint8_t current_hour;
+	uint8_t hours_remaining;
 };
 
 // Categorize a WMO code for bar coloring.
@@ -76,14 +77,28 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	//   heavy storm  → bright blue (GColorVividCerulean) + lightning bolt
 	//   hail storm   → white       (GColorWhite) + lightning bolt
 	for (int i = 0; i < GRAPH_HOURS; i++) {
-		if (pl->prob[i] == 0)
-			continue;
 		int x0 = graph_x + (long)i * graph_w / GRAPH_HOURS;
 		int x1 = graph_x + (long)(i + 1) * graph_w / GRAPH_HOURS;
-		int bar_h = (pl->prob[i] * (layer_h - 2)) / 100;
 		int bar_w = x1 - x0 - 1;
 		if (bar_w < 1)
 			bar_w = 1;
+
+		if (i >= pl->hours_remaining) {
+			// Missing data: draw a 1px bar at the bottom
+#if defined(PBL_COLOR)
+			graphics_context_set_fill_color(ctx, GColorRed);
+#else
+			graphics_context_set_fill_color(ctx, GColorWhite);
+#endif
+			graphics_fill_rect(ctx, GRect(x0, layer_h - 1, bar_w, 1), 0,
+			                   GCornerNone);
+			continue;
+		}
+
+		if (pl->prob[i] == 0)
+			continue;
+
+		int bar_h = (pl->prob[i] * (layer_h - 2)) / 100;
 
 #if defined(PBL_COLOR)
 		uint8_t cat = prv_precip_category(pl->hourly_code[i]);
@@ -132,6 +147,7 @@ PrecipLayer *precip_layer_create(GRect frame) {
 	memset(pl->prob, 0, sizeof(pl->prob));
 	memset(pl->hourly_code, 0, sizeof(pl->hourly_code));
 	pl->current_hour = 0;
+	pl->hours_remaining = GRAPH_HOURS;
 
 	pl->layer = layer_create_with_data(frame, sizeof(PrecipLayer *));
 	*(PrecipLayer **)layer_get_data(pl->layer) = pl;
@@ -151,12 +167,13 @@ Layer *precip_layer_get_layer(PrecipLayer *layer) {
 }
 
 void precip_layer_set_data(PrecipLayer *layer, const uint8_t prob[24],
-                           const uint8_t hourly_code[24],
-                           uint8_t current_hour) {
+                           const uint8_t hourly_code[24], uint8_t current_hour,
+                           uint8_t hours_remaining) {
 	if (!layer)
 		return;
 	memcpy(layer->prob, prob, GRAPH_HOURS);
 	memcpy(layer->hourly_code, hourly_code, GRAPH_HOURS);
 	layer->current_hour = current_hour;
+	layer->hours_remaining = hours_remaining;
 	layer_mark_dirty(layer->layer);
 }
