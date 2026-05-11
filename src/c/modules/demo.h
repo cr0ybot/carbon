@@ -16,11 +16,12 @@
 
 // Scenario IDs — pass -DDEMO_SCENARIO=N at build time via the DEMO env var.
 //
-//   DEMO=1  Temperate  calm spring day, Chicago CDT
-//   DEMO=2  Stormy     summer thunderstorms, Chicago CDT
-//   DEMO=3  Blizzard   winter storm with wind chill, Chicago CST
-//   DEMO=4  Tornado    severe spring outbreak, Chicago CDT
-//   DEMO=5  Partial    first 12 hours only (simulates fetch error), Chicago CDT
+//   DEMO=1  Temperate     calm spring day, Chicago CDT
+//   DEMO=2  Stormy        summer thunderstorms, Chicago CDT
+//   DEMO=3  Blizzard      winter storm with wind chill, Chicago CST
+//   DEMO=4  Tornado       severe spring outbreak, Chicago CDT
+//   DEMO=5  Partial       first 12 hours only (simulates fetch error), Chicago
+//   CDT DEMO=6  Disconnected  stale cache fully in the past, no data to show
 //
 // Usage (emulator):
 //   DEMO=2 pebble build && pebble install --emulator basalt
@@ -33,6 +34,7 @@
 #define DEMO_BLIZZARD 3
 #define DEMO_TORNADO 4
 #define DEMO_PARTIAL 5
+#define DEMO_DISCONNECTED 6
 
 #if defined(DEMO_SCENARIO)
 // Fills *weather with canned data for the selected scenario and forces

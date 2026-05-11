@@ -118,29 +118,34 @@ typedef struct {
 	const char *city_name;
 	const char *tz_abbr;
 	uint8_t valid_hours;
+	int32_t
+	    fetch_offset_hours; // hours in the past the fetch occurred (0 = now)
 } DemoScenario;
 
-static const DemoScenario s_scenarios[5] = {
+static const DemoScenario s_scenarios[6] = {
     // 1 — TEMPERATE: May 28, 10am, current=67°F, high=73, low=54
     {67, 73, 54, 1, 5, 19, s_temp_1, s_appar_1, s_precip_1, s_cloud_1, s_wmo_1,
-     "Chicago", "CDT", 24},
+     "Chicago", "CDT", 24, 0},
     // 2 — STORMY: Jul 15, 2pm, current=80°F, high=85, low=68
     {80, 85, 68, 80, 5, 20, s_temp_2, s_appar_2, s_precip_2, s_cloud_2, s_wmo_2,
-     "Chicago", "CDT", 24},
+     "Chicago", "CDT", 24, 0},
     // 3 — BLIZZARD: Jan 7, 8am, current=10°F, high=14, low=7
     {10, 14, 7, 73, 7, 16, s_temp_3, s_appar_3, s_precip_3, s_cloud_3, s_wmo_3,
-     "Chicago", "CST", 24},
+     "Chicago", "CST", 24, 0},
     // 4 — TORNADO: Apr 7, 11am, current=75°F, high=76, low=53
     {75, 76, 53, 65, 6, 19, s_temp_4, s_appar_4, s_precip_4, s_cloud_4, s_wmo_4,
-     "Chicago", "CDT", 24},
+     "Chicago", "CDT", 24, 0},
     // 5 — PARTIAL: same as temperate but only first 12 hours valid
     {67, 73, 54, 1, 5, 19, s_temp_1, s_appar_1, s_precip_1, s_cloud_1, s_wmo_1,
-     "Chicago", "CDT", 12},
+     "Chicago", "CDT", 12, 0},
+    // 6 — DISCONNECTED: temperate data but fetch was 25h ago, fully expired
+    {67, 73, 54, 1, 5, 19, s_temp_1, s_appar_1, s_precip_1, s_cloud_1, s_wmo_1,
+     "Chicago", "CDT", 24, 25},
 };
 
 void demo_data_load(WeatherData *weather, Settings *settings) {
-#if DEMO_SCENARIO < 1 || DEMO_SCENARIO > 5
-#error "DEMO_SCENARIO must be 1 through 5"
+#if DEMO_SCENARIO < 1 || DEMO_SCENARIO > 6
+#error "DEMO_SCENARIO must be 1 through 6"
 #endif
 	const DemoScenario *s = &s_scenarios[DEMO_SCENARIO - 1];
 
@@ -160,7 +165,7 @@ void demo_data_load(WeatherData *weather, Settings *settings) {
 	weather->city_name[WEATHER_CITY_MAX_LEN - 1] = '\0';
 	weather->is_valid = true;
 	weather->valid_hours = s->valid_hours;
-	weather->fetch_time = time(NULL);
+	weather->fetch_time = time(NULL) - (time_t)(s->fetch_offset_hours * 3600);
 
 	// Chicago uses Fahrenheit
 	if (settings) {
@@ -174,17 +179,18 @@ const char *demo_get_timezone(void) {
 
 void demo_get_tm(struct tm *out) {
 	// Scenario times:
-	//   1 TEMPERATE  Thu May 28 2026 10:00 CDT  — wday=4, yday=147
-	//   2 STORMY     Wed Jul 15 2026 14:00 CDT  — wday=3, yday=195
-	//   3 BLIZZARD   Wed Jan 07 2026 08:00 CST  — wday=3, yday=6
-	//   4 TORNADO    Tue Apr 07 2026 11:00 CDT  — wday=2, yday=96
-	//   5 PARTIAL    Thu May 28 2026 10:00 CDT  — same as TEMPERATE
-	static const int s_hour[5] = {10, 14, 8, 11, 10};
-	static const int s_mday[5] = {28, 15, 7, 7, 28};
-	static const int s_mon[5] = {4, 6, 0, 3, 4};
-	static const int s_wday[5] = {4, 3, 3, 2, 4};
-	static const int s_yday[5] = {147, 195, 6, 96, 147};
-	static const int s_isdst[5] = {1, 1, 0, 1, 1};
+	//   1 TEMPERATE    Thu May 28 2026 10:00 CDT  — wday=4, yday=147
+	//   2 STORMY       Wed Jul 15 2026 14:00 CDT  — wday=3, yday=195
+	//   3 BLIZZARD     Wed Jan 07 2026 08:00 CST  — wday=3, yday=6
+	//   4 TORNADO      Tue Apr 07 2026 11:00 CDT  — wday=2, yday=96
+	//   5 PARTIAL      Thu May 28 2026 10:00 CDT  — same as TEMPERATE
+	//   6 DISCONNECTED Thu May 28 2026 10:00 CDT  — same as TEMPERATE
+	static const int s_hour[6] = {10, 14, 8, 11, 10, 10};
+	static const int s_mday[6] = {28, 15, 7, 7, 28, 28};
+	static const int s_mon[6] = {4, 6, 0, 3, 4, 4};
+	static const int s_wday[6] = {4, 3, 3, 2, 4, 4};
+	static const int s_yday[6] = {147, 195, 6, 96, 147, 147};
+	static const int s_isdst[6] = {1, 1, 0, 1, 1, 1};
 	const int i = DEMO_SCENARIO - 1;
 	memset(out, 0, sizeof(*out));
 	out->tm_year = 126; // 2026

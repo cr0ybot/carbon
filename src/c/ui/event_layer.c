@@ -94,13 +94,14 @@ static int prv_find_spans(const uint8_t hourly_code[24],
 		span_count++;
 	}
 
-	// Append a single span for any missing (out-of-range) hours
-	if ((int)hours_remaining < GRAPH_HOURS) {
+	// Only append a missing span when some valid data exists — total absence
+	// is indicated by the icon_bar disconnect icon instead.
+	if ((int)hours_remaining > 0 && (int)hours_remaining < GRAPH_HOURS) {
 		spans[span_count].start_hour = (int)hours_remaining;
-		spans[span_count].end_hour   = GRAPH_HOURS - 1;
-		spans[span_count].kind  = EVENT_KIND_MISSING;
+		spans[span_count].end_hour = GRAPH_HOURS - 1;
+		spans[span_count].kind = EVENT_KIND_MISSING;
 		spans[span_count].color = GColorRed;
-		spans[span_count].icon  = ICON_CONNECTION_SIGNAL__OFF;
+		spans[span_count].icon = ICON_CONNECTION_SIGNAL__OFF;
 		span_count++;
 	}
 
@@ -119,7 +120,8 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 
 	// Find all event spans in the hourly data
 	EventSpan spans[GRAPH_HOURS];
-	int span_count = prv_find_spans(el->hourly_code, el->hours_remaining, spans);
+	int span_count =
+	    prv_find_spans(el->hourly_code, el->hours_remaining, spans);
 
 	// Draw each span in reverse order so earlier spans are on top of later ones
 	// in case of overlap.

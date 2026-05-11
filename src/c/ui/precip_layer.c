@@ -15,7 +15,6 @@ struct PrecipLayer {
 	uint8_t prob[GRAPH_HOURS];
 	uint8_t hourly_code[GRAPH_HOURS];
 	uint8_t current_hour;
-	uint8_t hours_remaining;
 };
 
 // Categorize a WMO code for bar coloring.
@@ -83,18 +82,6 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 		if (bar_w < 1)
 			bar_w = 1;
 
-		if (i >= pl->hours_remaining) {
-			// Missing data: draw a 1px bar at the bottom
-#if defined(PBL_COLOR)
-			graphics_context_set_fill_color(ctx, GColorRed);
-#else
-			graphics_context_set_fill_color(ctx, GColorWhite);
-#endif
-			graphics_fill_rect(ctx, GRect(x0, layer_h - 1, bar_w, 1), 0,
-			                   GCornerNone);
-			continue;
-		}
-
 		if (pl->prob[i] == 0)
 			continue;
 
@@ -147,7 +134,6 @@ PrecipLayer *precip_layer_create(GRect frame) {
 	memset(pl->prob, 0, sizeof(pl->prob));
 	memset(pl->hourly_code, 0, sizeof(pl->hourly_code));
 	pl->current_hour = 0;
-	pl->hours_remaining = GRAPH_HOURS;
 
 	pl->layer = layer_create_with_data(frame, sizeof(PrecipLayer *));
 	*(PrecipLayer **)layer_get_data(pl->layer) = pl;
@@ -167,13 +153,12 @@ Layer *precip_layer_get_layer(PrecipLayer *layer) {
 }
 
 void precip_layer_set_data(PrecipLayer *layer, const uint8_t prob[24],
-                           const uint8_t hourly_code[24], uint8_t current_hour,
-                           uint8_t hours_remaining) {
+                           const uint8_t hourly_code[24],
+                           uint8_t current_hour) {
 	if (!layer)
 		return;
 	memcpy(layer->prob, prob, GRAPH_HOURS);
 	memcpy(layer->hourly_code, hourly_code, GRAPH_HOURS);
 	layer->current_hour = current_hour;
-	layer->hours_remaining = hours_remaining;
 	layer_mark_dirty(layer->layer);
 }

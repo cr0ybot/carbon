@@ -88,8 +88,10 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 // ==========================================================================
 
 static void prv_push_weather_to_layers(struct tm *now) {
-	if (!s_weather.is_valid)
+	if (!s_weather.is_valid) {
+		icon_bar_layer_set_disconnected(s_icon_bar_layer, true);
 		return;
+	}
 
 	uint8_t current_hour = now ? (uint8_t)now->tm_hour : 0;
 
@@ -105,6 +107,7 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	// If the entire cached window is in the past, nothing useful to show
 	if (data_offset >= (int)s_weather.valid_hours ||
 	    data_offset >= WEATHER_HOURLY_COUNT) {
+		icon_bar_layer_set_disconnected(s_icon_bar_layer, true);
 		return;
 	}
 
@@ -147,12 +150,12 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	daylight_layer_set_data(s_daylight_layer, s_weather.sunrise_hour,
 	                        s_weather.sunset_hour, current_hour);
 	cloud_layer_set_data(s_cloud_layer, cloud_view, code_view, current_hour);
-	precip_layer_set_data(s_precip_layer, precip_view, code_view, current_hour,
-	                      hours_remaining);
+	precip_layer_set_data(s_precip_layer, precip_view, code_view, current_hour);
 	event_layer_set_data(s_event_layer, code_view, hours_remaining);
 	icon_bar_layer_set_condition(s_icon_bar_layer,
 	                             weather_code_to_condition(display_code));
 	icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
+	icon_bar_layer_set_disconnected(s_icon_bar_layer, false);
 	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
 	temp_layer_set_data(s_temp_layer, display_temp, s_weather.high_temp,
 	                    s_weather.low_temp, temp_view, appar_view,
