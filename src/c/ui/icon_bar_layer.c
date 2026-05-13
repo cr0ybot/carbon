@@ -106,23 +106,28 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	    sl->icon_font, GRect(0, y0, graph_x, icon_size),
 	    GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 
-	// Slot 1: bluetooth (only when disconnected)
-	if (!sl->bt_connected) {
+	// Slot 1: connection status — BT disconnect takes priority over weather
+	// disconnect; empty when both are fine.
+	const char *conn_icon = NULL;
+	if (!sl->bt_connected)
+		conn_icon = ICON_BLUETOOTH__OFF;
+	else if (sl->weather_disconnected)
+		conn_icon = ICON_CONNECTION_SIGNAL__OFF;
+	if (conn_icon) {
 		int y1 = zone_h + (zone_h - icon_size) / 2;
-		graphics_draw_text(ctx, ICON_BLUETOOTH__OFF, sl->icon_font,
-		                   GRect(0, y1, graph_x, icon_size),
+		graphics_draw_text(
+		    ctx, conn_icon, sl->icon_font, GRect(0, y1, graph_x, icon_size),
+		    GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+	}
+
+	// Slot 2: weather condition — only shown when data is available.
+	if (!sl->weather_disconnected) {
+		int y2 = 2 * zone_h + (zone_h - icon_size) / 2;
+		graphics_draw_text(ctx, prv_condition_icon(sl->condition, sl->is_day),
+		                   sl->icon_font, GRect(0, y2, graph_x, icon_size),
 		                   GTextOverflowModeTrailingEllipsis,
 		                   GTextAlignmentCenter, NULL);
 	}
-
-	// Slot 2: current weather condition (or disconnect icon)
-	int y2 = 2 * zone_h + (zone_h - icon_size) / 2;
-	const char *cond_icon = sl->weather_disconnected
-	                            ? ICON_CONNECTION_SIGNAL__OFF
-	                            : prv_condition_icon(sl->condition, sl->is_day);
-	graphics_draw_text(
-	    ctx, cond_icon, sl->icon_font, GRect(0, y2, graph_x, icon_size),
-	    GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 }
 
 IconBarLayer *icon_bar_layer_create(GRect frame) {
