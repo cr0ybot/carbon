@@ -152,7 +152,7 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	bool is_day = (current_hour >= s_weather.sunrise_hour &&
 	               current_hour < s_weather.sunset_hour);
 	daylight_layer_set_data(s_daylight_layer, s_weather.sunrise_hour,
-	                        s_weather.sunset_hour, current_hour);
+	                        s_weather.sunset_hour, current_hour, false, false);
 	cloud_layer_set_data(s_cloud_layer, cloud_view, code_view, current_hour);
 	precip_layer_set_data(s_precip_layer, precip_view, code_view, current_hour);
 	event_layer_set_data(s_event_layer, code_view, hours_remaining);

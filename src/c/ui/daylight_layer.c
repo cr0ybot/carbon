@@ -16,7 +16,13 @@ struct DaylightLayer {
 	uint8_t sunrise_hour;
 	uint8_t sunset_hour;
 	uint8_t current_hour;
+	bool sunrise_approx;
+	bool sunset_approx;
 };
+
+// Distance from the approximate-hour center at which the solid line stops.
+// Dots are drawn at center-2, center, center+2 (centered on the approx hour).
+#define DITHER_REACH 4
 
 // Calculate the current moon phase (0=new, 1=wax crescent, 2=first quarter,
 // 3=wax gibbous, 4=full, 5=wan gibbous, 6=last quarter, 7=wan crescent).
@@ -51,6 +57,16 @@ static int prv_moon_phase(void) {
 //       waxing  1→dx>=+2  2→dx>=+1  3→dx>=-1
 //       waning  5→dx<=+1  6→dx<=-1  7→dx<=-2
 // When col==0 also draws the marker peeking from the right edge (wrap).
+// Draw a dithered fade centered at x to indicate an approximate endpoint.
+// Three white pixels at offsets -2, 0, +2 create the sparse `——∙∙∙` look.
+static void prv_draw_dither_end(GContext *ctx, int x, int line_y) {
+	graphics_context_set_stroke_color(ctx, GColorWhite);
+	graphics_context_set_stroke_width(ctx, 1);
+	graphics_draw_pixel(ctx, GPoint(x - 2, line_y));
+	graphics_draw_pixel(ctx, GPoint(x, line_y));
+	graphics_draw_pixel(ctx, GPoint(x + 2, line_y));
+}
+
 static void prv_draw_col_marker(GContext *ctx, int col, int phase, int graph_x,
                                 int bar_w, int line_y, int layer_w) {
 	// Lit-side threshold indexed by phase (0 and 4 are special-cased below)
@@ -140,22 +156,46 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	int x_set = graph_x + set_off * bar_w;
 	int x_end = bounds.size.w;
 
+	// Solid-line endpoints, pulled inward when the end is approximate.
+	int x_rise_solid = dl->sunrise_approx ? x_rise + DITHER_REACH : x_rise;
+	int x_set_solid = dl->sunset_approx ? x_set - DITHER_REACH : x_set;
+
 	if (rise_off < set_off) {
-		graphics_draw_line(ctx, GPoint(x_rise, line_y), GPoint(x_set, line_y));
-		graphics_draw_line(ctx, GPoint(x_rise, line_y - 2),
-		                   GPoint(x_rise, line_y + 2));
-		graphics_draw_line(ctx, GPoint(x_set, line_y - 2),
-		                   GPoint(x_set, line_y + 2));
-	} else if (rise_off > set_off) {
-		if (set_off > 0) {
-			graphics_draw_line(ctx, GPoint(graph_x, line_y),
-			                   GPoint(x_set, line_y));
+		if (x_rise_solid < x_set_solid) {
+			graphics_draw_line(ctx, GPoint(x_rise_solid, line_y),
+			                   GPoint(x_set_solid, line_y));
+		}
+		if (dl->sunrise_approx) {
+			prv_draw_dither_end(ctx, x_rise, line_y);
+		} else {
+			graphics_draw_line(ctx, GPoint(x_rise, line_y - 2),
+			                   GPoint(x_rise, line_y + 2));
+		}
+		if (dl->sunset_approx) {
+			prv_draw_dither_end(ctx, x_set, line_y);
+		} else {
 			graphics_draw_line(ctx, GPoint(x_set, line_y - 2),
 			                   GPoint(x_set, line_y + 2));
 		}
-		graphics_draw_line(ctx, GPoint(x_rise, line_y), GPoint(x_end, line_y));
-		graphics_draw_line(ctx, GPoint(x_rise, line_y - 2),
-		                   GPoint(x_rise, line_y + 2));
+	} else if (rise_off > set_off) {
+		if (set_off > 0) {
+			graphics_draw_line(ctx, GPoint(graph_x, line_y),
+			                   GPoint(x_set_solid, line_y));
+			if (dl->sunset_approx) {
+				prv_draw_dither_end(ctx, x_set, line_y);
+			} else {
+				graphics_draw_line(ctx, GPoint(x_set, line_y - 2),
+				                   GPoint(x_set, line_y + 2));
+			}
+		}
+		graphics_draw_line(ctx, GPoint(x_rise_solid, line_y),
+		                   GPoint(x_end, line_y));
+		if (dl->sunrise_approx) {
+			prv_draw_dither_end(ctx, x_rise, line_y);
+		} else {
+			graphics_draw_line(ctx, GPoint(x_rise, line_y - 2),
+			                   GPoint(x_rise, line_y + 2));
+		}
 	}
 }
 
@@ -164,8 +204,10 @@ DaylightLayer *daylight_layer_create(GRect frame) {
 	if (!dl)
 		return NULL;
 	dl->sunrise_hour = 6;
-	dl->sunset_hour = 20;
+	dl->sunset_hour = 18;
 	dl->current_hour = 0;
+	dl->sunrise_approx = true;
+	dl->sunset_approx = true;
 
 	dl->layer = layer_create_with_data(frame, sizeof(DaylightLayer *));
 	*(DaylightLayer **)layer_get_data(dl->layer) = dl;
@@ -185,11 +227,14 @@ Layer *daylight_layer_get_layer(DaylightLayer *layer) {
 }
 
 void daylight_layer_set_data(DaylightLayer *layer, uint8_t sunrise_hour,
-                             uint8_t sunset_hour, uint8_t current_hour) {
+                             uint8_t sunset_hour, uint8_t current_hour,
+                             bool sunrise_approx, bool sunset_approx) {
 	if (!layer)
 		return;
 	layer->sunrise_hour = sunrise_hour;
 	layer->sunset_hour = sunset_hour;
 	layer->current_hour = current_hour;
+	layer->sunrise_approx = sunrise_approx;
+	layer->sunset_approx = sunset_approx;
 	layer_mark_dirty(layer->layer);
 }
