@@ -60,6 +60,7 @@ static WeatherData s_weather;
 
 // Forward declarations
 static void prv_request_weather(void);
+static void prv_push_weather_to_layers(struct tm *now);
 
 // ==========================================================================
 // Tick handler
@@ -73,8 +74,11 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 #else
 	time_layer_update(s_time_layer, tick_time, settings_get());
 
-	// Request fresh weather every hour
+	// Request fresh weather every hour and re-push cached data so that
+	// current_hour advances in all graph layers regardless of whether a new
+	// fetch succeeds.
 	if (units_changed & HOUR_UNIT) {
+		prv_push_weather_to_layers(tick_time);
 		prv_request_weather();
 	}
 #endif
