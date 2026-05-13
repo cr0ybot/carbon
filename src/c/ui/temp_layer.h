@@ -21,5 +21,7 @@ void temp_layer_set_data(TempLayer *layer, int16_t current, int16_t high,
                          uint8_t hours_remaining);
 // No-op kept for call-site compatibility; unit is baked into values by pkjs.
 void temp_layer_set_unit(TempLayer *layer, bool celsius);
-// Update only the current hour (tick positions) without touching graph data.
-void temp_layer_set_current_hour(TempLayer *layer, uint8_t current_hour);
+// Update only the current hour (tick positions) and hours_remaining without
+// touching graph data. Pass hours_remaining=0 when no data is available.
+void temp_layer_set_current_hour(TempLayer *layer, uint8_t current_hour,
+                                 uint8_t hours_remaining);

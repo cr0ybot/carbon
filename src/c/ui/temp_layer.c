@@ -275,9 +275,11 @@ void temp_layer_set_unit(TempLayer *layer, bool celsius) {
 	layer_mark_dirty(layer->layer);
 }
 
-void temp_layer_set_current_hour(TempLayer *layer, uint8_t current_hour) {
+void temp_layer_set_current_hour(TempLayer *layer, uint8_t current_hour,
+                                 uint8_t hours_remaining) {
 	if (!layer)
 		return;
 	layer->current_hour = current_hour;
+	layer->hours_remaining = hours_remaining;
 	layer_mark_dirty(layer->layer);
 }

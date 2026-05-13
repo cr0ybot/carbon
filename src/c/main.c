@@ -97,7 +97,7 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	if (!s_weather.is_valid) {
 		daylight_layer_set_data(s_daylight_layer, 6, 18, current_hour, true,
 		                        true);
-		temp_layer_set_current_hour(s_temp_layer, current_hour);
+		temp_layer_set_current_hour(s_temp_layer, current_hour, 0);
 		icon_bar_layer_set_disconnected(s_icon_bar_layer, true);
 		return;
 	}
@@ -116,7 +116,7 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	    data_offset >= WEATHER_HOURLY_COUNT) {
 		daylight_layer_set_data(s_daylight_layer, 6, 18, current_hour, true,
 		                        true);
-		temp_layer_set_current_hour(s_temp_layer, current_hour);
+		temp_layer_set_current_hour(s_temp_layer, current_hour, 0);
 		icon_bar_layer_set_disconnected(s_icon_bar_layer, true);
 		return;
 	}
