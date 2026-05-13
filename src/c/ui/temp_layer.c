@@ -214,14 +214,28 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 #endif
 
 	// Noon/midnight ticks — temp is the bottommost graph layer, draw bottom
-	// only. Black ticks on color platforms contrast against the filled color
-	// area; fall back to white when there is no sparkline (hours_remaining==0).
-	bool has_sparkline = tl->hours_remaining > 0;
-	graphics_context_set_stroke_color(
-	    ctx, PBL_IF_COLOR_ELSE(has_sparkline ? GColorBlack : GColorWhite,
-	                           GColorWhite));
-	graph_draw_ticks(ctx, graph_x, graph_w, lh, tl->current_hour, 4, false,
-	                 true);
+	// only. Each tick is colored individually: black when it falls within the
+	// sparkline fill (contrasts against color), white when it falls in the
+	// empty region or there is no sparkline at all.
+	{
+		int bar_w = graph_w / GRAPH_HOURS;
+		int offsets[2] = {
+		    (12 - (int)tl->current_hour + 24) % 24, // noon
+		    (24 - (int)tl->current_hour) % 24,      // midnight
+		};
+		graphics_context_set_stroke_width(ctx, 1);
+		for (int i = 0; i < 2; i++) {
+			int off = offsets[i];
+			if (off == 0)
+				continue;
+			bool in_sparkline = (off < (int)tl->hours_remaining);
+			graphics_context_set_stroke_color(
+			    ctx, PBL_IF_COLOR_ELSE(in_sparkline ? GColorBlack : GColorWhite,
+			                           GColorWhite));
+			int tx = graph_x + off * bar_w;
+			graphics_draw_line(ctx, GPoint(tx, lh - 4), GPoint(tx, lh - 1));
+		}
+	}
 }
 
 TempLayer *temp_layer_create(GRect frame) {

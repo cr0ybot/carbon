@@ -13,6 +13,7 @@
 #include "ui/cloud_layer.h"
 #include "ui/daylight_layer.h"
 #include "ui/event_layer.h"
+#include "ui/graph_common.h"
 #include "ui/icon_bar_layer.h"
 #include "ui/precip_layer.h"
 #include "ui/temp_layer.h"
@@ -98,6 +99,8 @@ static void prv_push_weather_to_layers(struct tm *now) {
 		daylight_layer_set_data(s_daylight_layer, 6, 18, current_hour, true,
 		                        true);
 		temp_layer_set_current_hour(s_temp_layer, current_hour, 0);
+		icon_bar_layer_set_condition(s_icon_bar_layer,
+		                             WEATHER_CONDITION_UNKNOWN);
 		icon_bar_layer_set_disconnected(s_icon_bar_layer, true);
 		return;
 	}
@@ -117,6 +120,8 @@ static void prv_push_weather_to_layers(struct tm *now) {
 		daylight_layer_set_data(s_daylight_layer, 6, 18, current_hour, true,
 		                        true);
 		temp_layer_set_current_hour(s_temp_layer, current_hour, 0);
+		icon_bar_layer_set_condition(s_icon_bar_layer,
+		                             WEATHER_CONDITION_UNKNOWN);
 		icon_bar_layer_set_disconnected(s_icon_bar_layer, true);
 		return;
 	}
@@ -165,7 +170,8 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	icon_bar_layer_set_condition(s_icon_bar_layer,
 	                             weather_code_to_condition(display_code));
 	icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
-	icon_bar_layer_set_disconnected(s_icon_bar_layer, false);
+	icon_bar_layer_set_disconnected(s_icon_bar_layer,
+	                                hours_remaining < GRAPH_HOURS);
 	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
 	temp_layer_set_data(s_temp_layer, display_temp, s_weather.high_temp,
 	                    s_weather.low_temp, temp_view, appar_view, current_hour,

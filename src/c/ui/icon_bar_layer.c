@@ -106,8 +106,8 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	    sl->icon_font, GRect(0, y0, graph_x, icon_size),
 	    GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 
-	// Slot 1: connection status — BT disconnect takes priority over weather
-	// disconnect; empty when both are fine.
+	// Slot 1: connection status — BT disconnect takes priority; signal-off
+	// shown for both fully-expired and partially-expired weather data.
 	const char *conn_icon = NULL;
 	if (!sl->bt_connected)
 		conn_icon = ICON_BLUETOOTH__OFF;
@@ -120,8 +120,9 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 		    GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 	}
 
-	// Slot 2: weather condition — only shown when data is available.
-	if (!sl->weather_disconnected) {
+	// Slot 2: weather condition — only shown when data is available for the
+	// current hour (condition != UNKNOWN means set_condition was called).
+	if (sl->condition != WEATHER_CONDITION_UNKNOWN) {
 		int y2 = 2 * zone_h + (zone_h - icon_size) / 2;
 		graphics_draw_text(ctx, prv_condition_icon(sl->condition, sl->is_day),
 		                   sl->icon_font, GRect(0, y2, graph_x, icon_size),
