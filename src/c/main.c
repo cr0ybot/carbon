@@ -92,12 +92,15 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 // ==========================================================================
 
 static void prv_push_weather_to_layers(struct tm *now) {
+	uint8_t current_hour = now ? (uint8_t)now->tm_hour : 0;
+
 	if (!s_weather.is_valid) {
+		daylight_layer_set_data(s_daylight_layer, 6, 18, current_hour, true,
+		                        true);
+		temp_layer_set_current_hour(s_temp_layer, current_hour);
 		icon_bar_layer_set_disconnected(s_icon_bar_layer, true);
 		return;
 	}
-
-	uint8_t current_hour = now ? (uint8_t)now->tm_hour : 0;
 
 	// How many array slots separate the fetch hour from the current hour
 	int data_offset = 0;
@@ -111,6 +114,9 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	// If the entire cached window is in the past, nothing useful to show
 	if (data_offset >= (int)s_weather.valid_hours ||
 	    data_offset >= WEATHER_HOURLY_COUNT) {
+		daylight_layer_set_data(s_daylight_layer, 6, 18, current_hour, true,
+		                        true);
+		temp_layer_set_current_hour(s_temp_layer, current_hour);
 		icon_bar_layer_set_disconnected(s_icon_bar_layer, true);
 		return;
 	}
