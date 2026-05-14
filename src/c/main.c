@@ -188,12 +188,16 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 	settings_apply_from_message(iter);
 	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
 
-	// Parse scalar weather fields
+	// Parse scalar weather fields — track whether any weather key was present
+	// so a settings-only message can't corrupt the weather state.
 	Tuple *t;
+	bool got_weather = false;
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_TEMP);
-	if (t)
+	if (t) {
 		s_weather.current_temp = (int16_t)t->value->int32;
+		got_weather = true;
+	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_TEMP_HIGH);
 	if (t)
@@ -248,8 +252,20 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 		s_weather.city_name[sizeof(s_weather.city_name) - 1] = '\0';
 	}
 
+	// Only update weather state if this message actually contained weather
+	// data. A settings-only message must not mark the weather as valid with
+	// zeroed arrays, which would render a false "clear sky" state.
+	if (!got_weather)
+		return;
+
+	// Require a fetch timestamp — without it we cannot compute data_offset and
+	// would wrongly treat data of unknown age as current.
+	t = dict_find(iter, MESSAGE_KEY_WEATHER_FETCH_TIME);
+	if (!t)
+		return;
+
 	s_weather.is_valid = true;
-	s_weather.fetch_time = time(NULL);
+	s_weather.fetch_time = (time_t)t->value->int32;
 	s_weather.valid_hours = 24;
 
 	// Persist for cold-start restoration

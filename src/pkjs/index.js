@@ -162,20 +162,24 @@ function sendToWatch(payload) {
 	var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
 
 	var dict = {
-		'WEATHER_TEMP':                  Math.round(payload.current_temp || 0),
-		'WEATHER_TEMP_HIGH':             Math.round(payload.high_temp    || 0),
-		'WEATHER_TEMP_LOW':              Math.round(payload.low_temp     || 0),
-		'WEATHER_CODE':                  payload.weather_code            || 0,
-		'WEATHER_SUNRISE_HOUR':          payload.sunrise_hour            || 6,
-		'WEATHER_SUNSET_HOUR':           payload.sunset_hour             || 20,
 		'WEATHER_PRECIP_PROB':           packUint8Array(precipProb),
 		'WEATHER_TEMP_HOURLY':           packInt8Array(tempHourly),
 		'WEATHER_APPARENT_TEMP_HOURLY':  packInt8Array(apparentHourly),
 		'WEATHER_CLOUD_COVER':           packUint8Array(cloudCover),
 		'WEATHER_HOURLY_CODE':           packUint8Array(hourlyCode),
 		'CITY_NAME':                     (payload.city_name || 'Unknown').substring(0, 23),
-		'SETTING_TEMP_UNIT':    tempUnitFlag,
+		'SETTING_TEMP_UNIT':             tempUnitFlag,
 	};
+
+	// Scalar weather fields are only included when the value is actually present;
+	// omitting a key is the AppMessage equivalent of null.
+	if (payload.current_temp != null) dict['WEATHER_TEMP']         = Math.round(payload.current_temp);
+	if (payload.high_temp    != null) dict['WEATHER_TEMP_HIGH']    = Math.round(payload.high_temp);
+	if (payload.low_temp     != null) dict['WEATHER_TEMP_LOW']     = Math.round(payload.low_temp);
+	if (payload.weather_code != null) dict['WEATHER_CODE']         = payload.weather_code;
+	if (payload.sunrise_hour != null) dict['WEATHER_SUNRISE_HOUR'] = payload.sunrise_hour;
+	if (payload.sunset_hour  != null) dict['WEATHER_SUNSET_HOUR']  = payload.sunset_hour;
+	if (payload.fetch_time   != null) dict['WEATHER_FETCH_TIME']   = Math.floor(payload.fetch_time);
 
 	Pebble.sendAppMessage(dict,
 		function() { console.log('Carbon: weather sent to watch'); },
@@ -190,16 +194,30 @@ function sendToWatch(payload) {
 function fetchAndSend(lat, lon) {
 	var weatherDone = false;
 	var cityDone    = false;
+	var weatherOk   = false;
 	var payload     = {};
 
 	var tempUnit = getTempUnit();
 	payload.temp_unit = tempUnit;
 
 	function tryFinish() {
-		if (weatherDone && cityDone) {
-			writeCache(payload);
-			sendToWatch(payload);
+		if (!weatherDone || !cityDone) return;
+
+		if (!weatherOk) {
+			// Weather fetch/parse failed; fall back to stale cache so the watch
+			// doesn't receive zeroed-out data.
+			var stale = readCache();
+			if (stale && stale.payload) {
+				console.log('Carbon: weather failed, using stale cache');
+				sendToWatch(stale.payload);
+			} else {
+				console.log('Carbon: weather failed, no cache — not sending');
+			}
+			return;
 		}
+
+		writeCache(payload);
+		sendToWatch(payload);
 	}
 
 	// Open-Meteo weather — forecast_hours=24 returns exactly 24 hourly entries
@@ -246,6 +264,11 @@ function fetchAndSend(lat, lon) {
 				payload.cloud_cover           = hrly.cloud_cover               || [];
 				payload.hourly_weather_code   = hrly.weather_code              || [];
 			}
+
+			// Record the real origin time so the watch can compute how many
+			// hourly slots are already in the past when serving from cache.
+			payload.fetch_time = Math.floor(Date.now() / 1000);
+			weatherOk = true;
 		} catch (e) {
 			console.log('Carbon: weather parse error: ' + e);
 		}
