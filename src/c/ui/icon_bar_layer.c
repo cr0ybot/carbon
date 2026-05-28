@@ -22,6 +22,7 @@ struct IconBarLayer {
 	WeatherCondition condition;
 	bool is_day;
 	bool weather_disconnected;
+	BatteryDisplay battery_display;
 };
 
 static const char *prv_battery_icon(int pct, bool charging) {
@@ -102,11 +103,21 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	graphics_context_set_text_color(ctx, GColorWhite);
 
 	// Slot 0: battery (always shown)
-	int y0 = (zone_h - icon_size) / 2;
-	graphics_draw_text(
-	    ctx, prv_battery_icon(sl->battery_percent, sl->battery_charging),
-	    sl->icon_font, GRect(0, y0, graph_x, icon_size),
-	    GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+	if (sl->battery_display == BATTERY_DISPLAY_PERCENT) {
+		char pct_buf[5];
+		snprintf(pct_buf, sizeof(pct_buf), "%d", sl->battery_percent);
+		GFont small_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+		int y0 = (zone_h - 14) / 2;
+		graphics_draw_text(ctx, pct_buf, small_font, GRect(0, y0, graph_x, 18),
+		                   GTextOverflowModeTrailingEllipsis,
+		                   GTextAlignmentCenter, NULL);
+	} else {
+		int y0 = (zone_h - icon_size) / 2;
+		graphics_draw_text(
+		    ctx, prv_battery_icon(sl->battery_percent, sl->battery_charging),
+		    sl->icon_font, GRect(0, y0, graph_x, icon_size),
+		    GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+	}
 
 	// Slot 1: connection status — BT disconnect takes priority; signal-off
 	// shown for both fully-expired and partially-expired weather data.
@@ -145,6 +156,7 @@ IconBarLayer *icon_bar_layer_create(GRect frame) {
 	sl->condition = WEATHER_CONDITION_UNKNOWN;
 	sl->is_day = true;
 	sl->weather_disconnected = true; // shown until first weather fetch
+	sl->battery_display = BATTERY_DISPLAY_ICON;
 
 #if PBL_DISPLAY_HEIGHT >= 228
 	sl->icon_font = fonts_load_custom_font(
@@ -210,5 +222,13 @@ void icon_bar_layer_set_disconnected(IconBarLayer *layer, bool disconnected) {
 	if (!layer)
 		return;
 	layer->weather_disconnected = disconnected;
+	layer_mark_dirty(layer->layer);
+}
+
+void icon_bar_layer_set_battery_display(IconBarLayer *layer,
+                                        BatteryDisplay display) {
+	if (!layer)
+		return;
+	layer->battery_display = display;
 	layer_mark_dirty(layer->layer);
 }

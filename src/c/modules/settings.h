@@ -19,10 +19,16 @@ typedef enum {
 	DATE_FORMAT_COUNT,
 } DateFormat;
 
+typedef enum {
+	BATTERY_DISPLAY_ICON = 0,
+	BATTERY_DISPLAY_PERCENT,
+} BatteryDisplay;
+
 typedef struct {
 	bool temp_unit_celsius;
 	DateFormat date_format;
 	GColor accent_color;
+	BatteryDisplay battery_display;
 } Settings;
 
 void settings_init(void);

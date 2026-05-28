@@ -26,7 +26,8 @@
       "watchface": true
     },
     "capabilities": [
-      "location"
+      "location",
+      "configurable"
     ],
     "messageKeys": [
       "WEATHER_REQUEST",
@@ -45,7 +46,8 @@
       "CITY_NAME",
       "SETTING_TEMP_UNIT",
       "SETTING_DATE_FORMAT",
-      "SETTING_ACCENT_COLOR"
+      "SETTING_ACCENT_COLOR",
+      "SETTING_BATTERY_DISPLAY"
     ],
     "resources": {
       "media": [
@@ -78,5 +80,8 @@
   },
   "scripts": {
     "gen-icons": "node scripts/gen-icons.js"
+  },
+  "dependencies": {
+    "@rebble/clay": "^1.0.10"
   }
 }

@@ -18,7 +18,10 @@ var WEATHER_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
 var GEOCODE_BASE_URL = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode';
 var CACHE_KEY = 'carbon.weather.v3';
 var CACHE_TTL_MS = 15 * 60 * 1000;  // 15 minutes
-var PREF_TEMP_UNIT_KEY = 'carbon.pref.tempUnit';  // 'celsius'|'fahrenheit'|null
+
+var Clay = require('@rebble/clay');
+var clayConfig = require('./config');
+var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
 
 /**
  * Make a GET request.
@@ -56,14 +59,24 @@ function shouldUseFahrenheit() {
 }
 
 /**
- * Returns 'celsius' or 'fahrenheit', respecting any stored preference.
+ * Returns 'celsius' or 'fahrenheit'.
+ * Reads the stored Clay setting first; if it is -1 (auto) or absent, falls
+ * back to locale detection via shouldUseFahrenheit().
  *
  * @returns {'celsius'|'fahrenheit'}
  */
 function getTempUnit() {
 	try {
-		var stored = localStorage.getItem(PREF_TEMP_UNIT_KEY);
-		if (stored === 'celsius' || stored === 'fahrenheit') return stored;
+		var raw = localStorage.getItem('clay-settings');
+		if (raw) {
+			var s = JSON.parse(raw);
+			// Clay stores select values as strings from the HTML form;
+			// always parse to int before comparing.
+			var unit = parseInt(s.SETTING_TEMP_UNIT, 10);
+			if (unit === 0) return 'celsius';
+			if (unit === 1) return 'fahrenheit';
+			// -1 (auto) or NaN: fall through to locale detection
+		}
 	} catch (e) {}
 	return shouldUseFahrenheit() ? 'fahrenheit' : 'celsius';
 }
@@ -381,6 +394,53 @@ function getWeather() {
 
 Pebble.addEventListener('ready', function() {
 	console.log('Carbon: PebbleKit JS ready');
+	getWeather();
+});
+
+Pebble.addEventListener('showConfiguration', function() {
+	Pebble.openURL(clay.generateUrl());
+});
+
+Pebble.addEventListener('webviewclosed', function(e) {
+	if (!e.response) return;
+
+	// Use convert=false to get raw string-keyed settings; Clay's HTML <select>
+	// always returns string values even when the config defines number options,
+	// so we parse each integer value ourselves instead of relying on Clay's
+	// type conversion (which leaves strings as-is and breaks C int8 parsing).
+	var rawSettings = clay.getSettings(e.response, false);
+
+	/**
+	 * Extract an integer from a raw Clay setting value.
+	 * Clay sends either a bare string ("0") or an object ({value:"0",label:"…"}).
+	 *
+	 * @param   {string|{value:string}} setting
+	 * @returns {number}  Parsed integer, or NaN if unparseable.
+	 */
+	function extractInt(setting) {
+		var v = (setting !== null && typeof setting === 'object' && 'value' in setting)
+			? setting.value : setting;
+		return parseInt(v, 10);
+	}
+
+	var tempUnit = extractInt(rawSettings['SETTING_TEMP_UNIT']);
+	if (isNaN(tempUnit) || tempUnit < 0) {
+		tempUnit = shouldUseFahrenheit() ? 1 : 0;
+	}
+
+	var dict = { 'SETTING_TEMP_UNIT': tempUnit };
+
+	var dateFormat = extractInt(rawSettings['SETTING_DATE_FORMAT']);
+	if (!isNaN(dateFormat)) dict['SETTING_DATE_FORMAT'] = dateFormat;
+
+	var batteryDisplay = extractInt(rawSettings['SETTING_BATTERY_DISPLAY']);
+	if (!isNaN(batteryDisplay)) dict['SETTING_BATTERY_DISPLAY'] = batteryDisplay;
+
+	Pebble.sendAppMessage(dict,
+		function() { console.log('Carbon: settings sent to watch'); },
+		function(err) { console.log('Carbon: settings send failed: ' + JSON.stringify(err)); }
+	);
+	// Refresh weather in case the temperature unit changed
 	getWeather();
 });
 

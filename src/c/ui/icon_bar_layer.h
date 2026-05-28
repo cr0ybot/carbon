@@ -8,6 +8,7 @@
  */
 
 #pragma once
+#include "../modules/settings.h"
 #include "../modules/weather.h"
 #include <pebble.h>
 
@@ -24,3 +25,5 @@ void icon_bar_layer_set_condition(IconBarLayer *layer,
                                   WeatherCondition condition);
 void icon_bar_layer_set_daytime(IconBarLayer *layer, bool is_day);
 void icon_bar_layer_set_disconnected(IconBarLayer *layer, bool disconnected);
+void icon_bar_layer_set_battery_display(IconBarLayer *layer,
+                                        BatteryDisplay display);

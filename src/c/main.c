@@ -196,6 +196,13 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 	// Check for settings changes first
 	settings_apply_from_message(iter);
 	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
+	icon_bar_layer_set_battery_display(s_icon_bar_layer,
+	                                   settings_get()->battery_display);
+	// Apply date format immediately rather than waiting for the next tick.
+	time_t now_s = time(NULL);
+	struct tm *now_stm = localtime(&now_s);
+	if (now_stm)
+		time_layer_update(s_time_layer, now_stm, settings_get());
 
 	// Parse scalar weather fields — track whether any weather key was present
 	// so a settings-only message can't corrupt the weather state.
@@ -337,6 +344,8 @@ static void prv_window_load(Window *window) {
 	// Icon bar — overlaid on top of daylight/cloud/precip, owns the left column
 	s_icon_bar_layer = icon_bar_layer_create(GRect(0, 0, w, GRAPH_LAYERS_H));
 	layer_add_child(root, icon_bar_layer_get_layer(s_icon_bar_layer));
+	icon_bar_layer_set_battery_display(s_icon_bar_layer,
+	                                   settings_get()->battery_display);
 
 	// Time block (city + time + date) — vertically centered on the screen
 	int time_y = (bounds.size.h - TL_TIME_BLOCK_H) / 2;
