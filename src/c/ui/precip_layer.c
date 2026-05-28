@@ -9,6 +9,8 @@
 
 #include "precip_layer.h"
 #include "graph_common.h"
+#include <stddef.h>
+#include <stdlib.h>
 
 struct PrecipLayer {
 	Layer *layer;

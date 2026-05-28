@@ -8,8 +8,9 @@
  */
 
 #include "cloud_layer.h"
-#include "../generated/icons.h"
 #include "graph_common.h"
+#include <stddef.h>
+#include <stdlib.h>
 
 #define CLEAR_THRESHOLD 15
 

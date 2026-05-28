@@ -9,6 +9,7 @@
 
 #pragma once
 #include <pebble.h>
+#include <stdlib.h>
 
 // Horizontal pixel offset shared by all graph layers (daylight, cloud,
 // precip, temp). The left column is reserved for icons / labels.

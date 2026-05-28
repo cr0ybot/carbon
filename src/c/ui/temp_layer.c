@@ -9,7 +9,9 @@
 
 #include "temp_layer.h"
 #include "graph_common.h"
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 struct TempLayer {
 	Layer *layer;
@@ -136,7 +138,7 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 //
 // Thresholds (°F): <=10 pink  <=32 purple <=45 cyan   <=59 teal
 //                  <=76 green <=84 yellow <=96 orange >96 red
-#define TEMP_TO_F(t) (tl->celsius ? ((t)*9 / 5 + 32) : (t))
+#define TEMP_TO_F(t) (tl->celsius ? ((t) * 9 / 5 + 32) : (t))
 #define DARK_TEMP_COLOR(tf)                                                    \
 	((tf) <= 10   ? GColorPurple                                               \
 	 : (tf) <= 32 ? GColorImperialPurple                                       \

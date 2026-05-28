@@ -10,6 +10,7 @@
 #include "daylight_layer.h"
 #include "../generated/icons.h"
 #include "graph_common.h"
+#include <stddef.h>
 
 struct DaylightLayer {
 	Layer *layer;

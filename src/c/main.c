@@ -19,6 +19,7 @@
 #include "ui/temp_layer.h"
 #include "ui/time_layer.h"
 #include <pebble.h>
+#include <stddef.h>
 
 // Storage key for persisting last-received weather across cold starts
 #define STORAGE_KEY_WEATHER 2
