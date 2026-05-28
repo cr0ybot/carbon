@@ -6,6 +6,7 @@ node_modules/
 build/
 screenshots/
 .lock-*
+__pycache__/
 
 # OS files
 .DS_Store

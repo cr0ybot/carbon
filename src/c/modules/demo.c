@@ -11,6 +11,7 @@
  */
 
 #include "demo.h"
+#include <stddef.h>
 #include <string.h>
 
 #if defined(DEMO_SCENARIO)

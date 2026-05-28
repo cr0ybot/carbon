@@ -24,15 +24,13 @@ def configure(ctx):
 	"""
 	ctx.load('pebble_sdk')
 
+	# Generate compile_commands.json for clangd
+	# https://github.com/coredevices/pebble-tool/issues/6#issuecomment-4501068925
+	ctx.load('clang_compilation_database', tooldir='./tools')
+
 
 def build(ctx):
 	ctx.load('pebble_sdk')
-	# Generate compile_commands.json for clangd
-	# https://github.com/coredevices/pebble-tool/issues/6#issuecomment-3134744369
-	try:
-		ctx.load('clang_compilation_database')
-	except:
-		pass
 
 	build_worker = os.path.exists('worker_src')
 	binaries = []

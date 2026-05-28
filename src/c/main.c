@@ -19,6 +19,7 @@
 #include "ui/temp_layer.h"
 #include "ui/time_layer.h"
 #include <pebble.h>
+#include <stddef.h>
 
 // Storage key for persisting last-received weather across cold starts
 #define STORAGE_KEY_WEATHER 2
@@ -63,10 +64,13 @@ static WeatherData s_weather;
 static void prv_request_weather(void);
 static void prv_push_weather_to_layers(struct tm *now);
 
-// ==========================================================================
-// Tick handler
-// ==========================================================================
-
+/**
+ * Ticks every minute; advances graph layers and requests fresh weather each
+ * hour.
+ *
+ * @param tick_time      Current local time.
+ * @param units_changed  Bitmask of which time units rolled over this tick.
+ */
 static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 #if defined(DEMO_SCENARIO)
 	// Demo mode: time display is frozen at the scenario's hour and date.
@@ -85,13 +89,15 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 #endif
 }
 
-// ==========================================================================
-// Layer data push
-//
-// Builds offset-shifted views of the hourly arrays so that column 0 always
-// represents the current hour, regardless of when the data was fetched.
-// ==========================================================================
-
+/**
+ * Push current weather state to all graph layers.
+ *
+ * Builds offset-shifted views of the hourly arrays so that column 0 always
+ * represents the current hour, regardless of when the data was fetched.
+ *
+ * @param now  Current local time; may be NULL on cold start before the first
+ * tick.
+ */
 static void prv_push_weather_to_layers(struct tm *now) {
 	uint8_t current_hour = now ? (uint8_t)now->tm_hour : 0;
 
@@ -179,10 +185,13 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	time_layer_set_city(s_time_layer, s_weather.city_name);
 }
 
-// ==========================================================================
-// AppMessage — receive weather from pkjs
-// ==========================================================================
-
+/**
+ * Handle incoming AppMessage; parse weather fields and push to layers if
+ * complete.
+ *
+ * @param iter     Incoming message dictionary iterator.
+ * @param context  Unused callback context.
+ */
 static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 	// Check for settings changes first
 	settings_apply_from_message(iter);
@@ -289,10 +298,6 @@ static void prv_request_weather(void) {
 	}
 }
 
-// ==========================================================================
-// Battery / Bluetooth callbacks
-// ==========================================================================
-
 static void prv_battery_handler(BatteryChargeState state) {
 	icon_bar_layer_notify_battery(s_icon_bar_layer, state);
 }
@@ -300,10 +305,6 @@ static void prv_battery_handler(BatteryChargeState state) {
 static void prv_bt_handler(bool connected) {
 	icon_bar_layer_notify_bt(s_icon_bar_layer, connected);
 }
-
-// ==========================================================================
-// Window lifecycle
-// ==========================================================================
 
 static void prv_window_load(Window *window) {
 	Layer *root = window_get_root_layer(window);
@@ -377,9 +378,9 @@ static void prv_window_unload(Window *window) {
 	temp_layer_destroy(s_temp_layer);
 }
 
-// ==========================================================================
+//
 // App lifecycle
-// ==========================================================================
+//
 
 static void init(void) {
 	settings_init();

@@ -10,6 +10,8 @@
 #include "icon_bar_layer.h"
 #include "../generated/icons.h"
 #include "graph_common.h"
+#include <stddef.h>
+#include <stdlib.h>
 
 struct IconBarLayer {
 	Layer *layer;

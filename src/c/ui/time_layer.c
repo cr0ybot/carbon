@@ -8,7 +8,9 @@
  */
 
 #include "time_layer.h"
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 struct TimeLayer {
 	Layer *container;
