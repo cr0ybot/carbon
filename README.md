@@ -67,6 +67,14 @@ pebble install --emulator emery --logs
 pebble install --emulator flint --logs
 ```
 
+#### Emulator config page
+
+To test the config page with the emulator:
+
+```sh
+pebble emu-app-config
+```
+
 ### Install on your device
 
 If you want to be able to run the watchface on your device, you'll also want to log in with GitHub after installing the Pebble SDK:
