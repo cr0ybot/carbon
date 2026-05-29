@@ -25,15 +25,16 @@ There are several other weather-focused Pebble watchfaces that might look simila
 
 ## To do
 
+
+- [x] Settings page for customizations
+- [x] Customize date format
+- [ ] Custom date format string
+- [x] Customize battery indicator (e.g. show percentage instead of icon)
+- [x] Customize temperature unit
+- [ ] Customize color scheme (e.g. light mode, accent colors)
 - [ ] Bluetooth disconnect vibration
 - [ ] Quiet time indicator
 - [ ] Support round watches (e.g. Pebble Round 2)
-- [ ] Settings page for customizations
-- [ ] Customize date format
-- [ ] Customize battery indicator (e.g. show percentage instead of icon)
-- [ ] Customize bluetooth indicator (e.g. show icon when connected)
-- [ ] Customize color scheme (e.g. light mode, accent colors)
-- [ ] Customize temperature unit
 
 ---
 

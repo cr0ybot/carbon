@@ -7,10 +7,16 @@
  * @link      https://cr0ybot.com/project/pebble-watchface-carbon
  */
 
+const { version } = require("../../package.json");
+
 module.exports = [
 	{
 		'type': 'heading',
 		'defaultValue': 'Carbon',
+	},
+	{
+		'type': 'text',
+		'defaultValue': `v${version}`,
 	},
 	{
 		'type': 'section',
@@ -39,6 +45,10 @@ module.exports = [
 			{
 				'type': 'heading',
 				'defaultValue': 'Display',
+			},
+			{
+				'type': 'text',
+				'defaultValue': 'Time Format (12h/24h) is determined by the watch\'s system settings.',
 			},
 			{
 				'type': 'select',
