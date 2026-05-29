@@ -15,14 +15,15 @@ static Settings s_settings;
 
 static const Settings s_defaults = {
     .temp_unit_celsius = true,
-    .date_format = DATE_FORMAT_WEEKDAY_M_D,
+    .date_format = "%A, %m/%d",
     .accent_color = {.argb = 0b11111111}, // GColorWhite
     .battery_display = BATTERY_DISPLAY_ICON,
 };
 
 void settings_init(void) {
 	s_settings = s_defaults;
-	if (persist_exists(STORAGE_KEY_SETTINGS)) {
+	if (persist_exists(STORAGE_KEY_SETTINGS) &&
+	    persist_get_size(STORAGE_KEY_SETTINGS) == (int)sizeof(s_settings)) {
 		persist_read_data(STORAGE_KEY_SETTINGS, &s_settings,
 		                  sizeof(s_settings));
 	}
@@ -42,11 +43,10 @@ void settings_apply_from_message(DictionaryIterator *iter) {
 		s_settings.temp_unit_celsius = (t->value->int8 == 0);
 
 	t = dict_find(iter, MESSAGE_KEY_SETTING_DATE_FORMAT);
-	if (t) {
-		int fmt = (int)t->value->int8;
-		if (fmt >= 0 && fmt < DATE_FORMAT_COUNT) {
-			s_settings.date_format = (DateFormat)fmt;
-		}
+	if (t && t->type == TUPLE_CSTRING && t->length > 0) {
+		strncpy(s_settings.date_format, t->value->cstring,
+		        sizeof(s_settings.date_format) - 1);
+		s_settings.date_format[sizeof(s_settings.date_format) - 1] = '\0';
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_SETTING_ACCENT_COLOR);

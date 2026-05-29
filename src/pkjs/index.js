@@ -430,8 +430,14 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
 	var dict = { 'SETTING_TEMP_UNIT': tempUnit };
 
-	var dateFormat = extractInt(rawSettings['SETTING_DATE_FORMAT']);
-	if (!isNaN(dateFormat)) dict['SETTING_DATE_FORMAT'] = dateFormat;
+	// Date format is a strftime string, not an integer — extract the raw value.
+	var rawDateFmt = rawSettings['SETTING_DATE_FORMAT'];
+	var dateFormat = (rawDateFmt !== null && typeof rawDateFmt === 'object' &&
+	                  'value' in rawDateFmt)
+		? rawDateFmt.value : rawDateFmt;
+	if (typeof dateFormat === 'string' && dateFormat.length > 0) {
+		dict['SETTING_DATE_FORMAT'] = dateFormat;
+	}
 
 	var batteryDisplay = extractInt(rawSettings['SETTING_BATTERY_DISPLAY']);
 	if (!isNaN(batteryDisplay)) dict['SETTING_BATTERY_DISPLAY'] = batteryDisplay;

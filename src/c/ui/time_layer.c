@@ -28,19 +28,16 @@ struct TimeLayer {
 	char date_buf[32];
 };
 
-static const char *prv_date_format(DateFormat fmt) {
-	switch (fmt) {
-	case DATE_FORMAT_WEEKDAY_MON_D:
-		return "%A, %b"; // day appended manually
-	case DATE_FORMAT_M_D_YYYY:
-		return NULL; // built manually
-	case DATE_FORMAT_D_MON_YYYY:
-		return NULL; // built manually
-	case DATE_FORMAT_ISO:
-		return "%Y-%m-%d";
-	case DATE_FORMAT_WEEKDAY_M_D:
-	default:
-		return NULL; // built manually
+static void prv_remove_leading_zero(char *buf, size_t len) {
+	bool prev_nondigit = true;
+	size_t i = 0;
+	while (buf[i]) {
+		if (buf[i] == '0' && prev_nondigit) {
+			memmove(&buf[i], &buf[i + 1], len - i - 1);
+		} else {
+			prev_nondigit = !(buf[i] >= '0' && buf[i] <= '9');
+			i++;
+		}
 	}
 }
 
@@ -192,46 +189,10 @@ void time_layer_update(TimeLayer *layer, struct tm *tick_time,
 		text_layer_set_text(layer->tz_label, tz_valid ? layer->tz_buf : "");
 	}
 
-	// Date — build without strftime's unreliable %-m/%-d flags
-	const char *iso_fmt = prv_date_format(settings->date_format);
-	if (iso_fmt) {
-		// Pure strftime format (ISO, or "Weekday, Mon")
-		strftime(layer->date_buf, sizeof(layer->date_buf), iso_fmt, tick_time);
-		if (settings->date_format == DATE_FORMAT_WEEKDAY_MON_D) {
-			// Append day number without leading zero
-			char day_buf[4];
-			snprintf(day_buf, sizeof(day_buf), " %d", tick_time->tm_mday);
-			strncat(layer->date_buf, day_buf,
-			        sizeof(layer->date_buf) - strlen(layer->date_buf) - 1);
-		}
-	} else {
-		// Manual construction to avoid %-m/%-d portability issues
-		int mon = tick_time->tm_mon + 1;
-		int day = tick_time->tm_mday;
-		int yr = tick_time->tm_year + 1900;
-		char wday[12];
-		strftime(wday, sizeof(wday), "%A", tick_time);
-		char mon_abbr[6];
-		strftime(mon_abbr, sizeof(mon_abbr), "%b", tick_time);
-
-		switch (settings->date_format) {
-		case DATE_FORMAT_WEEKDAY_M_D:
-			snprintf(layer->date_buf, sizeof(layer->date_buf), "%s, %d/%d",
-			         wday, mon, day);
-			break;
-		case DATE_FORMAT_M_D_YYYY:
-			snprintf(layer->date_buf, sizeof(layer->date_buf), "%d/%d/%d", mon,
-			         day, yr);
-			break;
-		case DATE_FORMAT_D_MON_YYYY:
-			snprintf(layer->date_buf, sizeof(layer->date_buf), "%d %s %d", day,
-			         mon_abbr, yr);
-			break;
-		default:
-			snprintf(layer->date_buf, sizeof(layer->date_buf), "%s, %d/%d",
-			         wday, mon, day);
-			break;
-		}
-	}
+	// Date — format string stored in settings; leading zeros stripped
+	// automatically.
+	strftime(layer->date_buf, sizeof(layer->date_buf), settings->date_format,
+	         tick_time);
+	prv_remove_leading_zero(layer->date_buf, sizeof(layer->date_buf));
 	text_layer_set_text(layer->date_label, layer->date_buf);
 }
