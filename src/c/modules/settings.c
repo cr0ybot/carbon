@@ -18,6 +18,8 @@ static const Settings s_defaults = {
     .date_format = "%A, %m/%d",
     .accent_color = {.argb = 0b11111111}, // GColorWhite
     .battery_display = BATTERY_DISPLAY_ICON,
+    .show_timezone = true,
+    .show_ampm = true,
 };
 
 void settings_init(void) {
@@ -61,6 +63,14 @@ void settings_apply_from_message(DictionaryIterator *iter) {
 			s_settings.battery_display = (BatteryDisplay)bd;
 		}
 	}
+
+	t = dict_find(iter, MESSAGE_KEY_SETTING_SHOW_TIMEZONE);
+	if (t)
+		s_settings.show_timezone = (t->value->int8 != 0);
+
+	t = dict_find(iter, MESSAGE_KEY_SETTING_SHOW_AMPM);
+	if (t)
+		s_settings.show_ampm = (t->value->int8 != 0);
 
 	settings_save();
 }

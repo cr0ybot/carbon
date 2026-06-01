@@ -177,6 +177,8 @@ void time_layer_update(TimeLayer *layer, struct tm *tick_time,
 	}
 	text_layer_set_text(layer->time_label, layer->time_buf);
 	text_layer_set_text(layer->ampm_label, layer->ampm_buf);
+	layer_set_hidden(text_layer_get_layer(layer->ampm_label),
+	                 !settings->show_ampm);
 
 	// Timezone abbreviation — use manual override if set (e.g. demo mode),
 	// otherwise derive from strftime and hide numeric offsets or empty values.
@@ -188,6 +190,8 @@ void time_layer_update(TimeLayer *layer, struct tm *tick_time,
 		                (layer->tz_buf[1] >= 'A' && layer->tz_buf[1] <= 'Z');
 		text_layer_set_text(layer->tz_label, tz_valid ? layer->tz_buf : "");
 	}
+	layer_set_hidden(text_layer_get_layer(layer->tz_label),
+	                 !settings->show_timezone);
 
 	// Date — format string stored in settings; leading zeros stripped
 	// automatically.

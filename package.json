@@ -47,7 +47,9 @@
       "SETTING_TEMP_UNIT",
       "SETTING_DATE_FORMAT",
       "SETTING_ACCENT_COLOR",
-      "SETTING_BATTERY_DISPLAY"
+      "SETTING_BATTERY_DISPLAY",
+      "SETTING_SHOW_TIMEZONE",
+      "SETTING_SHOW_AMPM"
     ],
     "resources": {
       "media": [

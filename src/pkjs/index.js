@@ -423,6 +423,24 @@ Pebble.addEventListener('webviewclosed', function(e) {
 		return parseInt(v, 10);
 	}
 
+	/**
+	 * Extract a boolean toggle from a raw Clay setting value as 1/0.
+	 * With convert=false, Clay wraps toggle values in an object
+	 * ({value:false}); the object itself is always truthy, so we must
+	 * unwrap .value before testing it. Returns null if the setting is absent.
+	 *
+	 * @param   {boolean|string|{value:boolean}} setting
+	 * @returns {number|null}  1 (on), 0 (off), or null if unset.
+	 */
+	function extractBool(setting) {
+		if (setting === null || setting === undefined) return null;
+		var v = (typeof setting === 'object' && 'value' in setting)
+			? setting.value : setting;
+		// Guard against the string "false", which is truthy in JS.
+		if (v === 'false' || v === '0') return 0;
+		return v ? 1 : 0;
+	}
+
 	var tempUnit = extractInt(rawSettings['SETTING_TEMP_UNIT']);
 	if (isNaN(tempUnit) || tempUnit < 0) {
 		tempUnit = shouldUseFahrenheit() ? 1 : 0;
@@ -441,6 +459,12 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
 	var batteryDisplay = extractInt(rawSettings['SETTING_BATTERY_DISPLAY']);
 	if (!isNaN(batteryDisplay)) dict['SETTING_BATTERY_DISPLAY'] = batteryDisplay;
+
+	var showTimezone = extractBool(rawSettings['SETTING_SHOW_TIMEZONE']);
+	if (showTimezone !== null) dict['SETTING_SHOW_TIMEZONE'] = showTimezone;
+
+	var showAmpm = extractBool(rawSettings['SETTING_SHOW_AMPM']);
+	if (showAmpm !== null) dict['SETTING_SHOW_AMPM'] = showAmpm;
 
 	Pebble.sendAppMessage(dict,
 		function() { console.log('Carbon: settings sent to watch'); },
