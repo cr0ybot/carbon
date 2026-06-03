@@ -20,6 +20,8 @@ typedef struct {
 	char date_format[32];
 	GColor accent_color;
 	BatteryDisplay battery_display;
+	bool show_timezone;
+	bool show_ampm;
 } Settings;
 
 void settings_init(void);

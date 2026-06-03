@@ -75,6 +75,20 @@ module.exports = [
 					{ 'label': 'Percentage', 'value': 1 },
 				],
 			},
+			{
+				'type': 'toggle',
+				'messageKey': 'SETTING_SHOW_TIMEZONE',
+				'label': 'Show Timezone',
+				'description': 'Show the timezone abbreviation to the left of the time.',
+				'defaultValue': true,
+			},
+			{
+				'type': 'toggle',
+				'messageKey': 'SETTING_SHOW_AMPM',
+				'label': 'Show AM/PM / 24h Indicator',
+				'description': 'Show the AM/PM or 24h indicator to the right of the time.',
+				'defaultValue': true,
+			},
 		],
 	},
 	{

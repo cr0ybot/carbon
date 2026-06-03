@@ -13,19 +13,31 @@
 
 static Settings s_settings;
 
+// Default settings values. New fields must be appended to the end of the
+// struct to maintain compatibility with old persisted data.
 static const Settings s_defaults = {
     .temp_unit_celsius = true,
     .date_format = "%A, %m/%d",
     .accent_color = {.argb = 0b11111111}, // GColorWhite
     .battery_display = BATTERY_DISPLAY_ICON,
+    .show_timezone = true,
+    .show_ampm = true,
 };
 
 void settings_init(void) {
 	s_settings = s_defaults;
-	if (persist_exists(STORAGE_KEY_SETTINGS) &&
-	    persist_get_size(STORAGE_KEY_SETTINGS) == (int)sizeof(s_settings)) {
-		persist_read_data(STORAGE_KEY_SETTINGS, &s_settings,
-		                  sizeof(s_settings));
+	if (persist_exists(STORAGE_KEY_SETTINGS)) {
+		int stored_size = persist_get_size(STORAGE_KEY_SETTINGS);
+		// Read min(stored, current) bytes so field migration works in both
+		// directions: upgrading (stored < current) keeps new field defaults;
+		// downgrading (stored > current) discards unknown trailing fields but
+		// preserves all fields the current version does know about.
+		if (stored_size > 0) {
+			int read_size = stored_size < (int)sizeof(s_settings)
+			                    ? stored_size
+			                    : (int)sizeof(s_settings);
+			persist_read_data(STORAGE_KEY_SETTINGS, &s_settings, read_size);
+		}
 	}
 }
 
@@ -61,6 +73,14 @@ void settings_apply_from_message(DictionaryIterator *iter) {
 			s_settings.battery_display = (BatteryDisplay)bd;
 		}
 	}
+
+	t = dict_find(iter, MESSAGE_KEY_SETTING_SHOW_TIMEZONE);
+	if (t)
+		s_settings.show_timezone = (t->value->int8 != 0);
+
+	t = dict_find(iter, MESSAGE_KEY_SETTING_SHOW_AMPM);
+	if (t)
+		s_settings.show_ampm = (t->value->int8 != 0);
 
 	settings_save();
 }
