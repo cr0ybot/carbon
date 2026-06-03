@@ -28,11 +28,15 @@ void settings_init(void) {
 	s_settings = s_defaults;
 	if (persist_exists(STORAGE_KEY_SETTINGS)) {
 		int stored_size = persist_get_size(STORAGE_KEY_SETTINGS);
-		// Read however many bytes were persisted, as long as they fit within
-		// the current struct. New fields appended to the end will retain their
-		// default values; old fields are restored from storage.
-		if (stored_size > 0 && stored_size <= (int)sizeof(s_settings)) {
-			persist_read_data(STORAGE_KEY_SETTINGS, &s_settings, stored_size);
+		// Read min(stored, current) bytes so field migration works in both
+		// directions: upgrading (stored < current) keeps new field defaults;
+		// downgrading (stored > current) discards unknown trailing fields but
+		// preserves all fields the current version does know about.
+		if (stored_size > 0) {
+			int read_size = stored_size < (int)sizeof(s_settings)
+			                    ? stored_size
+			                    : (int)sizeof(s_settings);
+			persist_read_data(STORAGE_KEY_SETTINGS, &s_settings, read_size);
 		}
 	}
 }
