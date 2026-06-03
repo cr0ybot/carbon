@@ -23,11 +23,16 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - Current weather condition icon.
 - Battery level and charging status.
 - Bluetooth disconnect indicator.
-- Respects system 12/24-hour time format
-- Temperature unit detection based on locale (defaults to Celsius, but Fahrenheit if you're in the US)
+- Respects system 12/24-hour time format.
+- Temperature unit detection based on locale (defaults to Celsius, but Fahrenheit if you're in the US).
+
+## Settings
+
+- Temperature unit: Auto (default), Celsius, or Fahrenheit
+- Date format: "Monday, 1/15" default, several other presets (please open an issue if your preferred date format isn't available)
+- Battery indicator: Icon (default), Percentage, or Off
 
 ## To do
-
 
 - [x] Settings page for customizations
 - [x] Customize date format
@@ -35,6 +40,7 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - [x] Customize battery indicator (e.g. show percentage instead of icon)
 - [x] Customize temperature unit
 - [ ] Customize color scheme (e.g. light mode, accent colors)
+- [ ] Localization
 - [ ] Bluetooth disconnect vibration
 - [ ] Quiet time indicator
 - [ ] Support round watches (e.g. Pebble Round 2)
@@ -69,6 +75,8 @@ pebble install --emulator emery --logs
 # Pebble 2 Duo (rectangular, 144×168)
 pebble install --emulator flint --logs
 ```
+
+Note that adding/removing `messageKeys` in package.json will require a `pebble clean` before the next build to avoid stale generated code.
 
 #### Emulator config page
 
