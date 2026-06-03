@@ -13,6 +13,8 @@
 
 static Settings s_settings;
 
+// Default settings values. New fields must be appended to the end of the
+// struct to maintain compatibility with old persisted data.
 static const Settings s_defaults = {
     .temp_unit_celsius = true,
     .date_format = "%A, %m/%d",
@@ -24,10 +26,14 @@ static const Settings s_defaults = {
 
 void settings_init(void) {
 	s_settings = s_defaults;
-	if (persist_exists(STORAGE_KEY_SETTINGS) &&
-	    persist_get_size(STORAGE_KEY_SETTINGS) == (int)sizeof(s_settings)) {
-		persist_read_data(STORAGE_KEY_SETTINGS, &s_settings,
-		                  sizeof(s_settings));
+	if (persist_exists(STORAGE_KEY_SETTINGS)) {
+		int stored_size = persist_get_size(STORAGE_KEY_SETTINGS);
+		// Read however many bytes were persisted, as long as they fit within
+		// the current struct. New fields appended to the end will retain their
+		// default values; old fields are restored from storage.
+		if (stored_size > 0 && stored_size <= (int)sizeof(s_settings)) {
+			persist_read_data(STORAGE_KEY_SETTINGS, &s_settings, stored_size);
+		}
 	}
 }
 
