@@ -19,7 +19,11 @@
 #include "ui/temp_layer.h"
 #include "ui/time_layer.h"
 #include <pebble.h>
+#include <locale.h>
 #include <stddef.h>
+
+// Forward declaration so prv_inbox_received can call it before its definition.
+static void prv_apply_locale(void);
 
 // Storage key for persisting last-received weather across cold starts
 #define STORAGE_KEY_WEATHER 2
@@ -195,6 +199,7 @@ static void prv_push_weather_to_layers(struct tm *now) {
 static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 	// Check for settings changes first
 	settings_apply_from_message(iter);
+	prv_apply_locale();
 	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
 	icon_bar_layer_set_battery_display(s_icon_bar_layer,
 	                                   settings_get()->battery_display);
@@ -391,8 +396,19 @@ static void prv_window_unload(Window *window) {
 // App lifecycle
 //
 
+// Apply the stored language setting to the C locale so strftime() translates
+// weekday/month names (%A, %a, %B, %b, %p) natively.
+// Falls back to English if the locale is unsupported.
+static void prv_apply_locale(void) {
+	const char *lang = settings_get()->language;
+	if (!lang || lang[0] == '\0' || setlocale(LC_TIME, lang) == NULL) {
+		setlocale(LC_TIME, "en_US");
+	}
+}
+
 static void init(void) {
 	settings_init();
+	prv_apply_locale();
 
 	// Restore persisted weather before anything renders
 	memset(&s_weather, 0, sizeof(s_weather));

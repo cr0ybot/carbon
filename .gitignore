@@ -4,6 +4,8 @@
 # Development files
 node_modules/
 .cache/
+docs/superpowers/
+AGENTS.md
 
 # Build files
 build/

@@ -65,6 +65,21 @@ module.exports = [
 					{ 'label': '2026-01-15',     'value': '%Y-0%m-0%d' },
 				],
 			},
+		{
+				'type': 'select',
+				'messageKey': 'SETTING_LANGUAGE',
+				'label': 'Language',
+				'description': 'Language used for day and month names on the watchface.',
+				'defaultValue': 'en_US',
+				'options': [
+					{ 'label': 'English',    'value': 'en_US' },
+					{ 'label': 'Français',   'value': 'fr_FR' },
+					{ 'label': 'Deutsch',    'value': 'de_DE' },
+					{ 'label': 'Español',    'value': 'es_ES' },
+					{ 'label': 'Italiano',   'value': 'it_IT' },
+					{ 'label': 'Português',  'value': 'pt_PT' },
+				],
+			},
 			{
 				'type': 'select',
 				'messageKey': 'SETTING_BATTERY_DISPLAY',

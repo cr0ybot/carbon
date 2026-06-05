@@ -22,6 +22,7 @@ typedef struct {
 	BatteryDisplay battery_display;
 	bool show_timezone;
 	bool show_ampm;
+	char language[12];
 } Settings;
 
 void settings_init(void);

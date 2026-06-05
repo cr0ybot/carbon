@@ -466,6 +466,15 @@ Pebble.addEventListener('webviewclosed', function(e) {
 	var showAmpm = extractBool(rawSettings['SETTING_SHOW_AMPM']);
 	if (showAmpm !== null) dict['SETTING_SHOW_AMPM'] = showAmpm;
 
+	// Language is an ISO locale code (e.g. "en_US", "de_DE") — extract raw value.
+	var rawLanguage = rawSettings['SETTING_LANGUAGE'];
+	var language = (rawLanguage !== null && typeof rawLanguage === 'object' &&
+	                'value' in rawLanguage)
+		? rawLanguage.value : rawLanguage;
+	if (typeof language === 'string' && language.length > 0) {
+		dict['SETTING_LANGUAGE'] = language;
+	}
+
 	Pebble.sendAppMessage(dict,
 		function() { console.log('Carbon: settings sent to watch'); },
 		function(err) { console.log('Carbon: settings send failed: ' + JSON.stringify(err)); }

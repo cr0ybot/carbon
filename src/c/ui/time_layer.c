@@ -24,7 +24,7 @@ struct TimeLayer {
 	char time_buf[8];
 	char tz_buf[8];
 	char tz_override[8]; // set by time_layer_set_timezone; overrides strftime
-	char ampm_buf[4];
+	char ampm_buf[8];
 	char date_buf[32];
 };
 
@@ -193,8 +193,9 @@ void time_layer_update(TimeLayer *layer, struct tm *tick_time,
 	layer_set_hidden(text_layer_get_layer(layer->tz_label),
 	                 !settings->show_timezone);
 
-	// Date — format string stored in settings; leading zeros stripped
-	// automatically.
+	// Date — format string stored in settings; strftime handles all specifiers
+	// using the locale set by prv_apply_locale() in main.c.
+	// Leading zeros stripped automatically.
 	strftime(layer->date_buf, sizeof(layer->date_buf), settings->date_format,
 	         tick_time);
 	prv_remove_leading_zero(layer->date_buf, sizeof(layer->date_buf));
