@@ -22,7 +22,7 @@ static const Settings s_defaults = {
     .battery_display = BATTERY_DISPLAY_ICON,
     .show_timezone = true,
     .show_ampm = true,
-    .language = "en_US",
+    .language = "",
 };
 
 void settings_init(void) {
@@ -84,7 +84,8 @@ void settings_apply_from_message(DictionaryIterator *iter) {
 		s_settings.show_ampm = (t->value->int8 != 0);
 
 	t = dict_find(iter, MESSAGE_KEY_SETTING_LANGUAGE);
-	if (t && t->type == TUPLE_CSTRING && t->length > 0) {
+	if (t && t->type == TUPLE_CSTRING) {
+		// Accept empty string (Auto/system locale) as well as named locales.
 		strncpy(s_settings.language, t->value->cstring,
 		        sizeof(s_settings.language) - 1);
 		s_settings.language[sizeof(s_settings.language) - 1] = '\0';

@@ -466,12 +466,14 @@ Pebble.addEventListener('webviewclosed', function(e) {
 	var showAmpm = extractBool(rawSettings['SETTING_SHOW_AMPM']);
 	if (showAmpm !== null) dict['SETTING_SHOW_AMPM'] = showAmpm;
 
-	// Language is an ISO locale code (e.g. "en_US", "de_DE") — extract raw value.
+	// Language is an ISO locale code (e.g. "en_US", "de_DE") or "" for Auto.
+	// We must always forward this key, even when empty, so the watch can switch
+	// back to Auto (system locale) after a named locale was previously set.
 	var rawLanguage = rawSettings['SETTING_LANGUAGE'];
 	var language = (rawLanguage !== null && typeof rawLanguage === 'object' &&
 	                'value' in rawLanguage)
 		? rawLanguage.value : rawLanguage;
-	if (typeof language === 'string' && language.length > 0) {
+	if (typeof language === 'string') {
 		dict['SETTING_LANGUAGE'] = language;
 	}
 

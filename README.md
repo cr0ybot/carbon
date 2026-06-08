@@ -25,7 +25,7 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - Bluetooth disconnect indicator.
 - Respects system 12/24-hour time format.
 - Temperature unit detection based on locale (defaults to Celsius, but Fahrenheit if you're in the US).
-- Localised day and month names via the Pebble SDK's native locale support (English default; French, German, Spanish, Italian, and Portuguese available in settings).
+- Localised day and month names via the Pebble SDK's native locale support (follows your watch's system language by default; can be overridden in settings).
 
 ## Settings
 
@@ -34,7 +34,7 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - Battery indicator: Icon (default), Percentage, or Off
 - Show Timezone: On (default) or Off
 - Show AM/PM / 24h Indicator: On (default) or Off
-- Language: English (default), French, German, Spanish, Italian, Portuguese
+- Language: Auto/system (default), English, French, German, Spanish, Italian, Portuguese
 
 ## To do
 

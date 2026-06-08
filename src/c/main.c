@@ -398,11 +398,17 @@ static void prv_window_unload(Window *window) {
 
 // Apply the stored language setting to the C locale so strftime() translates
 // weekday/month names (%A, %a, %B, %b, %p) natively.
-// Falls back to English if the locale is unsupported.
+// Empty string means "Auto": use the watch's system locale.
+// A named locale that the firmware doesn't support also falls back to the
+// system locale (rather than forcing English), so Auto is the safety net.
 static void prv_apply_locale(void) {
 	const char *lang = settings_get()->language;
-	if (!lang || lang[0] == '\0' || setlocale(LC_TIME, lang) == NULL) {
-		setlocale(LC_TIME, "en_US");
+	if (!lang || lang[0] == '\0') {
+		// Auto: let the firmware use its own locale setting.
+		setlocale(LC_TIME, "");
+	} else if (setlocale(LC_TIME, lang) == NULL) {
+		// Named locale unsupported by this firmware — fall back to system.
+		setlocale(LC_TIME, "");
 	}
 }
 
