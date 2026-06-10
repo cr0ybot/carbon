@@ -392,6 +392,7 @@ static void prv_window_unload(Window *window) {
 //
 
 static void init(void) {
+	setlocale(LC_ALL, ""); // Use watch system locale for date formatting
 	settings_init();
 
 	// Restore persisted weather before anything renders
