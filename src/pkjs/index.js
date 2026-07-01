@@ -14,14 +14,17 @@
  * @link      https://cr0ybot.com/project/pebble-watchface-carbon
  */
 
-var WEATHER_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
-var GEOCODE_BASE_URL = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode';
-var CACHE_KEY = 'carbon.weather.v3';
-var CACHE_TTL_MS = 15 * 60 * 1000;  // 15 minutes
+var {
+	WEATHER_BASE_URL,
+	GEOCODE_BASE_URL,
+	CACHE_KEY,
+	CACHE_TTL_MS,
+} = require('./constants');
 
 var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
 var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
+clay.registerComponent(require('./config/debug'));
 
 /**
  * Make a GET request.
@@ -253,6 +256,8 @@ function fetchAndSend(lat, lon) {
 
 	var tempUnit = getTempUnit();
 	payload.temp_unit = tempUnit;
+	payload.lat = lat;
+	payload.lon = lon;
 
 	function tryFinish() {
 		if (!weatherDone || !cityDone) return;
@@ -388,6 +393,42 @@ function getWeather() {
 	);
 }
 
+/**
+ * Format a debug snapshot from the weather cache for the Clay config page.
+ * Returns an object with a pre-formatted `html` string.
+ *
+ * @returns {{html: string}}
+ */
+function formatDebugInfo() {
+	function escHtml(s) {
+		return String(s)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;');
+	}
+	try {
+		var raw = localStorage.getItem(CACHE_KEY);
+		if (!raw) return { html: '<p>No cache data yet.</p>' };
+		var cache = JSON.parse(raw);
+		var p = cache.payload || {};
+		// Note: toLocaleString() does not seem to be available in this context.
+		var fetched = p.fetch_time
+			? new Date(p.fetch_time * 1000)
+			: 'N/A';
+		var expires = cache.expiresAt
+			? new Date(cache.expiresAt)
+			: 'N/A';
+		var html = [
+			'<p><b>Fetched:</b> '  + fetched + '</p>',
+			'<p><b>Expires:</b> '  + expires + '</p>',
+			'<details><summary>Raw cache</summary><code><pre>' + escHtml(JSON.stringify(p, null, 2)) + '</pre></code></details>'
+		].join('');
+		return { html: html, raw: raw };
+	} catch (e) {
+		return { html: `<p>Error reading cache: ${escHtml(e.message)}</p>` };
+	}
+}
+
 //
 // Event listeners
 //
@@ -398,6 +439,7 @@ Pebble.addEventListener('ready', function() {
 });
 
 Pebble.addEventListener('showConfiguration', function() {
+	clay.meta.userData.debugInfo = formatDebugInfo();
 	Pebble.openURL(clay.generateUrl());
 });
 
