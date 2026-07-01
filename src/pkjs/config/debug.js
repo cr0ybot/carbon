@@ -34,34 +34,46 @@ module.exports = {
 	manipulator: 'html',
 
 	initialize: function(minified, clayConfig) {
-		if ( ! clayConfig.meta.userData.debugInfo ) {
+		var debugInfo = clayConfig.meta.userData && clayConfig.meta.userData.debugInfo;
+
+		if (!debugInfo) {
 			this.hide();
 			return;
 		}
 
-		// The default value is set from the messageKey with a fallback to defaultValue after initialize is called. We hijack defaultValue to display the debug info.
-		this.config.defaultValue =  clayConfig.meta.userData.debugInfo.html || '<p>No cache data yet.</p>';
+		function escHtml(s) {
+			return String(s)
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;');
+		}
 
-		// Add click handler for the copy button.
+		var parts = [];
+		var keys = Object.keys(debugInfo);
+		for (var i = 0; i < keys.length; i++) {
+			var key = keys[i];
+			parts.push(
+				'<details><summary>' + escHtml(key) + '</summary>' +
+				'<code><pre>' + escHtml(JSON.stringify(debugInfo[key], null, 2)) + '</pre></code>' +
+				'</details>'
+			);
+		}
+		this.config.defaultValue = parts.join('');
+
 		var copyButton = this.$element.select('button');
-		console.log(copyButton);
 		copyButton.on('click', function() {
-			console.log(clayConfig.meta.userData.debugInfo.raw);
-			var debugContents = '{"activeWatchInfo":' + JSON.stringify(clayConfig.meta.activeWatchInfo) + ',"cache":' + clayConfig.meta.userData.debugInfo.raw + '}';
-			if (debugContents) {
-				// Create temporary textarea to hold the debug contents.
-				var tempTextarea = document.createElement('textarea');
-				tempTextarea.value = debugContents;
-				document.body.appendChild(tempTextarea);
-				tempTextarea.select();
-
-				// Clipboard API is not available outside of secure contexts.
-				var copied = document.execCommand('copy');
-				if (copied) alert('Debug info copied to clipboard.');
-
-				// Clear the selection after copying.
-				document.body.removeChild(tempTextarea);
+			var allData = { activeWatchInfo: clayConfig.meta.activeWatchInfo };
+			var dkeys = Object.keys(debugInfo);
+			for (var j = 0; j < dkeys.length; j++) {
+				allData[dkeys[j]] = debugInfo[dkeys[j]];
 			}
+			var temp = document.createElement('textarea');
+			temp.value = JSON.stringify(allData);
+			document.body.appendChild(temp);
+			temp.select();
+			var copied = document.execCommand('copy');
+			if (copied) alert('Debug info copied to clipboard.');
+			document.body.removeChild(temp);
 		});
 	},
 };

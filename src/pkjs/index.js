@@ -394,39 +394,27 @@ function getWeather() {
 }
 
 /**
- * Format a debug snapshot from the weather cache for the Clay config page.
- * Returns an object with a pre-formatted `html` string.
+ * Build a debug snapshot for the Clay config page.
+ * Returns a plain object whose keys become collapsible sections in the
+ * debug-info component; values are serialised as JSON in the display.
  *
- * @returns {{html: string}}
+ * @returns {{cache: Object|null, settings: Object|null}}
  */
 function formatDebugInfo() {
-	function escHtml(s) {
-		return String(s)
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
+	var result = {};
+	try {
+		var rawCache = localStorage.getItem(CACHE_KEY);
+		result.cache = rawCache ? JSON.parse(rawCache) : null;
+	} catch (e) {
+		result.cache = null;
 	}
 	try {
-		var raw = localStorage.getItem(CACHE_KEY);
-		if (!raw) return { html: '<p>No cache data yet.</p>' };
-		var cache = JSON.parse(raw);
-		var p = cache.payload || {};
-		// Note: toLocaleString() does not seem to be available in this context.
-		var fetched = p.fetch_time
-			? new Date(p.fetch_time * 1000)
-			: 'N/A';
-		var expires = cache.expiresAt
-			? new Date(cache.expiresAt)
-			: 'N/A';
-		var html = [
-			'<p><b>Fetched:</b> '  + fetched + '</p>',
-			'<p><b>Expires:</b> '  + expires + '</p>',
-			'<details><summary>Raw cache</summary><code><pre>' + escHtml(JSON.stringify(p, null, 2)) + '</pre></code></details>'
-		].join('');
-		return { html: html, raw: raw };
+		var rawSettings = localStorage.getItem('clay-settings');
+		result.settings = rawSettings ? JSON.parse(rawSettings) : null;
 	} catch (e) {
-		return { html: `<p>Error reading cache: ${escHtml(e.message)}</p>` };
+		result.settings = null;
 	}
+	return result;
 }
 
 //
