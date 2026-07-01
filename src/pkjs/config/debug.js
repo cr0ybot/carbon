@@ -48,13 +48,19 @@ module.exports = {
 				.replace(/>/g, '&gt;');
 		}
 
+		var allData = { activeWatchInfo: clayConfig.meta.activeWatchInfo };
+		var dkeys = Object.keys(debugInfo);
+		for (var j = 0; j < dkeys.length; j++) {
+			allData[dkeys[j]] = debugInfo[dkeys[j]];
+		}
+
 		var parts = [];
-		var keys = Object.keys(debugInfo);
+		var keys = Object.keys(allData);
 		for (var i = 0; i < keys.length; i++) {
 			var key = keys[i];
 			parts.push(
 				'<details><summary>' + escHtml(key) + '</summary>' +
-				'<code><pre>' + escHtml(JSON.stringify(debugInfo[key], null, 2)) + '</pre></code>' +
+				'<code><pre>' + escHtml(JSON.stringify(allData[key], null, 2)) + '</pre></code>' +
 				'</details>'
 			);
 		}
@@ -62,11 +68,6 @@ module.exports = {
 
 		var copyButton = this.$element.select('button');
 		copyButton.on('click', function() {
-			var allData = { activeWatchInfo: clayConfig.meta.activeWatchInfo };
-			var dkeys = Object.keys(debugInfo);
-			for (var j = 0; j < dkeys.length; j++) {
-				allData[dkeys[j]] = debugInfo[dkeys[j]];
-			}
 			var temp = document.createElement('textarea');
 			temp.value = JSON.stringify(allData);
 			document.body.appendChild(temp);
