@@ -47,7 +47,7 @@ module.exports = {
 		console.log(copyButton);
 		copyButton.on('click', function() {
 			console.log(clayConfig.meta.userData.debugInfo.raw);
-			var debugContents = clayConfig.meta.userData.debugInfo.raw;
+			var debugContents = '{"activeWatchInfo":' + JSON.stringify(clayConfig.meta.activeWatchInfo) + ',"cache":' + clayConfig.meta.userData.debugInfo.raw + '}';
 			if (debugContents) {
 				// Create temporary textarea to hold the debug contents.
 				var tempTextarea = document.createElement('textarea');
