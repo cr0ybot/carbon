@@ -19,6 +19,7 @@ module.exports = {
 		'    <summary class="component component-heading carbon-debug__summary tap-highlight"><h4>Debug</h4></summary>',
 		'    <div class="component component-debug-info carbon-debug__details">',
 		'      <div class="carbon-debug__contents" data-manipulator-target></div>',
+		'      <p class="carbon-debug__disclaimer">Do not share this information publicly without obfuscating sensitive data, such as latitude and longitude.</p>',
 		'      <button type="button" class="carbon-debug__copy">Copy debug info to clipboard</button>',
 		'    </div>',
 		'  </details>',
@@ -28,7 +29,8 @@ module.exports = {
 	style: [
 		'.carbon-debug h4 { display: inline-block; }',
 		'.carbon-debug code { display: block; font-family: monospace; background: #414141; padding: 4px; }',
-		'.carbon-debug__copy { margin: 1rem 0 0; }'
+		'.carbon-debug__disclaimer { margin: 0.7rem 0; font-style: italic; }',
+		'.carbon-debug__copy { margin: 0; }',
 	].join(' '),
 
 	manipulator: 'html',
