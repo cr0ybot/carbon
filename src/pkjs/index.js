@@ -21,6 +21,8 @@ var {
 	CACHE_TTL_MS,
 } = require('./constants');
 
+var buildInfo = require('../../.buildinfo.json');
+
 var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
 var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
@@ -401,7 +403,9 @@ function getWeather() {
  * @returns {{cache: Object|null, settings: Object|null}}
  */
 function formatDebugInfo() {
-	var result = {};
+	var result = {
+		buildInfo,
+	};
 	try {
 		var rawCache = localStorage.getItem(CACHE_KEY);
 		result.cache = rawCache ? JSON.parse(rawCache) : null;

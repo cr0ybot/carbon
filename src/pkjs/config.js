@@ -7,7 +7,7 @@
  * @link      https://cr0ybot.com/project/pebble-watchface-carbon
  */
 
-const { version } = require('../../package.json');
+const { version, hash } = require('../../.buildinfo.json');
 
 module.exports = [
 	{
@@ -16,7 +16,7 @@ module.exports = [
 	},
 	{
 		'type': 'text',
-		'defaultValue': `v${version}`,
+		'defaultValue': `v${version} (${hash})`,
 	},
 	{
 		'type': 'section',

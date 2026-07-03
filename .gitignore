@@ -10,6 +10,7 @@ build/
 screenshots/
 .lock-*
 __pycache__/
+.buildinfo.json
 
 # OS files
 .DS_Store
