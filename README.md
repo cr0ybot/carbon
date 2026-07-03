@@ -140,6 +140,21 @@ DEMO=1 pebble build && pebble screenshot --all-platforms
 
 Note: you may need to run `pebble wipe` if the emulator stalls and try again.
 
+### Project Structure
+
+```
+resources/      # Static assets (e.g. icon font)
+scripts/        # Utility scripts (e.g. icon generation)
+src/
+  c/            # C code
+    generated/  # Generated C code (e.g. from generated icons)
+    modules/    # C modules (settings, weather, etc.)
+    ui/         # Custom UI widget implementations (e.g. graph, event layer)
+    main.c      # C entrypoint
+  pkjs/
+    index.js    # Phone-side weather & location data fetching
+```
+
 ### Debug Info
 
 The settings page includes a **Debug** section (collapsed by default) powered by the `debug-info` custom Clay component in `src/pkjs/config/debug.js`. It reads the weather cache and current Clay settings from `localStorage` at the moment the settings page is opened, merges in the active watch info from the Clay runtime, and renders each key as a collapsible `<details>` block.
@@ -157,19 +172,6 @@ Build metadata is written to `.buildinfo.json` (gitignored) at the start of ever
 ```
 
 To add new fields to the debug output, add keys to the object returned by `formatDebugInfo()` in `src/pkjs/index.js`. The component renders any key it receives without needing changes.
-
-```
-resources/      # Static assets (e.g. icon font)
-scripts/        # Utility scripts (e.g. icon generation)
-src/
-  c/            # C code
-    generated/  # Generated C code (e.g. from generated icons)
-    modules/    # C modules (settings, weather, etc.)
-    ui/         # Custom UI widget implementations (e.g. graph, event layer)
-    main.c      # C entrypoint
-  pkjs/
-    index.js    # Phone-side weather & location data fetching
-```
 
 ### Icons
 
