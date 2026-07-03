@@ -50,6 +50,27 @@ There are several other weather-focused Pebble watchfaces that might look simila
 
 ---
 
+## Reporting Issues
+
+You may choose to report an issue either through the "contact developer" link in the Pebble app store or by opening a new issue on the project's GitHub repository.
+
+If you're experiencing unexpected behavior, the **Debug** section at the bottom of the settings page can help identify the cause and gives us a snapshot of everything the watchface knows at that moment. Ideally, bug reports should include this debug information to assist in troubleshooting.
+
+To access it:
+1. Open the Pebble app and tap the gear icon next to Carbon to open settings.
+2. Scroll to the bottom of the settings page and expand the **Debug** section.
+3. Review the data inline, or tap **Copy debug info to clipboard** to grab it all as JSON.
+
+The clipboard JSON contains everything displayed in the **Debug** section, including:
+- `activeWatchInfo` — watch hardware, platform, and firmware version
+- `buildInfo` — build metadata including version, git commit hash, branch, dirty flag, and build date
+- `cache` — the full weather payload including fetch time, expiry, and all hourly data
+- `settings` — current Clay settings stored on the phone
+
+> **Before sharing debug info in a GitHub issue, obfuscate the `lat` and `lon` values** inside `cache.payload` and anything else you deem sensitive to protect your location privacy.
+
+---
+
 ## Development
 
 ### Prerequisites
@@ -119,7 +140,23 @@ DEMO=1 pebble build && pebble screenshot --all-platforms
 
 Note: you may need to run `pebble wipe` if the emulator stalls and try again.
 
-### Project Structure
+### Debug Info
+
+The settings page includes a **Debug** section (collapsed by default) powered by the `debug-info` custom Clay component in `src/pkjs/config/debug.js`. It reads the weather cache and current Clay settings from `localStorage` at the moment the settings page is opened, merges in the active watch info from the Clay runtime, and renders each key as a collapsible `<details>` block.
+
+Build metadata is written to `.buildinfo.json` (gitignored) at the start of every `pebble build` and bundled into the JS. It contains:
+
+```json
+{
+  "version": "1.4.0",
+  "hash": "abc1234",
+  "branch": "main",
+  "dirty": false,
+  "buildDate": "2026-07-03T15:00:00+00:00"
+}
+```
+
+To add new fields to the debug output, add keys to the object returned by `formatDebugInfo()` in `src/pkjs/index.js`. The component renders any key it receives without needing changes.
 
 ```
 resources/      # Static assets (e.g. icon font)
