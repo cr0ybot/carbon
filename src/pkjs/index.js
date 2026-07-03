@@ -400,7 +400,7 @@ function getWeather() {
  * Returns a plain object whose keys become collapsible sections in the
  * debug-info component; values are serialised as JSON in the display.
  *
- * @returns {{cache: Object|null, settings: Object|null}}
+ * @returns {Object}
  */
 function formatDebugInfo() {
 	var result = {
