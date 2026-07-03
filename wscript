@@ -35,17 +35,26 @@ def build(ctx):
 	ctx.load('pebble_sdk')
 
 	# Generate .buildinfo.json from git state and package.json
-	try:
-		git_hash = subprocess.check_output(
-			['git', 'rev-parse', '--short', 'HEAD'],
-			cwd=ctx.path.abspath(),
-			stderr=subprocess.DEVNULL
-		).decode().strip()
-	except Exception:
-		git_hash = 'unknown'
+	def git(*args):
+		try:
+			return subprocess.check_output(
+				['git'] + list(args),
+				cwd=ctx.path.abspath(),
+				stderr=subprocess.DEVNULL
+			).decode().strip()
+		except Exception:
+			return None
+
+	import datetime
 	pkg = json.loads(ctx.path.find_node('package.json').read())
 	ctx.path.make_node('.buildinfo.json').write(
-		json.dumps({ 'version': pkg['version'], 'hash': git_hash }, indent=2) + '\n'
+		json.dumps({
+			'version':   pkg['version'],
+			'hash':      git('rev-parse', '--short', 'HEAD') or 'unknown',
+			'branch':    git('rev-parse', '--abbrev-ref', 'HEAD') or 'unknown',
+			'dirty':     bool(git('status', '--porcelain')),
+			'buildDate': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+		}, indent=2) + '\n'
 	)
 
 	build_worker = os.path.exists('worker_src')
