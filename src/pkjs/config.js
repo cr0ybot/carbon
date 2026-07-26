@@ -126,6 +126,27 @@ module.exports = [
 		'defaultValue': 'Save Settings',
 	},
 	{
+		'type': 'section',
+		'items': [
+			{
+				'type': 'heading',
+				'defaultValue': 'Attribution',
+			},
+			{
+				'type': 'text',
+				'defaultValue': 'Weather data from <a href="https://open-meteo.com/">Open-Meteo</a> — free &amp; open-source.',
+			},
+			{
+				'type': 'text',
+				'defaultValue': 'Reverse geocoding by <a href="https://www.bigdatacloud.com/">BigDataCloud</a>.',
+			},
+			{
+				'type': 'text',
+				'defaultValue': 'Icons from the <a href="https://carbondesignsystem.com/elements/icons/library/">Carbon Design System</a> icon set by IBM, assembled with <a href="https://icomoon.io/">IcoMoon</a>.',
+			},
+		],
+	},
+	{
 		'type': 'debug-info',
 	},
 ];
