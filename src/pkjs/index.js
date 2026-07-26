@@ -20,6 +20,13 @@ var {
 	CACHE_KEY,
 	CACHE_TTL_MS,
 	FORECAST_HOURS,
+	XHR_TIMEOUT_MS,
+	WEATHER_RETRY_ATTEMPTS,
+	WEATHER_RETRY_BASE_DELAY_MS,
+	GEOCODE_RETRY_ATTEMPTS,
+	GEOCODE_RETRY_BASE_DELAY_MS,
+	SEND_RETRY_ATTEMPTS,
+	SEND_RETRY_BASE_DELAY_MS,
 } = require('./constants');
 
 var buildInfo = require('../../.buildinfo.json');
@@ -37,14 +44,101 @@ clay.registerComponent(require('./config/debug'));
  */
 function xhrGet(url, callback) {
 	var xhr = new XMLHttpRequest();
+	var settled = false;
+
+	function done(err, responseText) {
+		if (settled) return;
+		settled = true;
+		callback(err, responseText);
+	}
+
 	xhr.onload = function() {
-		callback(null, this.responseText);
+		done(null, this.responseText);
 	};
 	xhr.onerror = function() {
-		callback('XHR error for ' + url);
+		done('XHR error for ' + url);
 	};
+	xhr.ontimeout = function() {
+		done('XHR timeout for ' + url + ' after ' + XHR_TIMEOUT_MS + 'ms');
+	};
+	xhr.timeout = XHR_TIMEOUT_MS;
 	xhr.open('GET', url);
 	xhr.send();
+}
+
+/**
+ * Retry an XHR GET with exponential backoff.
+ *
+ * @param {string}   url
+ * @param {number}   maxAttempts   Total attempts including the first try.
+ * @param {number}   baseDelayMs   Backoff base delay in milliseconds.
+ * @param {string}   label         Log label for this fetch type.
+ * @param {Function} callback      Called with (err, responseText).
+ */
+function retryXhr(url, maxAttempts, baseDelayMs, label, callback) {
+	var attempt = 1;
+
+	function run() {
+		xhrGet(url, function(err, responseText) {
+			if (!err) {
+				callback(null, responseText);
+				return;
+			}
+
+			if (attempt >= maxAttempts) {
+				callback(err);
+				return;
+			}
+
+			var delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+			console.log(
+				'Carbon: ' + label + ' retry ' + attempt + '/' + (maxAttempts - 1) +
+				' in ' + delayMs + 'ms after error: ' + err
+			);
+			attempt += 1;
+			setTimeout(run, delayMs);
+		});
+	}
+
+	run();
+}
+
+/**
+ * Retry Pebble.sendAppMessage with exponential backoff.
+ *
+ * SEND_RETRY_ATTEMPTS is treated as retry count (in addition to the first
+ * send), so base 1000ms yields delays of 1s/2s/4s.
+ *
+ * @param {Object} dict
+ */
+function sendToWatchWithRetry(dict) {
+	var retriesLeft = SEND_RETRY_ATTEMPTS;
+	var retryIndex = 0;
+
+	function send() {
+		Pebble.sendAppMessage(dict,
+			function() {
+				console.log('Carbon: weather sent to watch');
+			},
+			function(e) {
+				if (retriesLeft <= 0) {
+					console.log('Carbon: sendAppMessage failed: ' + JSON.stringify(e));
+					return;
+				}
+
+				var delayMs = SEND_RETRY_BASE_DELAY_MS * Math.pow(2, retryIndex);
+				console.log(
+					'Carbon: send retry ' + (retryIndex + 1) + '/' + SEND_RETRY_ATTEMPTS +
+					' in ' + delayMs + 'ms after error: ' + JSON.stringify(e)
+				);
+				retriesLeft -= 1;
+				retryIndex += 1;
+				setTimeout(send, delayMs);
+			}
+		);
+	}
+
+	send();
 }
 
 /**
@@ -239,10 +333,7 @@ function sendToWatch(payload) {
 	if (payload.sunset_hour  != null) dict['WEATHER_SUNSET_HOUR']  = payload.sunset_hour;
 	if (payload.fetch_time   != null) dict['WEATHER_FETCH_TIME']   = Math.floor(payload.fetch_time);
 
-	Pebble.sendAppMessage(dict,
-		function() { console.log('Carbon: weather sent to watch'); },
-		function(e) { console.log('Carbon: sendAppMessage failed: ' + JSON.stringify(e)); }
-	);
+	sendToWatchWithRetry(dict);
 }
 
 /**
@@ -296,7 +387,9 @@ function fetchAndSend(lat, lon) {
 		'&timeformat=unixtime' +
 		'&timezone=auto';
 
-	xhrGet(weatherUrl, function(err, responseText) {
+	retryXhr(weatherUrl, WEATHER_RETRY_ATTEMPTS,
+	         WEATHER_RETRY_BASE_DELAY_MS, 'weather fetch',
+	         function(err, responseText) {
 		if (err) {
 			console.log('Carbon: weather fetch error: ' + err);
 			weatherDone = true;
@@ -342,7 +435,9 @@ function fetchAndSend(lat, lon) {
 	var geocodeUrl = GEOCODE_BASE_URL +
 		'?f=json&langCode=EN&location=' + lon + ',' + lat;
 
-	xhrGet(geocodeUrl, function(err, responseText) {
+	retryXhr(geocodeUrl, GEOCODE_RETRY_ATTEMPTS,
+	         GEOCODE_RETRY_BASE_DELAY_MS, 'geocode fetch',
+	         function(err, responseText) {
 		if (err) {
 			console.log('Carbon: geocode error: ' + err);
 			payload.city_name = 'Unknown';
