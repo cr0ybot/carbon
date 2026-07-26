@@ -19,6 +19,9 @@ module.exports = [
 		'defaultValue': `v${version} (${hash})`,
 	},
 	{
+		'type': 'service-notice',
+	},
+	{
 		'type': 'section',
 		'items': [
 			{
@@ -32,9 +35,9 @@ module.exports = [
 				'description': '"Auto" detects your locale (US = °F, everywhere else = °C).',
 				'defaultValue': -1,
 				'options': [
-					{ 'label': 'Auto (locale)',   'value': -1 },
-					{ 'label': 'Celsius (°C)',    'value': 0  },
-					{ 'label': 'Fahrenheit (°F)', 'value': 1  },
+					{ 'label': 'Auto (locale)', 'value': -1 },
+					{ 'label': 'Celsius (°C)', 'value': 0 },
+					{ 'label': 'Fahrenheit (°F)', 'value': 1 },
 				],
 			},
 		],
@@ -56,13 +59,13 @@ module.exports = [
 				'label': 'Date Format',
 				'defaultValue': '%A, %m/%d',
 				'options': [
-					{ 'label': 'Monday, 1/15',   'value': '%A, %m/%d'  },
-					{ 'label': 'Monday, 15/1',   'value': '%A, %d/%m'  },
-					{ 'label': 'Monday, Jan 15', 'value': '%A, %b %d'  },
-					{ 'label': '1/15/2026',      'value': '%m/%d/%Y'   },
-					{ 'label': '15/1/2026',      'value': '%d/%m/%Y'   },
-					{ 'label': '15 Jan 2026',    'value': '%d %b %Y'   },
-					{ 'label': '2026-01-15',     'value': '%Y-0%m-0%d' },
+					{ 'label': 'Monday, 1/15', 'value': '%A, %m/%d' },
+					{ 'label': 'Monday, 15/1', 'value': '%A, %d/%m' },
+					{ 'label': 'Monday, Jan 15', 'value': '%A, %b %d' },
+					{ 'label': '1/15/2026', 'value': '%m/%d/%Y' },
+					{ 'label': '15/1/2026', 'value': '%d/%m/%Y' },
+					{ 'label': '15 Jan 2026', 'value': '%d %b %Y' },
+					{ 'label': '2026-01-15', 'value': '%Y-0%m-0%d' },
 				],
 			},
 			{
@@ -71,7 +74,7 @@ module.exports = [
 				'label': 'Battery Display',
 				'defaultValue': 0,
 				'options': [
-					{ 'label': 'Icon',       'value': 0 },
+					{ 'label': 'Icon', 'value': 0 },
 					{ 'label': 'Percentage', 'value': 1 },
 				],
 			},
@@ -88,6 +91,33 @@ module.exports = [
 				'label': 'Show AM/PM / 24h Indicator',
 				'description': 'Show the AM/PM or 24h indicator to the right of the time.',
 				'defaultValue': true,
+			},
+		],
+	},
+	{
+		'type': 'section',
+		'items': [
+			{
+				'type': 'heading',
+				'defaultValue': 'Location',
+			},
+			{
+				'type': 'toggle',
+				'messageKey': 'SETTING_GEOCODE_ENABLED',
+				'label': 'Detect Location Name',
+				'description': 'Look up your city name from your location (reverse geocoding). When off, the custom text below is shown instead.',
+				'defaultValue': true,
+			},
+			{
+				'type': 'input',
+				'messageKey': 'SETTING_LOCATION_OVERRIDE',
+				'label': 'Custom Location Text',
+				'description': 'Shown when location detection is off. Leave blank to show no location.',
+				'defaultValue': '',
+				'attributes': {
+					'placeholder': 'e.g. Home',
+					'maxlength': 23,
+				},
 			},
 		],
 	},
