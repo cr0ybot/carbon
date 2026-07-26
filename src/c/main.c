@@ -117,9 +117,41 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	int data_offset = 0;
 	if (s_weather.fetch_time > 0) {
 		time_t now_t = time(NULL);
-		long elapsed = (long)(now_t - s_weather.fetch_time);
-		if (elapsed > 0)
-			data_offset = (int)(elapsed / 3600);
+		struct tm fetch_tm;
+		struct tm now_tm;
+		struct tm *fetch_ptr = localtime(&s_weather.fetch_time);
+		if (fetch_ptr) {
+			fetch_tm = *fetch_ptr;
+		}
+		struct tm *now_ptr = localtime(&now_t);
+		if (now_ptr) {
+			now_tm = *now_ptr;
+		}
+
+		if (fetch_ptr && now_ptr) {
+			int fetch_hour_index = fetch_tm.tm_yday * 24 + fetch_tm.tm_hour;
+			int now_hour_index = now_tm.tm_yday * 24 + now_tm.tm_hour;
+
+			if (now_tm.tm_year == fetch_tm.tm_year) {
+				data_offset = now_hour_index - fetch_hour_index;
+			} else if (now_tm.tm_year == fetch_tm.tm_year + 1) {
+				int full_year_hours = 365 * 24;
+				int fetch_year = fetch_tm.tm_year + 1900;
+				if ((fetch_year % 4 == 0 && fetch_year % 100 != 0) ||
+				    (fetch_year % 400 == 0)) {
+					full_year_hours = 366 * 24;
+				}
+				data_offset = (full_year_hours - fetch_hour_index) + now_hour_index;
+			} else {
+				long elapsed = (long)(now_t - s_weather.fetch_time);
+				if (elapsed > 0)
+					data_offset = (int)(elapsed / 3600);
+			}
+		}
+
+		if (data_offset < 0) {
+			data_offset = 0;
+		}
 	}
 
 	// If the entire cached window is in the past, nothing useful to show
@@ -178,8 +210,16 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	icon_bar_layer_set_condition(s_icon_bar_layer,
 	                             weather_code_to_condition(display_code));
 	icon_bar_layer_set_daytime(s_icon_bar_layer, is_day);
-	icon_bar_layer_set_disconnected(s_icon_bar_layer,
-	                                hours_remaining < GRAPH_HOURS);
+	time_t now_t = time(NULL);
+	long data_age_sec = (long)(now_t - s_weather.fetch_time);
+	if (data_age_sec < 0)
+		data_age_sec = 0;
+	long stale_threshold_sec =
+	    2L * (long)settings_get()->fetch_interval_min * 60L;
+	icon_bar_layer_set_disconnected(
+	    s_icon_bar_layer,
+	    !s_weather.is_valid || data_age_sec >= stale_threshold_sec ||
+	        hours_remaining == 0);
 	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
 	temp_layer_set_data(s_temp_layer, display_temp, s_weather.high_temp,
 	                    s_weather.low_temp, temp_view, appar_view, current_hour,
