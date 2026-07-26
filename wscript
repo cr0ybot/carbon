@@ -57,6 +57,26 @@ def build(ctx):
 		}, indent=2) + '\n'
 	)
 
+	# Generate build/js/env.auto.js from .env (if present).
+	# All key=value pairs are emitted as strings; constants.js handles defaults.
+	# Developers can set custom values in a local .env file (see .env.example)
+	# without modifying tracked source files.
+	dotenv = {}
+	env_node = ctx.path.find_node('.env')
+	if env_node:
+		for line in env_node.read().splitlines():
+			line = line.strip()
+			if line and not line.startswith('#') and '=' in line:
+				key, _, val = line.partition('=')
+				dotenv[key.strip()] = val.strip().strip('"').strip("'")
+	ctx.path.make_node('build/js/env.auto.js').write(
+		'// Auto-generated from .env - do not edit by hand.\n'
+		'// See .env.example for available options.\n'
+		'module.exports = {\n' +
+		''.join('  %s: %s,\n' % (k, json.dumps(v)) for k, v in dotenv.items()) +
+		'};\n'
+	)
+
 	build_worker = os.path.exists('worker_src')
 	binaries = []
 

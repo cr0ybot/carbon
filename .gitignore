@@ -4,6 +4,7 @@
 # Development files
 node_modules/
 .cache/
+.env
 
 # Build files
 build/

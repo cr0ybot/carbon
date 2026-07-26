@@ -1,0 +1,4 @@
+{
+  "bigdatacloud": { "enabled": true },
+  "open-meteo": { "enabled": true }
+}

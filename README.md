@@ -66,6 +66,7 @@ The clipboard JSON contains everything displayed in the **Debug** section, inclu
 - `buildInfo` — build metadata including version, git commit hash, branch, dirty flag, and build date
 - `cache` — the full weather payload including fetch time, expiry, and all hourly data
 - `settings` — current Clay settings stored on the phone
+- `services` — the currently active/cached [remote service status](#service-status-killswitch-servicesjson)
 
 > **Before sharing debug info in a GitHub issue, obfuscate the `lat` and `lon` values** inside `cache.payload` and anything else you deem sensitive to protect your location privacy.
 
@@ -154,6 +155,34 @@ src/
   pkjs/
     index.js    # Phone-side weather & location data fetching
 ```
+
+### Service status killswitch (`services.json`)
+
+Carbon fetches weather from [Open-Meteo](https://open-meteo.com) and reverse-geocodes the location name via [BigDataCloud](https://www.bigdatacloud.com/)'s free client-side API. Both are free services called **directly from every user's phone** — there is no proxy server in between. That keeps the project free to run, but it also means that if a provider changes its terms, starts rate-limiting, or asks us to stop, there is no server to reconfigure and no way to push a fix short of waiting for an app update reaching every user.
+
+To keep in the good graces of the services used, I've added [services.json](./services.json): a remote killswitch. Every installed copy of Carbon periodically fetches the raw copy of this file from the `main` branch of this repository and checks whether each service is still enabled before calling it. Setting `"enabled": false` and pushing to `main` stops all installed copies from calling that service, no app update required.
+
+Behavior of services.json:
+
+- The fetched status is cached on the phone in `localStorage` — 6 hours for both enabled and deliberately disabled services, 5 minutes after a fetch/parse failure. These TTLs can be overridden remotely per-service or globally via the file itself (see [services.example.json](./services.example.json) for all supported fields).
+- A service key that is absent from the file is treated as **disabled**.
+- If the remote fetch fails, the copy of services.json bundled into the app at build time is used as a fallback.
+- When a service is deliberately disabled, an optional `"message"` explaining why is displayed in a notice banner at the top of the settings page (along with a link back to this repository) and logged on the phone.
+
+**Forks:** the killswitch URL points at this repository by default, meaning this repo would control your fork's service enablement (and your fork's users would be misattributed to this app). Set `CARBON_SERVICE_STATUS_URL` in `.env` (see below) to point at your own copy of services.json.
+
+### Environment overrides (`.env`)
+
+Some build-time defaults in `src/pkjs/constants.js` can be overridden by creating a `.env` file (gitignored) from the template at [.env.example](./.env.example).
+
+Values are compiled into the JS bundle at build time. Supported variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `CARBON_SERVICE_STATUS_URL` | URL of the services.json killswitch file. Forks should point this at their own copy. |
+| `CARBON_DISABLE_REMOTE_SERVICES` | Set to `true` to skip the remote status check entirely and use the bundled local services.json snapshot. Useful for offline development and for testing killswitch behavior by editing the local file. |
+
+Remember to rebuild after changing `.env` for the new values to take effect.
 
 ### Debug Info
 

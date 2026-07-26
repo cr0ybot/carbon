@@ -1,0 +1,19 @@
+{
+  "bigdatacloud": {
+    "enabled": true,
+    "message": "Optional explanation shown in logs and settings when this service is disabled.",
+    "ttl_enabled_ms": 21600000,
+    "ttl_disabled_ms": 21600000
+  },
+  "open-meteo": {
+    "enabled": true,
+    "message": "Optional explanation shown in logs and settings when this service is disabled.",
+    "ttl_enabled_ms": 21600000,
+    "ttl_disabled_ms": 21600000
+  },
+  "config": {
+    "ttl_enabled_ms": 21600000,
+    "ttl_disabled_ms": 21600000,
+    "ttl_fail_ms": 300000
+  }
+}
