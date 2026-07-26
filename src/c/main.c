@@ -20,6 +20,7 @@
 #include "ui/time_layer.h"
 #include <pebble.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 // Storage key for persisting last-received weather across cold starts
 #define STORAGE_KEY_WEATHER 2
@@ -59,10 +60,12 @@ static TempLayer *s_temp_layer;
 static IconBarLayer *s_icon_bar_layer;
 
 static WeatherData s_weather;
+static AppTimer *s_weather_request_timer = NULL;
 
 // Forward declarations
 static void prv_request_weather(void);
 static void prv_push_weather_to_layers(struct tm *now);
+static void prv_schedule_weather_request(void);
 
 /**
  * Ticks every minute; advances graph layers and requests fresh weather each
@@ -81,10 +84,11 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 	// Request fresh weather every hour and re-push cached data so that
 	// current_hour advances in all graph layers regardless of whether a new
-	// fetch succeeds.
+	// fetch succeeds. The request itself is delayed by a random jitter to
+	// reduce simultaneous API calls from multiple users.
 	if (units_changed & HOUR_UNIT) {
 		prv_push_weather_to_layers(tick_time);
-		prv_request_weather();
+		prv_schedule_weather_request();
 	}
 #endif
 }
@@ -305,6 +309,22 @@ static void prv_request_weather(void) {
 	}
 }
 
+static void prv_weather_timer_callback(void *context) {
+	s_weather_request_timer = NULL;
+	prv_request_weather();
+}
+
+// Schedule a weather request with a random 0–179 second jitter so that
+// hourly refreshes from different users are spread across the minute window
+// rather than all landing at exactly :00.
+static void prv_schedule_weather_request(void) {
+	if (s_weather_request_timer) {
+		app_timer_cancel(s_weather_request_timer);
+	}
+	uint32_t jitter_ms = (uint32_t)(rand() % 180) * 1000;
+	s_weather_request_timer = app_timer_register(jitter_ms, prv_weather_timer_callback, NULL);
+}
+
 static void prv_battery_handler(BatteryChargeState state) {
 	icon_bar_layer_notify_battery(s_icon_bar_layer, state);
 }
@@ -393,6 +413,7 @@ static void prv_window_unload(Window *window) {
 
 static void init(void) {
 	setlocale(LC_ALL, ""); // Use watch system locale for date formatting
+	srand((unsigned)time(NULL));
 	settings_init();
 
 	// Restore persisted weather before anything renders
@@ -426,13 +447,17 @@ static void init(void) {
 	app_message_open(512, 64);
 #endif
 
-	// Trigger initial weather fetch
+	// Trigger initial weather fetch with jitter
 #if !defined(DEMO_SCENARIO)
-	prv_request_weather();
+	prv_schedule_weather_request();
 #endif
 }
 
 static void deinit(void) {
+	if (s_weather_request_timer) {
+		app_timer_cancel(s_weather_request_timer);
+		s_weather_request_timer = NULL;
+	}
 	tick_timer_service_unsubscribe();
 	battery_state_service_unsubscribe();
 	connection_service_unsubscribe();
