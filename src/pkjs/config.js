@@ -19,6 +19,9 @@ module.exports = [
 		'defaultValue': `v${version} (${hash})`,
 	},
 	{
+		'type': 'service-notice',
+	},
+	{
 		'type': 'section',
 		'items': [
 			{
@@ -32,9 +35,20 @@ module.exports = [
 				'description': '"Auto" detects your locale (US = °F, everywhere else = °C).',
 				'defaultValue': -1,
 				'options': [
-					{ 'label': 'Auto (locale)',   'value': -1 },
-					{ 'label': 'Celsius (°C)',    'value': 0  },
-					{ 'label': 'Fahrenheit (°F)', 'value': 1  },
+					{ 'label': 'Auto (locale)', 'value': -1 },
+					{ 'label': 'Celsius (°C)', 'value': 0 },
+					{ 'label': 'Fahrenheit (°F)', 'value': 1 },
+				],
+			},
+			{
+				'type': 'select',
+				'messageKey': 'SETTING_FETCH_INTERVAL',
+				'label': 'Weather Refresh Interval',
+				'defaultValue': 30,
+				'options': [
+					{ 'label': 'Every 15 minutes', 'value': 15 },
+					{ 'label': 'Every 30 minutes', 'value': 30 },
+					{ 'label': 'Every 60 minutes', 'value': 60 },
 				],
 			},
 		],
@@ -56,12 +70,12 @@ module.exports = [
 				'label': 'Date Format',
 				'defaultValue': '%A, %m/%d',
 				'options': [
-					{ 'label': 'Monday, 1/15',   'value': '%A, %m/%d'  },
-					{ 'label': 'Monday, 15/1',   'value': '%A, %d/%m'  },
-					{ 'label': 'Monday, Jan 15', 'value': '%A, %b %d'  },
-					{ 'label': '1/15/2026',      'value': '%m/%d/%Y'   },
-					{ 'label': '15/1/2026',      'value': '%d/%m/%Y'   },
-					{ 'label': '15 Jan 2026',    'value': '%d %b %Y'   },
+					{ 'label': 'Monday, 1/15', 'value': '%A, %m/%d' },
+					{ 'label': 'Monday, 15/1', 'value': '%A, %d/%m' },
+					{ 'label': 'Monday, Jan 15', 'value': '%A, %b %d' },
+					{ 'label': '1/15/2026', 'value': '%m/%d/%Y' },
+					{ 'label': '15/1/2026', 'value': '%d/%m/%Y' },
+					{ 'label': '15 Jan 2026', 'value': '%d %b %Y' },
 					{ 'label': '2026-01-15',     'value': '%Y-0%m-0%d' },
 				],
 			},
@@ -71,7 +85,7 @@ module.exports = [
 				'label': 'Battery Display',
 				'defaultValue': 0,
 				'options': [
-					{ 'label': 'Icon',       'value': 0 },
+					{ 'label': 'Icon', 'value': 0 },
 					{ 'label': 'Percentage', 'value': 1 },
 				],
 			},
@@ -92,8 +106,56 @@ module.exports = [
 		],
 	},
 	{
+		'type': 'section',
+		'items': [
+			{
+				'type': 'heading',
+				'defaultValue': 'Location',
+			},
+			{
+				'type': 'toggle',
+				'messageKey': 'SETTING_GEOCODE_ENABLED',
+				'label': 'Detect Location Name',
+				'description': 'Look up your city name from your location (reverse geocoding). When off, the custom text below is shown instead.',
+				'defaultValue': true,
+			},
+			{
+				'type': 'input',
+				'messageKey': 'SETTING_LOCATION_OVERRIDE',
+				'label': 'Custom Location Text',
+				'description': 'Shown when location detection is off. Leave blank to show no location.',
+				'defaultValue': '',
+				'attributes': {
+					'placeholder': 'e.g. Home',
+					'maxlength': 23,
+				},
+			},
+		],
+	},
+	{
 		'type': 'submit',
 		'defaultValue': 'Save Settings',
+	},
+	{
+		'type': 'section',
+		'items': [
+			{
+				'type': 'heading',
+				'defaultValue': 'Attribution',
+			},
+			{
+				'type': 'text',
+				'defaultValue': 'Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a>',
+			},
+			{
+				'type': 'text',
+				'defaultValue': 'Reverse geocoding from <a href="https://www.bigdatacloud.com/free-api/free-reverse-geocode-to-city-api">BigDataCloud</a>.',
+			},
+			{
+				'type': 'text',
+				'defaultValue': 'Icons from the <a href="https://carbondesignsystem.com/elements/icons/library/">Carbon Design System</a> icon set by IBM, assembled with <a href="https://icomoon.io/">IcoMoon</a>.',
+			},
+		],
 	},
 	{
 		'type': 'debug-info',

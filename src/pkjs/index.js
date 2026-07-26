@@ -590,6 +590,11 @@ Pebble.addEventListener('webviewclosed', function(e) {
 	var batteryDisplay = extractInt(rawSettings['SETTING_BATTERY_DISPLAY']);
 	if (!isNaN(batteryDisplay)) dict['SETTING_BATTERY_DISPLAY'] = batteryDisplay;
 
+	var fetchInterval = extractInt(rawSettings['SETTING_FETCH_INTERVAL']);
+	if (fetchInterval === 15 || fetchInterval === 30 || fetchInterval === 60) {
+		dict['SETTING_FETCH_INTERVAL'] = fetchInterval;
+	}
+
 	var showTimezone = extractBool(rawSettings['SETTING_SHOW_TIMEZONE']);
 	if (showTimezone !== null) dict['SETTING_SHOW_TIMEZONE'] = showTimezone;
 

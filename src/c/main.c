@@ -79,11 +79,13 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 #else
 	time_layer_update(s_time_layer, tick_time, settings_get());
 
-	// Request fresh weather every hour and re-push cached data so that
-	// current_hour advances in all graph layers regardless of whether a new
-	// fetch succeeds.
+	// Re-push graph layers each hour for display rollover, and request weather
+	// at the configured minute cadence.
 	if (units_changed & HOUR_UNIT) {
 		prv_push_weather_to_layers(tick_time);
+	}
+
+	if (tick_time->tm_min % settings_get()->fetch_interval_min == 0) {
 		prv_request_weather();
 	}
 #endif
