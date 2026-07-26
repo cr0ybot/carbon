@@ -11,4 +11,12 @@ module.exports = {
 	GEOCODE_BASE_URL: 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode',
 	CACHE_KEY:        'carbon.weather.v3',
 	CACHE_TTL_MS:     15 * 60 * 1000,  // 15 minutes
+	XHR_TIMEOUT_MS:   10 * 1000,
+	FORECAST_HOURS:   36,
+	WEATHER_RETRY_ATTEMPTS: 3,
+	WEATHER_RETRY_BASE_DELAY_MS: 2 * 1000,
+	GEOCODE_RETRY_ATTEMPTS: 2,
+	GEOCODE_RETRY_BASE_DELAY_MS: 2 * 1000,
+	SEND_RETRY_ATTEMPTS: 3,
+	SEND_RETRY_BASE_DELAY_MS: 1000,
 };

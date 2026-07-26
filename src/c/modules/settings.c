@@ -22,6 +22,7 @@ static const Settings s_defaults = {
     .battery_display = BATTERY_DISPLAY_ICON,
     .show_timezone = true,
     .show_ampm = true,
+	.fetch_interval_min = 30,
 };
 
 void settings_init(void) {
@@ -81,6 +82,14 @@ void settings_apply_from_message(DictionaryIterator *iter) {
 	t = dict_find(iter, MESSAGE_KEY_SETTING_SHOW_AMPM);
 	if (t)
 		s_settings.show_ampm = (t->value->int8 != 0);
+
+	t = dict_find(iter, MESSAGE_KEY_SETTING_FETCH_INTERVAL);
+	if (t) {
+		int interval = (int)t->value->int32;
+		if (interval == 15 || interval == 30 || interval == 60) {
+			s_settings.fetch_interval_min = (uint8_t)interval;
+		}
+	}
 
 	settings_save();
 }

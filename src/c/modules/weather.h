@@ -10,7 +10,7 @@
 #pragma once
 #include <pebble.h>
 
-#define WEATHER_HOURLY_COUNT 24
+#define WEATHER_HOURLY_COUNT 36
 #define WEATHER_CITY_MAX_LEN 24
 
 typedef enum {
@@ -48,8 +48,11 @@ typedef struct {
   char city_name[WEATHER_CITY_MAX_LEN];
   bool is_valid;
   time_t  fetch_time;   // unix timestamp of last successful fetch
-  uint8_t valid_hours;  // hourly entries valid starting from fetch_time (0-24)
+  uint8_t valid_hours;  // hourly entries valid starting from fetch_time (0-WEATHER_HOURLY_COUNT)
 } WeatherData;
+
+_Static_assert(sizeof(WeatherData) <= PERSIST_DATA_MAX_LENGTH,
+               "WeatherData exceeds PERSIST_DATA_MAX_LENGTH");
 
 /**
  * Converts a WMO weather code (0-99) to a WeatherCondition enum.
