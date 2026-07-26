@@ -26,7 +26,7 @@ var buildInfo = require('../../.buildinfo.json');
 var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
 var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
-clay.registerComponent(require('./config/debug'));
+clay.registerComponent(require('./config/components/debug'));
 
 /**
  * Make a GET request.
