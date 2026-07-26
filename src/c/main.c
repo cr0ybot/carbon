@@ -237,28 +237,35 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 
 	// Hourly byte arrays
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_PRECIP_PROB);
-	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= 24) {
-		memcpy(s_weather.precip_prob, t->value->data, 24);
+	if (t && t->type == TUPLE_BYTE_ARRAY &&
+	    t->length >= WEATHER_HOURLY_COUNT) {
+		memcpy(s_weather.precip_prob, t->value->data, WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_TEMP_HOURLY);
-	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= 24) {
-		memcpy(s_weather.temp_hourly, t->value->data, 24);
+	if (t && t->type == TUPLE_BYTE_ARRAY &&
+	    t->length >= WEATHER_HOURLY_COUNT) {
+		memcpy(s_weather.temp_hourly, t->value->data, WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_APPARENT_TEMP_HOURLY);
-	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= 24) {
-		memcpy(s_weather.apparent_temp_hourly, t->value->data, 24);
+	if (t && t->type == TUPLE_BYTE_ARRAY &&
+	    t->length >= WEATHER_HOURLY_COUNT) {
+		memcpy(s_weather.apparent_temp_hourly, t->value->data,
+		       WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_CLOUD_COVER);
-	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= 24) {
-		memcpy(s_weather.cloud_cover, t->value->data, 24);
+	if (t && t->type == TUPLE_BYTE_ARRAY &&
+	    t->length >= WEATHER_HOURLY_COUNT) {
+		memcpy(s_weather.cloud_cover, t->value->data, WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_HOURLY_CODE);
-	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= 24) {
-		memcpy(s_weather.hourly_weather_code, t->value->data, 24);
+	if (t && t->type == TUPLE_BYTE_ARRAY &&
+	    t->length >= WEATHER_HOURLY_COUNT) {
+		memcpy(s_weather.hourly_weather_code, t->value->data,
+		       WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_CITY_NAME);
@@ -282,7 +289,7 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 
 	s_weather.is_valid = true;
 	s_weather.fetch_time = (time_t)t->value->int32;
-	s_weather.valid_hours = 24;
+	s_weather.valid_hours = WEATHER_HOURLY_COUNT;
 
 	// Persist for cold-start restoration
 	persist_write_data(STORAGE_KEY_WEATHER, &s_weather, sizeof(s_weather));
@@ -401,7 +408,13 @@ static void init(void) {
 	demo_data_load(&s_weather, settings_get());
 #else
 	if (persist_exists(STORAGE_KEY_WEATHER)) {
-		persist_read_data(STORAGE_KEY_WEATHER, &s_weather, sizeof(s_weather));
+		int stored_size = persist_get_size(STORAGE_KEY_WEATHER);
+		if (stored_size == (int)sizeof(s_weather)) {
+			persist_read_data(STORAGE_KEY_WEATHER, &s_weather,
+			                  sizeof(s_weather));
+		} else {
+			persist_delete(STORAGE_KEY_WEATHER);
+		}
 	}
 #endif
 

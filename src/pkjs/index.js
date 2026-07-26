@@ -19,6 +19,7 @@ var {
 	GEOCODE_BASE_URL,
 	CACHE_KEY,
 	CACHE_TTL_MS,
+	FORECAST_HOURS,
 } = require('./constants');
 
 var buildInfo = require('../../.buildinfo.json');
@@ -107,28 +108,28 @@ function conditionFromCode(code) {
 }
 
 /**
- * Pack up to 24 values into a clamped uint8 array for AppMessage transport.
+ * Pack up to hourlyCount values into a clamped uint8 array for AppMessage transport.
  *
  * @param   {number[]} values  Input values; missing entries default to 0.
- * @returns {number[]}         24-element array with values clamped to [0, 255].
+ * @returns {number[]}         hourlyCount-element array with values clamped to [0, 255].
  */
-function packUint8Array(values) {
+function packUint8Array(values, hourlyCount) {
 	var arr = [];
-	for (var i = 0; i < 24; i++) {
+	for (var i = 0; i < hourlyCount; i++) {
 		arr.push(Math.min(255, Math.max(0, Math.round(values[i] || 0))));
 	}
 	return arr;
 }
 
 /**
- * Pack up to 24 values into a clamped int8 array (two's complement) for AppMessage transport.
+ * Pack up to hourlyCount values into a clamped int8 array (two's complement) for AppMessage transport.
  *
  * @param   {number[]} values  Input values; missing entries default to 0.
- * @returns {number[]}         24-element array clamped to [-128, 127], encoded as unsigned bytes.
+ * @returns {number[]}         hourlyCount-element array clamped to [-128, 127], encoded as unsigned bytes.
  */
-function packInt8Array(values) {
+function packInt8Array(values, hourlyCount) {
 	var arr = [];
-	for (var i = 0; i < 24; i++) {
+	for (var i = 0; i < hourlyCount; i++) {
 		var v = Math.round(values[i] || 0);
 		v = Math.min(127, Math.max(-128, v));
 		// Convert negative to unsigned byte (two's complement)
@@ -201,7 +202,7 @@ function writeCache(payload) {
  * @param {number}  [payload.fetch_time]           Unix fetch timestamp (omitted when null).
  */
 function sendToWatch(payload) {
-	var hourlyCount = 24;
+	var hourlyCount = FORECAST_HOURS;
 
 	var precipProb    = (payload.precip_prob            || []).slice(0, hourlyCount);
 	var tempHourly    = (payload.temp_hourly             || []).slice(0, hourlyCount);
@@ -219,11 +220,11 @@ function sendToWatch(payload) {
 	var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
 
 	var dict = {
-		'WEATHER_PRECIP_PROB':           packUint8Array(precipProb),
-		'WEATHER_TEMP_HOURLY':           packInt8Array(tempHourly),
-		'WEATHER_APPARENT_TEMP_HOURLY':  packInt8Array(apparentHourly),
-		'WEATHER_CLOUD_COVER':           packUint8Array(cloudCover),
-		'WEATHER_HOURLY_CODE':           packUint8Array(hourlyCode),
+		'WEATHER_PRECIP_PROB':           packUint8Array(precipProb, hourlyCount),
+		'WEATHER_TEMP_HOURLY':           packInt8Array(tempHourly, hourlyCount),
+		'WEATHER_APPARENT_TEMP_HOURLY':  packInt8Array(apparentHourly, hourlyCount),
+		'WEATHER_CLOUD_COVER':           packUint8Array(cloudCover, hourlyCount),
+		'WEATHER_HOURLY_CODE':           packUint8Array(hourlyCode, hourlyCount),
 		'CITY_NAME':                     (payload.city_name || 'Unknown').substring(0, 23),
 		'SETTING_TEMP_UNIT':             tempUnitFlag,
 	};
@@ -281,14 +282,14 @@ function fetchAndSend(lat, lon) {
 		sendToWatch(payload);
 	}
 
-	// Open-Meteo weather — forecast_hours=24 returns exactly 24 hourly entries
+	// Open-Meteo weather — forecast_hours=FORECAST_HOURS returns hourly entries
 	// starting from the current hour; timeformat=unixtime for sunrise/sunset
 	var weatherUrl = WEATHER_BASE_URL +
 		'?latitude='  + lat +
 		'&longitude=' + lon +
 		'&current=temperature_2m,weather_code' +
 		'&hourly=precipitation_probability,temperature_2m,apparent_temperature,cloud_cover,weather_code' +
-		'&forecast_hours=24' +
+		'&forecast_hours=' + FORECAST_HOURS +
 		'&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max' +
 		'&forecast_days=1' +
 		'&temperature_unit=' + tempUnit +
@@ -317,7 +318,7 @@ function fetchAndSend(lat, lon) {
 			payload.sunrise_hour = dly && dly.sunrise ? extractHourFromUnix(dly.sunrise[0]) : 6;
 			payload.sunset_hour  = dly && dly.sunset  ? extractHourFromUnix(dly.sunset[0])  : 20;
 
-			// forecast_hours=24 returns exactly 24 entries starting from now
+			// forecast_hours=FORECAST_HOURS returns entries starting from now
 			if (hrly) {
 				payload.precip_prob          = hrly.precipitation_probability || [];
 				payload.temp_hourly           = hrly.temperature_2m            || [];
