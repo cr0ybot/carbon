@@ -53,13 +53,13 @@ function xhrGet(url, callback) {
 		callback(err, responseText);
 	}
 
-	xhr.onload = function() {
+	xhr.onload = function () {
 		done(null, this.responseText);
 	};
-	xhr.onerror = function() {
+	xhr.onerror = function () {
 		done('XHR error for ' + url);
 	};
-	xhr.ontimeout = function() {
+	xhr.ontimeout = function () {
 		done('XHR timeout for ' + url + ' after ' + XHR_TIMEOUT_MS + 'ms');
 	};
 	xhr.timeout = XHR_TIMEOUT_MS;
@@ -81,7 +81,7 @@ function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events) {
 	var attempt = 1;
 
 	function run() {
-		xhrGet(url, function(err, responseText) {
+		xhrGet(url, function (err, responseText) {
 			if (!err) {
 				if (events.ok) {
 					fetchLog.log(events.ok, label + ' a=' + attempt);
@@ -93,7 +93,7 @@ function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events) {
 			if (attempt >= maxAttempts) {
 				if (events.fail) {
 					fetchLog.log(events.fail,
-					             label + ' a=' + attempt + ' err=' + err);
+						label + ' a=' + attempt + ' err=' + err);
 				}
 				callback(err);
 				return;
@@ -102,8 +102,8 @@ function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events) {
 			var delayMs = baseDelayMs * Math.pow(2, attempt - 1);
 			if (events.retry) {
 				fetchLog.log(events.retry,
-				             label + ' a=' + attempt + ' d=' + delayMs +
-				                 ' err=' + err);
+					label + ' a=' + attempt + ' d=' + delayMs +
+					' err=' + err);
 			}
 			console.log(
 				'Carbon: ' + label + ' retry ' + attempt + '/' + (maxAttempts - 1) +
@@ -131,22 +131,22 @@ function sendToWatchWithRetry(dict) {
 
 	function send() {
 		Pebble.sendAppMessage(dict,
-			function() {
+			function () {
 				fetchLog.log('send_ok', 'a=' + (retryIndex + 1));
 				console.log('Carbon: weather sent to watch');
 			},
-			function(e) {
+			function (e) {
 				if (retriesLeft <= 0) {
 					fetchLog.log('send_fail', 'a=' + (retryIndex + 1) +
-					                          ' err=' + JSON.stringify(e));
+						' err=' + JSON.stringify(e));
 					console.log('Carbon: sendAppMessage failed: ' + JSON.stringify(e));
 					return;
 				}
 
 				var delayMs = SEND_RETRY_BASE_DELAY_MS * Math.pow(2, retryIndex);
 				fetchLog.log('send_retry',
-				             'a=' + (retryIndex + 1) + ' d=' + delayMs +
-				                 ' err=' + JSON.stringify(e));
+					'a=' + (retryIndex + 1) + ' d=' + delayMs +
+					' err=' + JSON.stringify(e));
 				console.log(
 					'Carbon: send retry ' + (retryIndex + 1) + '/' + SEND_RETRY_ATTEMPTS +
 					' in ' + delayMs + 'ms after error: ' + JSON.stringify(e)
@@ -173,7 +173,7 @@ function shouldUseFahrenheit() {
 		if (info && info.language) {
 			return info.language === 'en_US';
 		}
-	} catch (e) {}
+	} catch (e) { }
 	var lang = (navigator && navigator.language) || '';
 	return lang === 'en-US' || lang === 'en_US';
 }
@@ -197,7 +197,7 @@ function getTempUnit() {
 			if (unit === 1) return 'fahrenheit';
 			// -1 (auto) or NaN: fall through to locale detection
 		}
-	} catch (e) {}
+	} catch (e) { }
 	return shouldUseFahrenheit() ? 'fahrenheit' : 'celsius';
 }
 
@@ -209,7 +209,7 @@ function getTempUnit() {
  */
 function conditionFromCode(code) {
 	if (code === 0) return 'Clear';
-	if (code <= 2)  return 'Partly Cloudy';
+	if (code <= 2) return 'Partly Cloudy';
 	if (code === 3) return 'Cloudy';
 	if (code <= 48) return 'Fog';
 	if (code <= 57) return 'Drizzle';
@@ -293,7 +293,7 @@ function writeCache(payload) {
 			expiresAt: Date.now() + CACHE_TTL_MS,
 			payload: payload
 		}));
-	} catch (e) {}
+	} catch (e) { }
 }
 
 /**
@@ -318,40 +318,40 @@ function writeCache(payload) {
 function sendToWatch(payload) {
 	var hourlyCount = FORECAST_HOURS;
 
-	var precipProb    = (payload.precip_prob            || []).slice(0, hourlyCount);
-	var tempHourly    = (payload.temp_hourly             || []).slice(0, hourlyCount);
-	var apparentHourly = (payload.apparent_temp_hourly   || []).slice(0, hourlyCount);
-	var cloudCover    = (payload.cloud_cover             || []).slice(0, hourlyCount);
-	var hourlyCode    = (payload.hourly_weather_code     || []).slice(0, hourlyCount);
+	var precipProb = (payload.precip_prob || []).slice(0, hourlyCount);
+	var tempHourly = (payload.temp_hourly || []).slice(0, hourlyCount);
+	var apparentHourly = (payload.apparent_temp_hourly || []).slice(0, hourlyCount);
+	var cloudCover = (payload.cloud_cover || []).slice(0, hourlyCount);
+	var hourlyCode = (payload.hourly_weather_code || []).slice(0, hourlyCount);
 
-	while (precipProb.length     < hourlyCount) precipProb.push(0);
-	while (tempHourly.length     < hourlyCount) tempHourly.push(0);
+	while (precipProb.length < hourlyCount) precipProb.push(0);
+	while (tempHourly.length < hourlyCount) tempHourly.push(0);
 	while (apparentHourly.length < hourlyCount) apparentHourly.push(0);
-	while (cloudCover.length     < hourlyCount) cloudCover.push(0);
-	while (hourlyCode.length     < hourlyCount) hourlyCode.push(0);
+	while (cloudCover.length < hourlyCount) cloudCover.push(0);
+	while (hourlyCode.length < hourlyCount) hourlyCode.push(0);
 
 	// 0 = celsius, 1 = fahrenheit  (matches settings.c convention)
 	var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
 
 	var dict = {
-		'WEATHER_PRECIP_PROB':           packUint8Array(precipProb, hourlyCount),
-		'WEATHER_TEMP_HOURLY':           packInt8Array(tempHourly, hourlyCount),
-		'WEATHER_APPARENT_TEMP_HOURLY':  packInt8Array(apparentHourly, hourlyCount),
-		'WEATHER_CLOUD_COVER':           packUint8Array(cloudCover, hourlyCount),
-		'WEATHER_HOURLY_CODE':           packUint8Array(hourlyCode, hourlyCount),
-		'CITY_NAME':                     (payload.city_name || 'Unknown').substring(0, 23),
-		'SETTING_TEMP_UNIT':             tempUnitFlag,
+		'WEATHER_PRECIP_PROB': packUint8Array(precipProb, hourlyCount),
+		'WEATHER_TEMP_HOURLY': packInt8Array(tempHourly, hourlyCount),
+		'WEATHER_APPARENT_TEMP_HOURLY': packInt8Array(apparentHourly, hourlyCount),
+		'WEATHER_CLOUD_COVER': packUint8Array(cloudCover, hourlyCount),
+		'WEATHER_HOURLY_CODE': packUint8Array(hourlyCode, hourlyCount),
+		'CITY_NAME': (payload.city_name || 'Unknown').substring(0, 23),
+		'SETTING_TEMP_UNIT': tempUnitFlag,
 	};
 
 	// Scalar weather fields are only included when the value is actually present;
 	// omitting a key is the AppMessage equivalent of null.
-	if (payload.current_temp != null) dict['WEATHER_TEMP']         = Math.round(payload.current_temp);
-	if (payload.high_temp    != null) dict['WEATHER_TEMP_HIGH']    = Math.round(payload.high_temp);
-	if (payload.low_temp     != null) dict['WEATHER_TEMP_LOW']     = Math.round(payload.low_temp);
-	if (payload.weather_code != null) dict['WEATHER_CODE']         = payload.weather_code;
+	if (payload.current_temp != null) dict['WEATHER_TEMP'] = Math.round(payload.current_temp);
+	if (payload.high_temp != null) dict['WEATHER_TEMP_HIGH'] = Math.round(payload.high_temp);
+	if (payload.low_temp != null) dict['WEATHER_TEMP_LOW'] = Math.round(payload.low_temp);
+	if (payload.weather_code != null) dict['WEATHER_CODE'] = payload.weather_code;
 	if (payload.sunrise_hour != null) dict['WEATHER_SUNRISE_HOUR'] = payload.sunrise_hour;
-	if (payload.sunset_hour  != null) dict['WEATHER_SUNSET_HOUR']  = payload.sunset_hour;
-	if (payload.fetch_time   != null) dict['WEATHER_FETCH_TIME']   = Math.floor(payload.fetch_time);
+	if (payload.sunset_hour != null) dict['WEATHER_SUNSET_HOUR'] = payload.sunset_hour;
+	if (payload.fetch_time != null) dict['WEATHER_FETCH_TIME'] = Math.floor(payload.fetch_time);
 
 	sendToWatchWithRetry(dict);
 }
@@ -364,9 +364,9 @@ function sendToWatch(payload) {
  */
 function fetchAndSend(lat, lon) {
 	var weatherDone = false;
-	var cityDone    = false;
-	var weatherOk   = false;
-	var payload     = {};
+	var cityDone = false;
+	var weatherOk = false;
+	var payload = {};
 
 	var tempUnit = getTempUnit();
 	payload.temp_unit = tempUnit;
@@ -397,7 +397,7 @@ function fetchAndSend(lat, lon) {
 	// Open-Meteo weather — forecast_hours=FORECAST_HOURS returns hourly entries
 	// starting from the current hour; timeformat=unixtime for sunrise/sunset
 	var weatherUrl = WEATHER_BASE_URL +
-		'?latitude='  + lat +
+		'?latitude=' + lat +
 		'&longitude=' + lon +
 		'&current=temperature_2m,weather_code' +
 		'&hourly=precipitation_probability,temperature_2m,apparent_temperature,cloud_cover,weather_code' +
@@ -409,51 +409,51 @@ function fetchAndSend(lat, lon) {
 		'&timezone=auto';
 
 	retryXhr(weatherUrl, WEATHER_RETRY_ATTEMPTS,
-	         WEATHER_RETRY_BASE_DELAY_MS, 'weather fetch',
-	         function(err, responseText) {
-		if (err) {
-			fetchLog.log('wx_fail', 'xhr err=' + err);
-			console.log('Carbon: weather fetch error: ' + err);
+		WEATHER_RETRY_BASE_DELAY_MS, 'weather fetch',
+		function (err, responseText) {
+			if (err) {
+				fetchLog.log('wx_fail', 'xhr err=' + err);
+				console.log('Carbon: weather fetch error: ' + err);
+				weatherDone = true;
+				tryFinish();
+				return;
+			}
+			try {
+				var json = JSON.parse(responseText);
+				var cur = json.current;
+				var hrly = json.hourly;
+				var dly = json.daily;
+
+				payload.current_temp = cur.temperature_2m;
+				payload.weather_code = cur.weather_code;
+				payload.high_temp = dly && dly.temperature_2m_max ? dly.temperature_2m_max[0] : cur.temperature_2m;
+				payload.low_temp = dly && dly.temperature_2m_min ? dly.temperature_2m_min[0] : cur.temperature_2m;
+
+				// Sunrise/sunset are Unix timestamps with timeformat=unixtime
+				payload.sunrise_hour = dly && dly.sunrise ? extractHourFromUnix(dly.sunrise[0]) : 6;
+				payload.sunset_hour = dly && dly.sunset ? extractHourFromUnix(dly.sunset[0]) : 20;
+
+				// forecast_hours=FORECAST_HOURS returns entries starting from now
+				if (hrly) {
+					payload.precip_prob = hrly.precipitation_probability || [];
+					payload.temp_hourly = hrly.temperature_2m || [];
+					payload.apparent_temp_hourly = hrly.apparent_temperature || [];
+					payload.cloud_cover = hrly.cloud_cover || [];
+					payload.hourly_weather_code = hrly.weather_code || [];
+				}
+
+				// Record the real origin time so the watch can compute how many
+				// hourly slots are already in the past when serving from cache.
+				payload.fetch_time = Math.floor(Date.now() / 1000);
+				weatherOk = true;
+				fetchLog.log('wx_ok', 'parsed');
+			} catch (e) {
+				fetchLog.log('wx_fail', 'parse err=' + e);
+				console.log('Carbon: weather parse error: ' + e);
+			}
 			weatherDone = true;
 			tryFinish();
-			return;
-		}
-		try {
-			var json = JSON.parse(responseText);
-			var cur  = json.current;
-			var hrly = json.hourly;
-			var dly  = json.daily;
-
-			payload.current_temp = cur.temperature_2m;
-			payload.weather_code = cur.weather_code;
-			payload.high_temp    = dly && dly.temperature_2m_max ? dly.temperature_2m_max[0] : cur.temperature_2m;
-			payload.low_temp     = dly && dly.temperature_2m_min ? dly.temperature_2m_min[0] : cur.temperature_2m;
-
-			// Sunrise/sunset are Unix timestamps with timeformat=unixtime
-			payload.sunrise_hour = dly && dly.sunrise ? extractHourFromUnix(dly.sunrise[0]) : 6;
-			payload.sunset_hour  = dly && dly.sunset  ? extractHourFromUnix(dly.sunset[0])  : 20;
-
-			// forecast_hours=FORECAST_HOURS returns entries starting from now
-			if (hrly) {
-				payload.precip_prob          = hrly.precipitation_probability || [];
-				payload.temp_hourly           = hrly.temperature_2m            || [];
-				payload.apparent_temp_hourly  = hrly.apparent_temperature      || [];
-				payload.cloud_cover           = hrly.cloud_cover               || [];
-				payload.hourly_weather_code   = hrly.weather_code              || [];
-			}
-
-			// Record the real origin time so the watch can compute how many
-			// hourly slots are already in the past when serving from cache.
-			payload.fetch_time = Math.floor(Date.now() / 1000);
-			weatherOk = true;
-			fetchLog.log('wx_ok', 'parsed');
-		} catch (e) {
-			fetchLog.log('wx_fail', 'parse err=' + e);
-			console.log('Carbon: weather parse error: ' + e);
-		}
-		weatherDone = true;
-		tryFinish();
-	}, {
+		}, {
 		retry: 'wx_retry',
 	});
 
@@ -462,25 +462,25 @@ function fetchAndSend(lat, lon) {
 		'?f=json&langCode=EN&location=' + lon + ',' + lat;
 
 	retryXhr(geocodeUrl, GEOCODE_RETRY_ATTEMPTS,
-	         GEOCODE_RETRY_BASE_DELAY_MS, 'geocode fetch',
-	         function(err, responseText) {
-		if (err) {
-			console.log('Carbon: geocode error: ' + err);
-			payload.city_name = 'Unknown';
+		GEOCODE_RETRY_BASE_DELAY_MS, 'geocode fetch',
+		function (err, responseText) {
+			if (err) {
+				console.log('Carbon: geocode error: ' + err);
+				payload.city_name = 'Unknown';
+				cityDone = true;
+				tryFinish();
+				return;
+			}
+			try {
+				var json = JSON.parse(responseText);
+				var addr = json && json.address;
+				payload.city_name = (addr && (addr.City || addr.ShortLabel)) || 'Unknown';
+			} catch (e) {
+				payload.city_name = 'Unknown';
+			}
 			cityDone = true;
 			tryFinish();
-			return;
-		}
-		try {
-			var json = JSON.parse(responseText);
-			var addr = json && json.address;
-			payload.city_name = (addr && (addr.City || addr.ShortLabel)) || 'Unknown';
-		} catch (e) {
-			payload.city_name = 'Unknown';
-		}
-		cityDone = true;
-		tryFinish();
-	});
+		});
 }
 
 /**
@@ -503,13 +503,13 @@ function getWeather() {
 	}
 
 	navigator.geolocation.getCurrentPosition(
-		function(pos) {
+		function (pos) {
 			fetchLog.log('geo_ok',
-			             'lat=' + pos.coords.latitude.toFixed(4) +
-			                 ' lon=' + pos.coords.longitude.toFixed(4));
+				'lat=' + pos.coords.latitude.toFixed(4) +
+				' lon=' + pos.coords.longitude.toFixed(4));
 			fetchAndSend(pos.coords.latitude, pos.coords.longitude);
 		},
-		function(err) {
+		function (err) {
 			fetchLog.log('geo_fail', (err && err.message) ? err.message : 'unknown');
 			console.log('Carbon: geolocation error: ' + err.message);
 			// Fall back to stale cache if available
@@ -534,7 +534,7 @@ function formatDebugInfo() {
 		buildInfo,
 	};
 	function mapLogEntries(entries) {
-		return entries.map(function(entry) {
+		return entries.map(function (entry) {
 			var ts = entry && typeof entry.t === 'number' ? entry.t : null;
 			return {
 				t: ts,
@@ -572,18 +572,18 @@ function formatDebugInfo() {
 // Event listeners
 //
 
-Pebble.addEventListener('ready', function() {
+Pebble.addEventListener('ready', function () {
 	console.log('Carbon: PebbleKit JS ready');
 	fetchLog.log('ready', 'pkjs_ready');
 	getWeather();
 });
 
-Pebble.addEventListener('showConfiguration', function() {
+Pebble.addEventListener('showConfiguration', function () {
 	clay.meta.userData.debugInfo = formatDebugInfo();
 	Pebble.openURL(clay.generateUrl());
 });
 
-Pebble.addEventListener('webviewclosed', function(e) {
+Pebble.addEventListener('webviewclosed', function (e) {
 	if (!e.response) return;
 
 	// Use convert=false to get raw string-keyed settings; Clay's HTML <select>
@@ -633,7 +633,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
 	// Date format is a strftime string, not an integer — extract the raw value.
 	var rawDateFmt = rawSettings['SETTING_DATE_FORMAT'];
 	var dateFormat = (rawDateFmt !== null && typeof rawDateFmt === 'object' &&
-	                  'value' in rawDateFmt)
+		'value' in rawDateFmt)
 		? rawDateFmt.value : rawDateFmt;
 	if (typeof dateFormat === 'string' && dateFormat.length > 0) {
 		dict['SETTING_DATE_FORMAT'] = dateFormat;
@@ -654,14 +654,14 @@ Pebble.addEventListener('webviewclosed', function(e) {
 	if (showAmpm !== null) dict['SETTING_SHOW_AMPM'] = showAmpm;
 
 	Pebble.sendAppMessage(dict,
-		function() { console.log('Carbon: settings sent to watch'); },
-		function(err) { console.log('Carbon: settings send failed: ' + JSON.stringify(err)); }
+		function () { console.log('Carbon: settings sent to watch'); },
+		function (err) { console.log('Carbon: settings send failed: ' + JSON.stringify(err)); }
 	);
 	// Refresh weather in case the temperature unit changed
 	getWeather();
 });
 
-Pebble.addEventListener('appmessage', function(e) {
+Pebble.addEventListener('appmessage', function (e) {
 	if (e.payload && e.payload['WEATHER_REQUEST'] !== undefined) {
 		var seq = e.payload['WEATHER_REQUEST'];
 		fetchLog.log('req', 'seq=' + seq);

@@ -143,7 +143,8 @@ static void prv_push_weather_to_layers(struct tm *now) {
 				    (fetch_year % 400 == 0)) {
 					full_year_hours = 366 * 24;
 				}
-				data_offset = (full_year_hours - fetch_hour_index) + now_hour_index;
+				data_offset =
+				    (full_year_hours - fetch_hour_index) + now_hour_index;
 			} else {
 				long elapsed = (long)(now_t - s_weather.fetch_time);
 				if (elapsed > 0)
@@ -218,10 +219,10 @@ static void prv_push_weather_to_layers(struct tm *now) {
 		data_age_sec = 0;
 	long stale_threshold_sec =
 	    2L * (long)settings_get()->fetch_interval_min * 60L;
-	icon_bar_layer_set_disconnected(
-	    s_icon_bar_layer,
-	    !s_weather.is_valid || data_age_sec >= stale_threshold_sec ||
-	        hours_remaining == 0);
+	icon_bar_layer_set_disconnected(s_icon_bar_layer,
+	                                !s_weather.is_valid ||
+	                                    data_age_sec >= stale_threshold_sec ||
+	                                    hours_remaining == 0);
 	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
 	temp_layer_set_data(s_temp_layer, display_temp, s_weather.high_temp,
 	                    s_weather.low_temp, temp_view, appar_view, current_hour,
@@ -281,33 +282,28 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 
 	// Hourly byte arrays
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_PRECIP_PROB);
-	if (t && t->type == TUPLE_BYTE_ARRAY &&
-	    t->length >= WEATHER_HOURLY_COUNT) {
+	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= WEATHER_HOURLY_COUNT) {
 		memcpy(s_weather.precip_prob, t->value->data, WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_TEMP_HOURLY);
-	if (t && t->type == TUPLE_BYTE_ARRAY &&
-	    t->length >= WEATHER_HOURLY_COUNT) {
+	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= WEATHER_HOURLY_COUNT) {
 		memcpy(s_weather.temp_hourly, t->value->data, WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_APPARENT_TEMP_HOURLY);
-	if (t && t->type == TUPLE_BYTE_ARRAY &&
-	    t->length >= WEATHER_HOURLY_COUNT) {
+	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= WEATHER_HOURLY_COUNT) {
 		memcpy(s_weather.apparent_temp_hourly, t->value->data,
 		       WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_CLOUD_COVER);
-	if (t && t->type == TUPLE_BYTE_ARRAY &&
-	    t->length >= WEATHER_HOURLY_COUNT) {
+	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= WEATHER_HOURLY_COUNT) {
 		memcpy(s_weather.cloud_cover, t->value->data, WEATHER_HOURLY_COUNT);
 	}
 
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_HOURLY_CODE);
-	if (t && t->type == TUPLE_BYTE_ARRAY &&
-	    t->length >= WEATHER_HOURLY_COUNT) {
+	if (t && t->type == TUPLE_BYTE_ARRAY && t->length >= WEATHER_HOURLY_COUNT) {
 		memcpy(s_weather.hourly_weather_code, t->value->data,
 		       WEATHER_HOURLY_COUNT);
 	}
@@ -369,9 +365,8 @@ static void prv_request_weather(void) {
 			        (unsigned long)seq);
 		}
 	} else {
-		APP_LOG(APP_LOG_LEVEL_WARNING,
-		        "Outbox begin failed: reason=%d seq=%lu", (int)result,
-		        (unsigned long)seq);
+		APP_LOG(APP_LOG_LEVEL_WARNING, "Outbox begin failed: reason=%d seq=%lu",
+		        (int)result, (unsigned long)seq);
 	}
 }
 

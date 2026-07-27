@@ -33,7 +33,7 @@ function safeReadList(key) {
 function safeWriteList(key, list) {
 	try {
 		localStorage.setItem(key, JSON.stringify(list));
-	} catch (e) {}
+	} catch (e) { }
 }
 
 function trimString(value, maxLen) {
