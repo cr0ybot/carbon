@@ -19,9 +19,6 @@ module.exports = [
 		'defaultValue': `v${version} (${hash})`,
 	},
 	{
-		'type': 'service-notice',
-	},
-	{
 		'type': 'section',
 		'items': [
 			{
@@ -76,7 +73,7 @@ module.exports = [
 					{ 'label': '1/15/2026', 'value': '%m/%d/%Y' },
 					{ 'label': '15/1/2026', 'value': '%d/%m/%Y' },
 					{ 'label': '15 Jan 2026', 'value': '%d %b %Y' },
-					{ 'label': '2026-01-15',     'value': '%Y-0%m-0%d' },
+					{ 'label': '2026-01-15', 'value': '%Y-0%m-0%d' },
 				],
 			},
 			{
@@ -135,27 +132,6 @@ module.exports = [
 	{
 		'type': 'submit',
 		'defaultValue': 'Save Settings',
-	},
-	{
-		'type': 'section',
-		'items': [
-			{
-				'type': 'heading',
-				'defaultValue': 'Attribution',
-			},
-			{
-				'type': 'text',
-				'defaultValue': 'Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a>',
-			},
-			{
-				'type': 'text',
-				'defaultValue': 'Reverse geocoding from <a href="https://www.bigdatacloud.com/free-api/free-reverse-geocode-to-city-api">BigDataCloud</a>.',
-			},
-			{
-				'type': 'text',
-				'defaultValue': 'Icons from the <a href="https://carbondesignsystem.com/elements/icons/library/">Carbon Design System</a> icon set by IBM, assembled with <a href="https://icomoon.io/">IcoMoon</a>.',
-			},
-		],
 	},
 	{
 		'type': 'debug-info',
