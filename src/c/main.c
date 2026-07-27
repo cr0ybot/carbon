@@ -59,6 +59,8 @@ static TempLayer *s_temp_layer;
 static IconBarLayer *s_icon_bar_layer;
 
 static WeatherData s_weather;
+static uint32_t s_request_seq;
+static uint32_t s_last_sent_request_seq;
 
 // Forward declarations
 static void prv_request_weather(void);
@@ -345,12 +347,31 @@ static void prv_inbox_dropped(AppMessageResult reason, void *context) {
 	APP_LOG(APP_LOG_LEVEL_WARNING, "Inbox dropped: %d", (int)reason);
 }
 
+static void prv_outbox_failed(DictionaryIterator *failed,
+                              AppMessageResult reason, void *context) {
+	(void)failed;
+	(void)context;
+	APP_LOG(APP_LOG_LEVEL_WARNING, "Outbox failed: reason=%d seq=%lu",
+	        (int)reason, (unsigned long)s_last_sent_request_seq);
+}
+
 static void prv_request_weather(void) {
+	uint32_t seq = ++s_request_seq;
 	DictionaryIterator *iter;
 	AppMessageResult result = app_message_outbox_begin(&iter);
 	if (result == APP_MSG_OK) {
-		dict_write_uint8(iter, MESSAGE_KEY_WEATHER_REQUEST, 1);
-		app_message_outbox_send();
+		s_last_sent_request_seq = seq;
+		dict_write_uint32(iter, MESSAGE_KEY_WEATHER_REQUEST, seq);
+		result = app_message_outbox_send();
+		if (result != APP_MSG_OK) {
+			APP_LOG(APP_LOG_LEVEL_WARNING,
+			        "Outbox send failed: reason=%d seq=%lu", (int)result,
+			        (unsigned long)seq);
+		}
+	} else {
+		APP_LOG(APP_LOG_LEVEL_WARNING,
+		        "Outbox begin failed: reason=%d seq=%lu", (int)result,
+		        (unsigned long)seq);
 	}
 }
 
@@ -478,6 +499,7 @@ static void init(void) {
 #if !defined(DEMO_SCENARIO)
 	app_message_register_inbox_received(prv_inbox_received);
 	app_message_register_inbox_dropped(prv_inbox_dropped);
+	app_message_register_outbox_failed(prv_outbox_failed);
 	app_message_open(512, 64);
 #endif
 
