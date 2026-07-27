@@ -30,6 +30,7 @@ var {
 } = require('./constants');
 
 var buildInfo = require('../../.buildinfo.json');
+var fetchLog = require('./fetchlog');
 
 var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
@@ -75,22 +76,35 @@ function xhrGet(url, callback) {
  * @param {string}   label         Log label for this fetch type.
  * @param {Function} callback      Called with (err, responseText).
  */
-function retryXhr(url, maxAttempts, baseDelayMs, label, callback) {
+function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events) {
+	events = events || {};
 	var attempt = 1;
 
 	function run() {
 		xhrGet(url, function(err, responseText) {
 			if (!err) {
+				if (events.ok) {
+					fetchLog.log(events.ok, label + ' a=' + attempt);
+				}
 				callback(null, responseText);
 				return;
 			}
 
 			if (attempt >= maxAttempts) {
+				if (events.fail) {
+					fetchLog.log(events.fail,
+					             label + ' a=' + attempt + ' err=' + err);
+				}
 				callback(err);
 				return;
 			}
 
 			var delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+			if (events.retry) {
+				fetchLog.log(events.retry,
+				             label + ' a=' + attempt + ' d=' + delayMs +
+				                 ' err=' + err);
+			}
 			console.log(
 				'Carbon: ' + label + ' retry ' + attempt + '/' + (maxAttempts - 1) +
 				' in ' + delayMs + 'ms after error: ' + err
@@ -118,15 +132,21 @@ function sendToWatchWithRetry(dict) {
 	function send() {
 		Pebble.sendAppMessage(dict,
 			function() {
+				fetchLog.log('send_ok', 'a=' + (retryIndex + 1));
 				console.log('Carbon: weather sent to watch');
 			},
 			function(e) {
 				if (retriesLeft <= 0) {
+					fetchLog.log('send_fail', 'a=' + (retryIndex + 1) +
+					                          ' err=' + JSON.stringify(e));
 					console.log('Carbon: sendAppMessage failed: ' + JSON.stringify(e));
 					return;
 				}
 
 				var delayMs = SEND_RETRY_BASE_DELAY_MS * Math.pow(2, retryIndex);
+				fetchLog.log('send_retry',
+				             'a=' + (retryIndex + 1) + ' d=' + delayMs +
+				                 ' err=' + JSON.stringify(e));
 				console.log(
 					'Carbon: send retry ' + (retryIndex + 1) + '/' + SEND_RETRY_ATTEMPTS +
 					' in ' + delayMs + 'ms after error: ' + JSON.stringify(e)
@@ -362,6 +382,7 @@ function fetchAndSend(lat, lon) {
 			var stale = readCache();
 			if (stale && stale.payload) {
 				console.log('Carbon: weather failed, using stale cache');
+				fetchLog.log('stale_send', 'cache_fallback');
 				sendToWatch(stale.payload);
 			} else {
 				console.log('Carbon: weather failed, no cache — not sending');
@@ -391,6 +412,7 @@ function fetchAndSend(lat, lon) {
 	         WEATHER_RETRY_BASE_DELAY_MS, 'weather fetch',
 	         function(err, responseText) {
 		if (err) {
+			fetchLog.log('wx_fail', 'xhr err=' + err);
 			console.log('Carbon: weather fetch error: ' + err);
 			weatherDone = true;
 			tryFinish();
@@ -424,11 +446,15 @@ function fetchAndSend(lat, lon) {
 			// hourly slots are already in the past when serving from cache.
 			payload.fetch_time = Math.floor(Date.now() / 1000);
 			weatherOk = true;
+			fetchLog.log('wx_ok', 'parsed');
 		} catch (e) {
+			fetchLog.log('wx_fail', 'parse err=' + e);
 			console.log('Carbon: weather parse error: ' + e);
 		}
 		weatherDone = true;
 		tryFinish();
+	}, {
+		retry: 'wx_retry',
 	});
 
 	// ArcGIS reverse geocode for city name
@@ -466,6 +492,7 @@ function getWeather() {
 	var cache = readCache();
 	if (cache && cache.expiresAt > Date.now()) {
 		console.log('Carbon: using cached weather');
+		fetchLog.log('cache_hit', 'ttl=' + (cache.expiresAt - Date.now()));
 		// Re-evaluate unit in case locale changed; re-fetch if unit differs
 		var cachedUnit = cache.payload && cache.payload.temp_unit;
 		if (cachedUnit && cachedUnit === getTempUnit()) {
@@ -477,9 +504,13 @@ function getWeather() {
 
 	navigator.geolocation.getCurrentPosition(
 		function(pos) {
+			fetchLog.log('geo_ok',
+			             'lat=' + pos.coords.latitude.toFixed(4) +
+			                 ' lon=' + pos.coords.longitude.toFixed(4));
 			fetchAndSend(pos.coords.latitude, pos.coords.longitude);
 		},
 		function(err) {
+			fetchLog.log('geo_fail', (err && err.message) ? err.message : 'unknown');
 			console.log('Carbon: geolocation error: ' + err.message);
 			// Fall back to stale cache if available
 			if (cache) {
@@ -502,6 +533,17 @@ function formatDebugInfo() {
 	var result = {
 		buildInfo,
 	};
+	function mapLogEntries(entries) {
+		return entries.map(function(entry) {
+			var ts = entry && typeof entry.t === 'number' ? entry.t : null;
+			return {
+				t: ts,
+				iso: ts ? new Date(ts).toISOString() : null,
+				e: entry ? entry.e : null,
+				d: entry ? entry.d : null,
+			};
+		});
+	}
 	try {
 		var rawCache = localStorage.getItem(CACHE_KEY);
 		result.cache = rawCache ? JSON.parse(rawCache) : null;
@@ -514,6 +556,15 @@ function formatDebugInfo() {
 	} catch (e) {
 		result.settings = null;
 	}
+	try {
+		var logData = fetchLog.read();
+		result.fetchLog = {
+			current: mapLogEntries(logData.current || []),
+			previous: mapLogEntries(logData.previous || []),
+		};
+	} catch (e) {
+		result.fetchLog = { current: [], previous: [] };
+	}
 	return result;
 }
 
@@ -523,6 +574,7 @@ function formatDebugInfo() {
 
 Pebble.addEventListener('ready', function() {
 	console.log('Carbon: PebbleKit JS ready');
+	fetchLog.log('ready', 'pkjs_ready');
 	getWeather();
 });
 
@@ -610,7 +662,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
 });
 
 Pebble.addEventListener('appmessage', function(e) {
-	if (e.payload && e.payload['WEATHER_REQUEST']) {
+	if (e.payload && e.payload['WEATHER_REQUEST'] !== undefined) {
+		var seq = e.payload['WEATHER_REQUEST'];
+		fetchLog.log('req', 'seq=' + seq);
 		console.log('Carbon: weather refresh requested');
 		getWeather();
 	}
