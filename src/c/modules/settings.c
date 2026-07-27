@@ -22,7 +22,7 @@ static const Settings s_defaults = {
     .battery_display = BATTERY_DISPLAY_ICON,
     .show_timezone = true,
     .show_ampm = true,
-	.fetch_interval_min = 30,
+    .fetch_interval_min = 30,
 };
 
 void settings_init(void) {
