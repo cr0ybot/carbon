@@ -218,7 +218,7 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	if (data_age_sec < 0)
 		data_age_sec = 0;
 	long stale_threshold_sec =
-	    2L * (long)settings_get()->fetch_interval_min * 60L;
+	    2L * (long)settings_get()->fetch_interval_min * 60L + 5L * 60L;
 	icon_bar_layer_set_disconnected(s_icon_bar_layer,
 	                                !s_weather.is_valid ||
 	                                    data_age_sec >= stale_threshold_sec ||
