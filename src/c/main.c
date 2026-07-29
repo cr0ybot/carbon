@@ -61,6 +61,7 @@ static IconBarLayer *s_icon_bar_layer;
 static WeatherData s_weather;
 static uint32_t s_request_seq;
 static uint32_t s_last_sent_request_seq;
+static uint32_t s_minutes_since_launch;
 
 // Forward declarations
 static void prv_request_weather(void);
@@ -87,7 +88,9 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 		prv_push_weather_to_layers(tick_time);
 	}
 
-	if (tick_time->tm_min % settings_get()->fetch_interval_min == 0) {
+	s_minutes_since_launch += 1;
+
+	if (s_minutes_since_launch % settings_get()->fetch_interval_min == 0) {
 		prv_request_weather();
 	}
 #endif
