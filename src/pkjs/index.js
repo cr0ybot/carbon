@@ -18,7 +18,7 @@ var {
 	WEATHER_BASE_URL,
 	GEOCODE_BASE_URL,
 	CACHE_KEY,
-	CACHE_TTL_MS,
+	CACHE_TTL_MARGIN_MS,
 	FORECAST_HOURS,
 	XHR_TIMEOUT_MS,
 	WEATHER_RETRY_ATTEMPTS,
@@ -54,7 +54,12 @@ function xhrGet(url, callback) {
 	}
 
 	xhr.onload = function () {
-		done(null, this.responseText);
+		if (this.status >= 200 && this.status < 300) {
+			done(null, this.responseText);
+			return;
+		}
+		done('HTTP ' + this.status + ' for ' + url + ': ' +
+			String(this.responseText || '').slice(0, 120));
 	};
 	xhr.onerror = function () {
 		done('XHR error for ' + url);
@@ -74,19 +79,36 @@ function xhrGet(url, callback) {
  * @param {number}   maxAttempts   Total attempts including the first try.
  * @param {number}   baseDelayMs   Backoff base delay in milliseconds.
  * @param {string}   label         Log label for this fetch type.
- * @param {Function} callback      Called with (err, responseText).
+ * @param {Function} callback      Called with (err, responseText, validated).
+ * @param {Object=}  events        Optional event code mapping for retry/ok/fail logs.
+ * @param {Function=} validate     Optional validator: (responseText) => value or error string.
  */
-function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events) {
+function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events, validate) {
 	events = events || {};
 	var attempt = 1;
 
 	function run() {
 		xhrGet(url, function (err, responseText) {
+			var validated = null;
+
+			if (!err && typeof validate === 'function') {
+				try {
+					var validationResult = validate(responseText);
+					if (typeof validationResult === 'string' && validationResult.length > 0) {
+						err = validationResult;
+					} else {
+						validated = validationResult;
+					}
+				} catch (e) {
+					err = 'validate error for ' + label + ': ' + e;
+				}
+			}
+
 			if (!err) {
 				if (events.ok) {
 					fetchLog.log(events.ok, label + ' a=' + attempt);
 				}
-				callback(null, responseText);
+				callback(null, responseText, validated);
 				return;
 			}
 
@@ -202,6 +224,26 @@ function getTempUnit() {
 }
 
 /**
+ * Returns the configured fetch interval in minutes from Clay settings.
+ * Falls back to 30 when unset or invalid.
+ *
+ * @returns {number}
+ */
+function getFetchIntervalMin() {
+	try {
+		var raw = localStorage.getItem('clay-settings');
+		if (raw) {
+			var s = JSON.parse(raw);
+			var interval = parseInt(s.SETTING_FETCH_INTERVAL, 10);
+			if (interval === 15 || interval === 30 || interval === 60) {
+				return interval;
+			}
+		}
+	} catch (e) { }
+	return 30;
+}
+
+/**
  * Maps a WMO weather code to a short condition string (informational only).
  *
  * @param   {number} code  WMO weather interpretation code.
@@ -288,9 +330,11 @@ function readCache() {
  * @param {Object} payload  Weather data object to cache.
  */
 function writeCache(payload) {
+	var ttlMs = getFetchIntervalMin() * 60 * 1000 - CACHE_TTL_MARGIN_MS;
+	if (ttlMs < 60 * 1000) ttlMs = 60 * 1000;
 	try {
 		localStorage.setItem(CACHE_KEY, JSON.stringify({
-			expiresAt: Date.now() + CACHE_TTL_MS,
+			expiresAt: Date.now() + ttlMs,
 			payload: payload
 		}));
 	} catch (e) { }
@@ -410,7 +454,7 @@ function fetchAndSend(lat, lon) {
 
 	retryXhr(weatherUrl, WEATHER_RETRY_ATTEMPTS,
 		WEATHER_RETRY_BASE_DELAY_MS, 'weather fetch',
-		function (err, responseText) {
+		function (err, responseText, weatherJson) {
 			if (err) {
 				fetchLog.log('wx_fail', 'xhr err=' + err);
 				console.log('Carbon: weather fetch error: ' + err);
@@ -419,7 +463,7 @@ function fetchAndSend(lat, lon) {
 				return;
 			}
 			try {
-				var json = JSON.parse(responseText);
+				var json = weatherJson || JSON.parse(responseText);
 				var cur = json.current;
 				var hrly = json.hourly;
 				var dly = json.daily;
@@ -455,6 +499,12 @@ function fetchAndSend(lat, lon) {
 			tryFinish();
 		}, {
 		retry: 'wx_retry',
+	}, function validateWeatherResponse(responseText) {
+		var parsed = JSON.parse(responseText);
+		if (!parsed || !parsed.current || !parsed.hourly) {
+			return 'invalid weather payload';
+		}
+		return parsed;
 	});
 
 	// ArcGIS reverse geocode for city name
