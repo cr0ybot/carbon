@@ -27,6 +27,7 @@ var {
 	GEOCODE_RETRY_BASE_DELAY_MS,
 	SEND_RETRY_ATTEMPTS,
 	SEND_RETRY_BASE_DELAY_MS,
+	FETCH_DEDUPE_WINDOW_MS,
 } = require('./constants');
 
 var buildInfo = require('../../.buildinfo.json');
@@ -36,6 +37,8 @@ var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
 var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
 clay.registerComponent(require('./config/debug'));
+
+var s_fetchStartedAt = 0;
 
 /**
  * Make a GET request.
@@ -427,13 +430,16 @@ function fetchAndSend(lat, lon) {
 			if (stale && stale.payload) {
 				console.log('Carbon: weather failed, using stale cache');
 				fetchLog.log('stale_send', 'cache_fallback');
+				s_fetchStartedAt = 0;
 				sendToWatch(stale.payload);
 			} else {
 				console.log('Carbon: weather failed, no cache — not sending');
+				s_fetchStartedAt = 0;
 			}
 			return;
 		}
 
+		s_fetchStartedAt = 0;
 		writeCache(payload);
 		sendToWatch(payload);
 	}
@@ -552,6 +558,14 @@ function getWeather() {
 		console.log('Carbon: temp unit changed, refreshing weather');
 	}
 
+	var nowMs = Date.now();
+	if (s_fetchStartedAt > 0 &&
+	    nowMs - s_fetchStartedAt < FETCH_DEDUPE_WINDOW_MS) {
+		fetchLog.log('dedupe', 'ms=' + (nowMs - s_fetchStartedAt));
+		return;
+	}
+	s_fetchStartedAt = nowMs;
+
 	navigator.geolocation.getCurrentPosition(
 		function (pos) {
 			fetchLog.log('geo_ok',
@@ -560,6 +574,7 @@ function getWeather() {
 			fetchAndSend(pos.coords.latitude, pos.coords.longitude);
 		},
 		function (err) {
+			s_fetchStartedAt = 0;
 			fetchLog.log('geo_fail', (err && err.message) ? err.message : 'unknown');
 			console.log('Carbon: geolocation error: ' + err.message);
 			// Fall back to stale cache if available

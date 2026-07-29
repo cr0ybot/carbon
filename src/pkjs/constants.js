@@ -19,6 +19,7 @@ module.exports = {
 	GEOCODE_RETRY_BASE_DELAY_MS: 2 * 1000,
 	SEND_RETRY_ATTEMPTS: 3,
 	SEND_RETRY_BASE_DELAY_MS: 1000,
+	FETCH_DEDUPE_WINDOW_MS: 30 * 1000,
 	LOG_KEY_CUR: 'carbon.fetchlog.cur',
 	LOG_KEY_PREV: 'carbon.fetchlog.prev',
 	MAX_LOG_ENTRIES: 60,
