@@ -560,7 +560,7 @@ function getWeather() {
 
 	var nowMs = Date.now();
 	if (s_fetchStartedAt > 0 &&
-	    nowMs - s_fetchStartedAt < FETCH_DEDUPE_WINDOW_MS) {
+		nowMs - s_fetchStartedAt < FETCH_DEDUPE_WINDOW_MS) {
 		fetchLog.log('dedupe', 'ms=' + (nowMs - s_fetchStartedAt));
 		return;
 	}

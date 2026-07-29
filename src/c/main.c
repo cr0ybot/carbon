@@ -88,8 +88,9 @@ static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 		prv_push_weather_to_layers(tick_time);
 	}
 
+	// Note: the potential for overflow is negligible: this resets on watchface
+	// launch and would take 4082 years of continuous operation to overflow.
 	s_minutes_since_launch += 1;
-
 	if (s_minutes_since_launch % settings_get()->fetch_interval_min == 0) {
 		prv_request_weather();
 	}
