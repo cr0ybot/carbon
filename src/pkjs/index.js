@@ -28,6 +28,7 @@ var {
 	SEND_RETRY_ATTEMPTS,
 	SEND_RETRY_BASE_DELAY_MS,
 	FETCH_DEDUPE_WINDOW_MS,
+	SEND_DEDUPE_WINDOW_MS,
 } = require('./constants');
 
 var buildInfo = require('../../.buildinfo.json');
@@ -39,6 +40,8 @@ var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
 clay.registerComponent(require('./config/debug'));
 
 var s_fetchStartedAt = 0;
+var s_lastCacheSendAt = 0;
+var s_lastCacheSendFetchTime = 0;
 
 /**
  * Make a GET request.
@@ -328,18 +331,48 @@ function readCache() {
 }
 
 /**
+ * Compute the cache TTL from the configured fetch interval, with a floor of
+ * one minute.
+ *
+ * @returns {number}  TTL in milliseconds.
+ */
+function getCacheTtlMs() {
+	var ttlMs = getFetchIntervalMin() * 60 * 1000 - CACHE_TTL_MARGIN_MS;
+	if (ttlMs < 60 * 1000) ttlMs = 60 * 1000;
+	return ttlMs;
+}
+
+/**
  * Persist payload to localStorage with a TTL-based expiry timestamp.
  *
  * @param {Object} payload  Weather data object to cache.
  */
 function writeCache(payload) {
-	var ttlMs = getFetchIntervalMin() * 60 * 1000 - CACHE_TTL_MARGIN_MS;
-	if (ttlMs < 60 * 1000) ttlMs = 60 * 1000;
 	try {
 		localStorage.setItem(CACHE_KEY, JSON.stringify({
-			expiresAt: Date.now() + ttlMs,
+			expiresAt: Date.now() + getCacheTtlMs(),
 			payload: payload
 		}));
+	} catch (e) { }
+}
+
+/**
+ * Clamp the cached weather's expiry to the current TTL. Called when the
+ * fetch-interval setting changes: a cache written under a longer interval
+ * (e.g. 60 min) must not keep serving cache hits for the remainder of its
+ * old, longer TTL after the user switches to a shorter interval.
+ */
+function clampCacheExpiry() {
+	try {
+		var raw = localStorage.getItem(CACHE_KEY);
+		if (!raw) return;
+		var obj = JSON.parse(raw);
+		if (!obj || !obj.expiresAt) return;
+		var maxExpiry = Date.now() + getCacheTtlMs();
+		if (obj.expiresAt > maxExpiry) {
+			obj.expiresAt = maxExpiry;
+			localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+		}
 	} catch (e) { }
 }
 
@@ -552,6 +585,19 @@ function getWeather() {
 		// Re-evaluate unit in case locale changed; re-fetch if unit differs
 		var cachedUnit = cache.payload && cache.payload.temp_unit;
 		if (cachedUnit && cachedUnit === getTempUnit()) {
+			// Dedupe cache-served sends: at watchface launch, the pkjs 'ready'
+			// event and the watch's own request both call getWeather() within
+			// ~20ms, and the second identical AppMessage gets nack'd by the
+			// still-busy watch inbox. Skip if this exact payload was just sent.
+			var cacheFetchTime = cache.payload.fetch_time || 0;
+			var sendNowMs = Date.now();
+			if (cacheFetchTime && cacheFetchTime === s_lastCacheSendFetchTime &&
+				sendNowMs - s_lastCacheSendAt < SEND_DEDUPE_WINDOW_MS) {
+				fetchLog.log('dedupe_send', 'send ms=' + (sendNowMs - s_lastCacheSendAt));
+				return;
+			}
+			s_lastCacheSendFetchTime = cacheFetchTime;
+			s_lastCacheSendAt = sendNowMs;
 			sendToWatch(cache.payload);
 			return;
 		}
@@ -561,7 +607,7 @@ function getWeather() {
 	var nowMs = Date.now();
 	if (s_fetchStartedAt > 0 &&
 		nowMs - s_fetchStartedAt < FETCH_DEDUPE_WINDOW_MS) {
-		fetchLog.log('dedupe', 'ms=' + (nowMs - s_fetchStartedAt));
+		fetchLog.log('dedupe_fetch', 'ms=' + (nowMs - s_fetchStartedAt));
 		return;
 	}
 	s_fetchStartedAt = nowMs;
@@ -710,6 +756,9 @@ Pebble.addEventListener('webviewclosed', function (e) {
 	var fetchInterval = extractInt(rawSettings['SETTING_FETCH_INTERVAL']);
 	if (fetchInterval === 15 || fetchInterval === 30 || fetchInterval === 60) {
 		dict['SETTING_FETCH_INTERVAL'] = fetchInterval;
+		// The interval may have shrunk; re-clamp the existing cache's expiry
+		// so it can't keep serving hits under its old, longer TTL.
+		clampCacheExpiry();
 	}
 
 	var showTimezone = extractBool(rawSettings['SETTING_SHOW_TIMEZONE']);
