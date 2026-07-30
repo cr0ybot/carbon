@@ -29,10 +29,11 @@ var {
 	SEND_RETRY_BASE_DELAY_MS,
 	FETCH_DEDUPE_WINDOW_MS,
 	SEND_DEDUPE_WINDOW_MS,
+	REQ_DEDUPE_WINDOW_MS,
 } = require('./constants');
 
 var buildInfo = require('../../.buildinfo.json');
-var fetchLog = require('./fetchlog');
+var eventLog = require('./eventlog');
 
 var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
@@ -40,8 +41,9 @@ var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
 clay.registerComponent(require('./config/debug'));
 
 var s_fetchStartedAt = 0;
-var s_lastCacheSendAt = 0;
-var s_lastCacheSendFetchTime = 0;
+var s_lastHandledAt = 0;
+var s_lastSentAt = 0;
+var s_lastSentSignature = '';
 
 /**
  * Make a GET request.
@@ -112,7 +114,7 @@ function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events, valida
 
 			if (!err) {
 				if (events.ok) {
-					fetchLog.log(events.ok, label + ' a=' + attempt);
+					eventLog.log(events.ok, label + ' a=' + attempt);
 				}
 				callback(null, responseText, validated);
 				return;
@@ -120,7 +122,7 @@ function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events, valida
 
 			if (attempt >= maxAttempts) {
 				if (events.fail) {
-					fetchLog.log(events.fail,
+					eventLog.log(events.fail,
 						label + ' a=' + attempt + ' err=' + err);
 				}
 				callback(err);
@@ -129,7 +131,7 @@ function retryXhr(url, maxAttempts, baseDelayMs, label, callback, events, valida
 
 			var delayMs = baseDelayMs * Math.pow(2, attempt - 1);
 			if (events.retry) {
-				fetchLog.log(events.retry,
+				eventLog.log(events.retry,
 					label + ' a=' + attempt + ' d=' + delayMs +
 					' err=' + err);
 			}
@@ -160,19 +162,19 @@ function sendToWatchWithRetry(dict) {
 	function send() {
 		Pebble.sendAppMessage(dict,
 			function () {
-				fetchLog.log('send_ok', 'a=' + (retryIndex + 1));
+				eventLog.log('send_ok', 'a=' + (retryIndex + 1));
 				console.log('Carbon: weather sent to watch');
 			},
 			function (e) {
 				if (retriesLeft <= 0) {
-					fetchLog.log('send_fail', 'a=' + (retryIndex + 1) +
+					eventLog.log('send_fail', 'a=' + (retryIndex + 1) +
 						' err=' + JSON.stringify(e));
 					console.log('Carbon: sendAppMessage failed: ' + JSON.stringify(e));
 					return;
 				}
 
 				var delayMs = SEND_RETRY_BASE_DELAY_MS * Math.pow(2, retryIndex);
-				fetchLog.log('send_retry',
+				eventLog.log('send_retry',
 					'a=' + (retryIndex + 1) + ' d=' + delayMs +
 					' err=' + JSON.stringify(e));
 				console.log(
@@ -331,48 +333,18 @@ function readCache() {
 }
 
 /**
- * Compute the cache TTL from the configured fetch interval, with a floor of
- * one minute.
- *
- * @returns {number}  TTL in milliseconds.
- */
-function getCacheTtlMs() {
-	var ttlMs = getFetchIntervalMin() * 60 * 1000 - CACHE_TTL_MARGIN_MS;
-	if (ttlMs < 60 * 1000) ttlMs = 60 * 1000;
-	return ttlMs;
-}
-
-/**
  * Persist payload to localStorage with a TTL-based expiry timestamp.
  *
  * @param {Object} payload  Weather data object to cache.
  */
 function writeCache(payload) {
+	var ttlMs = getFetchIntervalMin() * 60 * 1000 - CACHE_TTL_MARGIN_MS;
+	if (ttlMs < 60 * 1000) ttlMs = 60 * 1000;
 	try {
 		localStorage.setItem(CACHE_KEY, JSON.stringify({
-			expiresAt: Date.now() + getCacheTtlMs(),
+			expiresAt: Date.now() + ttlMs,
 			payload: payload
 		}));
-	} catch (e) { }
-}
-
-/**
- * Clamp the cached weather's expiry to the current TTL. Called when the
- * fetch-interval setting changes: a cache written under a longer interval
- * (e.g. 60 min) must not keep serving cache hits for the remainder of its
- * old, longer TTL after the user switches to a shorter interval.
- */
-function clampCacheExpiry() {
-	try {
-		var raw = localStorage.getItem(CACHE_KEY);
-		if (!raw) return;
-		var obj = JSON.parse(raw);
-		if (!obj || !obj.expiresAt) return;
-		var maxExpiry = Date.now() + getCacheTtlMs();
-		if (obj.expiresAt > maxExpiry) {
-			obj.expiresAt = maxExpiry;
-			localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
-		}
 	} catch (e) { }
 }
 
@@ -433,6 +405,16 @@ function sendToWatch(payload) {
 	if (payload.sunset_hour != null) dict['WEATHER_SUNSET_HOUR'] = payload.sunset_hour;
 	if (payload.fetch_time != null) dict['WEATHER_FETCH_TIME'] = Math.floor(payload.fetch_time);
 
+	var nowMs = Date.now();
+	var signature = JSON.stringify(dict);
+	if (s_lastSentAt > 0 && nowMs - s_lastSentAt < SEND_DEDUPE_WINDOW_MS &&
+		signature === s_lastSentSignature) {
+		eventLog.aggregate('dedupe_send', 'ms=' + (nowMs - s_lastSentAt));
+		return;
+	}
+	s_lastSentAt = nowMs;
+	s_lastSentSignature = signature;
+
 	sendToWatchWithRetry(dict);
 }
 
@@ -462,7 +444,7 @@ function fetchAndSend(lat, lon) {
 			var stale = readCache();
 			if (stale && stale.payload) {
 				console.log('Carbon: weather failed, using stale cache');
-				fetchLog.log('stale_send', 'cache_fallback');
+				eventLog.log('stale_send', 'cache_fallback');
 				s_fetchStartedAt = 0;
 				sendToWatch(stale.payload);
 			} else {
@@ -495,7 +477,7 @@ function fetchAndSend(lat, lon) {
 		WEATHER_RETRY_BASE_DELAY_MS, 'weather fetch',
 		function (err, responseText, weatherJson) {
 			if (err) {
-				fetchLog.log('wx_fail', 'xhr err=' + err);
+				eventLog.log('wx_fail', 'xhr err=' + err);
 				console.log('Carbon: weather fetch error: ' + err);
 				weatherDone = true;
 				tryFinish();
@@ -529,9 +511,9 @@ function fetchAndSend(lat, lon) {
 				// hourly slots are already in the past when serving from cache.
 				payload.fetch_time = Math.floor(Date.now() / 1000);
 				weatherOk = true;
-				fetchLog.log('wx_ok', 'parsed');
+				eventLog.log('wx_ok', 'parsed');
 			} catch (e) {
-				fetchLog.log('wx_fail', 'parse err=' + e);
+				eventLog.log('wx_fail', 'parse err=' + e);
 				console.log('Carbon: weather parse error: ' + e);
 			}
 			weatherDone = true;
@@ -577,51 +559,45 @@ function fetchAndSend(lat, lon) {
  * and call fetchAndSend.
  */
 function getWeather() {
+	var nowMs = Date.now();
+	if (s_lastHandledAt > 0 && nowMs - s_lastHandledAt < REQ_DEDUPE_WINDOW_MS) {
+		return 'dedupe_req';
+	}
+	// Timestamp moves only on handled calls so bursts cannot self-starve.
+	s_lastHandledAt = nowMs;
+
 	// Check cache first
 	var cache = readCache();
 	if (cache && cache.expiresAt > Date.now()) {
 		console.log('Carbon: using cached weather');
-		fetchLog.log('cache_hit', 'ttl=' + (cache.expiresAt - Date.now()));
+		eventLog.log('cache_hit', 'ttl=' + (cache.expiresAt - Date.now()));
 		// Re-evaluate unit in case locale changed; re-fetch if unit differs
 		var cachedUnit = cache.payload && cache.payload.temp_unit;
 		if (cachedUnit && cachedUnit === getTempUnit()) {
-			// Dedupe cache-served sends: at watchface launch, the pkjs 'ready'
-			// event and the watch's own request both call getWeather() within
-			// ~20ms, and the second identical AppMessage gets nack'd by the
-			// still-busy watch inbox. Skip if this exact payload was just sent.
-			var cacheFetchTime = cache.payload.fetch_time || 0;
-			var sendNowMs = Date.now();
-			if (cacheFetchTime && cacheFetchTime === s_lastCacheSendFetchTime &&
-				sendNowMs - s_lastCacheSendAt < SEND_DEDUPE_WINDOW_MS) {
-				fetchLog.log('dedupe_send', 'send ms=' + (sendNowMs - s_lastCacheSendAt));
-				return;
-			}
-			s_lastCacheSendFetchTime = cacheFetchTime;
-			s_lastCacheSendAt = sendNowMs;
 			sendToWatch(cache.payload);
 			return;
 		}
 		console.log('Carbon: temp unit changed, refreshing weather');
 	}
 
-	var nowMs = Date.now();
+	// Layer 1 guard; later dedupe layers catch slow-cycle late arrivals.
 	if (s_fetchStartedAt > 0 &&
 		nowMs - s_fetchStartedAt < FETCH_DEDUPE_WINDOW_MS) {
-		fetchLog.log('dedupe_fetch', 'ms=' + (nowMs - s_fetchStartedAt));
+		eventLog.aggregate('dedupe_fetch', 'ms=' + (nowMs - s_fetchStartedAt));
 		return;
 	}
 	s_fetchStartedAt = nowMs;
 
 	navigator.geolocation.getCurrentPosition(
 		function (pos) {
-			fetchLog.log('geo_ok',
+			eventLog.log('geo_ok',
 				'lat=' + pos.coords.latitude.toFixed(4) +
 				' lon=' + pos.coords.longitude.toFixed(4));
 			fetchAndSend(pos.coords.latitude, pos.coords.longitude);
 		},
 		function (err) {
 			s_fetchStartedAt = 0;
-			fetchLog.log('geo_fail', (err && err.message) ? err.message : 'unknown');
+			eventLog.log('geo_fail', (err && err.message) ? err.message : 'unknown');
 			console.log('Carbon: geolocation error: ' + err.message);
 			// Fall back to stale cache if available
 			if (cache) {
@@ -647,11 +623,15 @@ function formatDebugInfo() {
 	function mapLogEntries(entries) {
 		return entries.map(function (entry) {
 			var ts = entry && typeof entry.t === 'number' ? entry.t : null;
+			var tsEnd = entry && typeof entry.tn === 'number' ? entry.tn : null;
 			return {
 				t: ts,
 				iso: ts ? new Date(ts).toISOString() : null,
+				tn: tsEnd,
+				isoEnd: tsEnd ? new Date(tsEnd).toISOString() : null,
 				e: entry ? entry.e : null,
 				d: entry ? entry.d : null,
+				n: entry && typeof entry.n === 'number' ? entry.n : null,
 			};
 		});
 	}
@@ -668,13 +648,13 @@ function formatDebugInfo() {
 		result.settings = null;
 	}
 	try {
-		var logData = fetchLog.read();
-		result.fetchLog = {
+		var logData = eventLog.read();
+		result.eventLog = {
 			current: mapLogEntries(logData.current || []),
 			previous: mapLogEntries(logData.previous || []),
 		};
 	} catch (e) {
-		result.fetchLog = { current: [], previous: [] };
+		result.eventLog = { current: [], previous: [] };
 	}
 	return result;
 }
@@ -685,8 +665,10 @@ function formatDebugInfo() {
 
 Pebble.addEventListener('ready', function () {
 	console.log('Carbon: PebbleKit JS ready');
-	fetchLog.log('ready', 'pkjs_ready');
-	getWeather();
+	eventLog.log('ready', 'pkjs_ready');
+	if (getWeather() === 'dedupe_req') {
+		eventLog.aggregate('dedupe_req', 'ready');
+	}
 });
 
 Pebble.addEventListener('showConfiguration', function () {
@@ -756,9 +738,6 @@ Pebble.addEventListener('webviewclosed', function (e) {
 	var fetchInterval = extractInt(rawSettings['SETTING_FETCH_INTERVAL']);
 	if (fetchInterval === 15 || fetchInterval === 30 || fetchInterval === 60) {
 		dict['SETTING_FETCH_INTERVAL'] = fetchInterval;
-		// The interval may have shrunk; re-clamp the existing cache's expiry
-		// so it can't keep serving hits under its old, longer TTL.
-		clampCacheExpiry();
 	}
 
 	var showTimezone = extractBool(rawSettings['SETTING_SHOW_TIMEZONE']);
@@ -772,14 +751,20 @@ Pebble.addEventListener('webviewclosed', function (e) {
 		function (err) { console.log('Carbon: settings send failed: ' + JSON.stringify(err)); }
 	);
 	// Refresh weather in case the temperature unit changed
-	getWeather();
+	if (getWeather() === 'dedupe_req') {
+		eventLog.aggregate('dedupe_req', 'config');
+	}
 });
 
 Pebble.addEventListener('appmessage', function (e) {
 	if (e.payload && e.payload['WEATHER_REQUEST'] !== undefined) {
 		var seq = e.payload['WEATHER_REQUEST'];
-		fetchLog.log('req', 'seq=' + seq);
+		var dropReason = getWeather();
+		if (dropReason === 'dedupe_req') {
+			eventLog.aggregate('dedupe_req', 'seq=' + seq);
+			return;
+		}
+		eventLog.log('req', 'seq=' + seq);
 		console.log('Carbon: weather refresh requested');
-		getWeather();
 	}
 });
