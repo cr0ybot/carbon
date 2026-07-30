@@ -25,5 +25,6 @@ void icon_bar_layer_set_condition(IconBarLayer *layer,
                                   WeatherCondition condition);
 void icon_bar_layer_set_daytime(IconBarLayer *layer, bool is_day);
 void icon_bar_layer_set_disconnected(IconBarLayer *layer, bool disconnected);
+void icon_bar_layer_set_pending(IconBarLayer *layer, bool pending);
 void icon_bar_layer_set_battery_display(IconBarLayer *layer,
                                         BatteryDisplay display);

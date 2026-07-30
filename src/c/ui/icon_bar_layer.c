@@ -22,6 +22,7 @@ struct IconBarLayer {
 	WeatherCondition condition;
 	bool is_day;
 	bool weather_disconnected;
+	bool app_pending;
 	BatteryDisplay battery_display;
 };
 
@@ -124,6 +125,8 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	const char *conn_icon = NULL;
 	if (!sl->bt_connected)
 		conn_icon = ICON_BLUETOOTH__OFF;
+	else if (sl->app_pending)
+		conn_icon = ICON_PENDING;
 	else if (sl->weather_disconnected)
 		conn_icon = ICON_CONNECTION_SIGNAL__OFF;
 	if (conn_icon) {
@@ -156,6 +159,7 @@ IconBarLayer *icon_bar_layer_create(GRect frame) {
 	sl->condition = WEATHER_CONDITION_UNKNOWN;
 	sl->is_day = true;
 	sl->weather_disconnected = true; // shown until first weather fetch
+	sl->app_pending = false;
 	sl->battery_display = BATTERY_DISPLAY_ICON;
 
 #if PBL_DISPLAY_HEIGHT >= 228
@@ -222,6 +226,13 @@ void icon_bar_layer_set_disconnected(IconBarLayer *layer, bool disconnected) {
 	if (!layer)
 		return;
 	layer->weather_disconnected = disconnected;
+	layer_mark_dirty(layer->layer);
+}
+
+void icon_bar_layer_set_pending(IconBarLayer *layer, bool pending) {
+	if (!layer)
+		return;
+	layer->app_pending = pending;
 	layer_mark_dirty(layer->layer);
 }
 

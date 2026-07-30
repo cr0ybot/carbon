@@ -61,11 +61,13 @@ static IconBarLayer *s_icon_bar_layer;
 static WeatherData s_weather;
 static uint32_t s_request_seq;
 static uint32_t s_last_sent_request_seq;
+static uint32_t s_last_answered_seq;
 static uint32_t s_minutes_since_launch;
 
 // Forward declarations
 static void prv_request_weather(void);
 static void prv_push_weather_to_layers(struct tm *now);
+static void prv_update_pending_state(void);
 
 /**
  * Ticks every minute; advances graph layers and requests fresh weather each
@@ -323,17 +325,18 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 	// data. A settings-only message must not mark the weather as valid with
 	// zeroed arrays, which would render a false "clear sky" state.
 	if (!got_weather)
-		return;
+		goto done;
 
 	// Require a fetch timestamp — without it we cannot compute data_offset and
 	// would wrongly treat data of unknown age as current.
 	t = dict_find(iter, MESSAGE_KEY_WEATHER_FETCH_TIME);
 	if (!t)
-		return;
+		goto done;
 
 	s_weather.is_valid = true;
 	s_weather.fetch_time = (time_t)t->value->int32;
 	s_weather.valid_hours = WEATHER_HOURLY_COUNT;
+	s_last_answered_seq = s_last_sent_request_seq;
 
 	// Persist for cold-start restoration
 	persist_write_data(STORAGE_KEY_WEATHER, &s_weather, sizeof(s_weather));
@@ -341,6 +344,9 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 	// Push data to layers
 	time_t now_push = time(NULL);
 	prv_push_weather_to_layers(localtime(&now_push));
+
+done:
+	prv_update_pending_state();
 }
 
 static void prv_inbox_dropped(AppMessageResult reason, void *context) {
@@ -372,14 +378,22 @@ static void prv_request_weather(void) {
 		APP_LOG(APP_LOG_LEVEL_WARNING, "Outbox begin failed: reason=%d seq=%lu",
 		        (int)result, (unsigned long)seq);
 	}
+	prv_update_pending_state();
 }
 
 static void prv_battery_handler(BatteryChargeState state) {
 	icon_bar_layer_notify_battery(s_icon_bar_layer, state);
 }
 
+static void prv_update_pending_state(void) {
+	bool connected = connection_service_peek_pebble_app_connection();
+	bool pending = connected && (s_request_seq - s_last_answered_seq) >= 2;
+	icon_bar_layer_set_pending(s_icon_bar_layer, pending);
+}
+
 static void prv_bt_handler(bool connected) {
 	icon_bar_layer_notify_bt(s_icon_bar_layer, connected);
+	prv_update_pending_state();
 }
 
 static void prv_window_load(Window *window) {
