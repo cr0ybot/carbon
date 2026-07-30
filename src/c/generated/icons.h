@@ -3,6 +3,7 @@
 // DO NOT EDIT BY HAND.
 #pragma once
 
+#define ICON_PENDING "\xEF\x92\xBF"                        /* U+F4BF */
 #define ICON_CONNECTION_SIGNAL__OFF "\xEF\x87\x9F"         /* U+F1DF */
 #define ICON_THUNDERSTORM "\xEF\x98\x91"                   /* U+F611 */
 #define ICON_THUNDERSTORM__SCATTERED "\xEF\x8B\xB3"        /* U+F2F3 */
