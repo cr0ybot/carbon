@@ -66,6 +66,7 @@ The clipboard JSON contains everything displayed in the **Debug** section, inclu
 - `buildInfo` — build metadata including version, git commit hash, branch, dirty flag, and build date
 - `cache` — the full weather payload including fetch time, expiry, and all hourly data
 - `settings` — current Clay settings stored on the phone
+- `eventLog` — log of recent communication and fetch events
 
 > **Before sharing debug info in a GitHub issue, obfuscate the `lat` and `lon` values** inside `cache.payload` and anything else you deem sensitive to protect your location privacy.
 
