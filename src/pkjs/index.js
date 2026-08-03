@@ -1024,6 +1024,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
 
 	var showAmpm = extractBool(rawSettings['SETTING_SHOW_AMPM']);
 	if (showAmpm !== null) dict['SETTING_SHOW_AMPM'] = showAmpm;
+
 	var clearCacheRequested = extractBool(rawSettings['SETTING_CLEAR_CACHE']) === 1;
 
 	Pebble.sendAppMessage(dict,
@@ -1068,7 +1069,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
 	}
 
 	if (clearCacheRequested) {
-		// One-shot clear-cache should force a refresh even in dedupe windows.
+		// Clear-cache should force a refresh even in dedupe windows.
 		s_lastHandledAt = 0;
 		s_fetchStartedAt = 0;
 	}
