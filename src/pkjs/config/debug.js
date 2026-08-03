@@ -20,6 +20,7 @@ module.exports = {
 		'    <div class="component component-debug-info carbon-debug__details">',
 		'      <div class="carbon-debug__contents" data-manipulator-target></div>',
 		'      <p class="carbon-debug__disclaimer">Do not share this information publicly without obfuscating sensitive data, such as latitude and longitude.</p>',
+		'      <label class="carbon-debug__obfuscate-wrap"><input type="checkbox" class="carbon-debug__obfuscate" checked> Obfuscate latitude/longitude when copying</label>',
 		'      <button type="button" class="carbon-debug__copy">Copy debug info to clipboard</button>',
 		'    </div>',
 		'  </details>',
@@ -30,6 +31,7 @@ module.exports = {
 		'.carbon-debug h4 { display: inline-block; }',
 		'.carbon-debug code { display: block; font-family: monospace; background: #414141; padding: 4px; }',
 		'.carbon-debug__disclaimer { margin: 0.7rem 0; font-style: italic; }',
+		'.carbon-debug__obfuscate-wrap { display: block; margin: 0.7rem 0; }',
 		'.carbon-debug__copy { margin: 0; }',
 	].join(' '),
 
@@ -50,6 +52,51 @@ module.exports = {
 				.replace(/>/g, '&gt;');
 		}
 
+		function obfuscateCoordNumber(value) {
+			if (typeof value !== 'number' || !isFinite(value)) return value;
+			// 1 decimal keeps regional context while removing precise coordinates.
+			return Math.round(value * 10) / 10;
+		}
+
+		function obfuscateCoordString(value) {
+			if (typeof value !== 'string') return value;
+			return value
+				.replace(/(lat=)(-?\d+(?:\.\d+)?)/ig, function(_, prefix, num) {
+					return prefix + String(obfuscateCoordNumber(parseFloat(num)));
+				})
+				.replace(/((?:lon|lng)=)(-?\d+(?:\.\d+)?)/ig, function(_, prefix, num) {
+					return prefix + String(obfuscateCoordNumber(parseFloat(num)));
+				});
+		}
+
+		function obfuscateCoords(value, key) {
+			if (Array.isArray(value)) {
+				return value.map(function(item) {
+					return obfuscateCoords(item, '');
+				});
+			}
+
+			if (value && typeof value === 'object') {
+				var out = {};
+				var objectKeys = Object.keys(value);
+				for (var idx = 0; idx < objectKeys.length; idx++) {
+					var k = objectKeys[idx];
+					out[k] = obfuscateCoords(value[k], k);
+				}
+				return out;
+			}
+
+			if (/^(lat|latitude|lon|lng|longitude)$/i.test(String(key || ''))) {
+				return obfuscateCoordNumber(value);
+			}
+
+			if (typeof value === 'string') {
+				return obfuscateCoordString(value);
+			}
+
+			return value;
+		}
+
 		var allData = { activeWatchInfo: clayConfig.meta.activeWatchInfo };
 		var dkeys = Object.keys(debugInfo);
 		for (var j = 0; j < dkeys.length; j++) {
@@ -68,10 +115,17 @@ module.exports = {
 		}
 		this.config.defaultValue = parts.join('');
 
-		var copyButton = this.$element.select('button');
+		var copyButton = this.$element.select('.carbon-debug__copy');
+		var obfuscateCheckbox = this.$element.select('.carbon-debug__obfuscate');
 		copyButton.on('click', function() {
+			var shouldObfuscate = true;
+			if (obfuscateCheckbox && obfuscateCheckbox.length) {
+				shouldObfuscate = !!obfuscateCheckbox.get('checked');
+			}
+
+			var copyPayload = shouldObfuscate ? obfuscateCoords(allData, '') : allData;
 			var temp = document.createElement('textarea');
-			temp.value = JSON.stringify(allData);
+			temp.value = JSON.stringify(copyPayload);
 			document.body.appendChild(temp);
 			temp.select();
 			var copied = document.execCommand('copy');
