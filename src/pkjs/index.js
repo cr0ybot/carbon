@@ -785,7 +785,7 @@ function fetchAndSend(lat, lon, isStaticLocation) {
 			try {
 				var json = JSON.parse(responseText);
 				payload.city_name =
-					(json && (json.city || json.locality || json.principalSubdivision)) ||
+					(json && (json.locality || json.city || json.principalSubdivision)) ||
 					'';
 				writeGeonameCache(lat, lon, payload.city_name, !!isStaticLocation);
 			} catch (e) {
