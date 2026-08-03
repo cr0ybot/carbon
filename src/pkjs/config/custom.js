@@ -1,8 +1,5 @@
 /**
  * Clay custom function.
- *
- * Controls visibility of static coordinate inputs and pre-fills them from
- * userData when static mode is enabled and fields are blank.
  */
 
 module.exports = function () {
@@ -18,6 +15,10 @@ module.exports = function () {
 		return value === null || value === undefined || String(value).trim() === '';
 	}
 
+	/**
+	 * Controls visibility of static coordinate inputs and pre-fills them from
+	 * userData when static mode is enabled and fields are blank.
+	 */
 	function applyStaticLocationVisibility() {
 		var useStaticItem = clayConfig.getItemByMessageKey('SETTING_USE_STATIC_LOCATION');
 		var latItem = clayConfig.getItemByMessageKey('SETTING_STATIC_LAT');
@@ -43,6 +44,9 @@ module.exports = function () {
 		}
 	}
 
+	/**
+	 * Controls visibility of location name override.
+	 */
 	function applyGeocodeVisibility() {
 		var geocodeEnabledItem = clayConfig.getItemByMessageKey('SETTING_GEOCODE_ENABLED');
 		var locationOverrideItem = clayConfig.getItemByMessageKey('SETTING_LOCATION_OVERRIDE');
