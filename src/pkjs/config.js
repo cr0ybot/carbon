@@ -142,6 +142,7 @@ module.exports = [
 				'defaultValue': '',
 				'attributes': {
 					'type': 'number',
+					'step': 'any',
 					'placeholder': '41.8338',
 				},
 			},
@@ -153,6 +154,7 @@ module.exports = [
 				'defaultValue': '',
 				'attributes': {
 					'type': 'number',
+					'step': 'any',
 					'placeholder': '-87.8966',
 				},
 			},
