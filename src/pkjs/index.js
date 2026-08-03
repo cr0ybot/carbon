@@ -528,9 +528,11 @@ function fetchAndSend(lat, lon) {
 		return parsed;
 	});
 
-	// ArcGIS reverse geocode for city name
+	// BigDataCloud reverse geocode for city name
 	var geocodeUrl = GEOCODE_BASE_URL +
-		'?f=json&langCode=EN&location=' + lon + ',' + lat;
+		'?latitude=' + lat +
+		'&longitude=' + lon +
+		'&localityLanguage=en';
 
 	retryXhr(geocodeUrl, GEOCODE_RETRY_ATTEMPTS,
 		GEOCODE_RETRY_BASE_DELAY_MS, 'geocode fetch',
@@ -544,8 +546,9 @@ function fetchAndSend(lat, lon) {
 			}
 			try {
 				var json = JSON.parse(responseText);
-				var addr = json && json.address;
-				payload.city_name = (addr && (addr.City || addr.ShortLabel)) || 'Unknown';
+				payload.city_name =
+					(json && (json.city || json.locality || json.principalSubdivision)) ||
+					'Unknown';
 			} catch (e) {
 				payload.city_name = 'Unknown';
 			}
