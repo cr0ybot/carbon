@@ -169,7 +169,18 @@ module.exports = [
 		'items': [
 			{
 				'type': 'heading',
-				'defaultValue': 'Developer',
+				'defaultValue': 'Advanced',
+			},
+			{
+				'type': 'toggle',
+				'messageKey': 'SETTING_SHOW_ADVANCED_OPTIONS',
+				'label': 'Show advanced options',
+				'description': 'Advanced options are geared toward developers and troubleshooting. Most users should leave these off.',
+				'defaultValue': false,
+			},
+			{
+				'type': 'text',
+				'defaultValue': 'Clear cached data on save is intended for debugging and should not be necessary for normal use.',
 			},
 			{
 				'type': 'toggle',

@@ -61,15 +61,35 @@ module.exports = function () {
 		locationOverrideItem.show();
 	}
 
+	/**
+	 * Controls visibility of developer-oriented advanced options.
+	 */
+	function applyAdvancedVisibility() {
+		var showAdvancedItem = clayConfig.getItemByMessageKey('SETTING_SHOW_ADVANCED_OPTIONS');
+		var clearCacheItem = clayConfig.getItemByMessageKey('SETTING_CLEAR_CACHE');
+		if (!showAdvancedItem || !clearCacheItem) return;
+
+		if (normalizeBool(showAdvancedItem.get())) {
+			clearCacheItem.show();
+			return;
+		}
+
+		clearCacheItem.hide();
+	}
+
 	clayConfig.on(clayConfig.EVENTS.AFTER_BUILD, function () {
 		var geocodeEnabledItem = clayConfig.getItemByMessageKey('SETTING_GEOCODE_ENABLED');
 		var useStaticItem = clayConfig.getItemByMessageKey('SETTING_USE_STATIC_LOCATION');
-		if (!geocodeEnabledItem || !useStaticItem) return;
+		var showAdvancedItem = clayConfig.getItemByMessageKey('SETTING_SHOW_ADVANCED_OPTIONS');
+		if (!geocodeEnabledItem || !useStaticItem || !showAdvancedItem) return;
 
 		applyGeocodeVisibility();
 		geocodeEnabledItem.on('change', applyGeocodeVisibility);
 
 		applyStaticLocationVisibility();
 		useStaticItem.on('change', applyStaticLocationVisibility);
+
+		applyAdvancedVisibility();
+		showAdvancedItem.on('change', applyAdvancedVisibility);
 	});
 };
