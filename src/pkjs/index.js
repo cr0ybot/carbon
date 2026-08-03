@@ -255,6 +255,30 @@ function getFetchIntervalMin() {
 }
 
 /**
+ * Resolve the locale language used for reverse geocoding.
+ * Prefers watch locale, then phone locale, then falls back to English.
+ *
+ * @returns {string}
+ */
+function getLocalityLanguage() {
+	var rawLang = '';
+
+	try {
+		var info = Pebble.getActiveWatchInfo();
+		if (info && info.language) rawLang = String(info.language);
+	} catch (e) { }
+
+	if (!rawLang && navigator && navigator.language) {
+		rawLang = String(navigator.language);
+	}
+
+	rawLang = rawLang.replace('_', '-');
+	var match = /^[A-Za-z]{2,3}/.exec(rawLang);
+	if (!match) return 'en';
+	return match[0].toLowerCase();
+}
+
+/**
  * Read Clay settings from localStorage.
  *
  * @returns {Object}
@@ -574,8 +598,9 @@ function sendToWatch(payload) {
 	// 0 = celsius, 1 = fahrenheit  (matches settings.c convention)
 	var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
 	var cityName = (payload.city_name === null || payload.city_name === undefined)
-		? 'Unknown'
+		? ''
 		: String(payload.city_name);
+	if (cityName === 'Unknown') cityName = '';
 
 	var dict = {
 		'WEATHER_PRECIP_PROB': packUint8Array(precipProb, hourlyCount),
@@ -741,17 +766,18 @@ function fetchAndSend(lat, lon, isStaticLocation) {
 	}
 
 	// BigDataCloud reverse geocode for city name
+	var localityLanguage = getLocalityLanguage();
 	var geocodeUrl = GEOCODE_BASE_URL +
 		'?latitude=' + lat +
 		'&longitude=' + lon +
-		'&localityLanguage=en';
+		'&localityLanguage=' + encodeURIComponent(localityLanguage);
 
 	retryXhr(geocodeUrl, GEOCODE_RETRY_ATTEMPTS,
 		GEOCODE_RETRY_BASE_DELAY_MS, 'geocode fetch',
 		function (err, responseText) {
 			if (err) {
 				console.log('Carbon: geocode error: ' + err);
-				payload.city_name = 'Unknown';
+				payload.city_name = '';
 				cityDone = true;
 				tryFinish();
 				return;
@@ -760,10 +786,10 @@ function fetchAndSend(lat, lon, isStaticLocation) {
 				var json = JSON.parse(responseText);
 				payload.city_name =
 					(json && (json.city || json.locality || json.principalSubdivision)) ||
-					'Unknown';
+					'';
 				writeGeonameCache(lat, lon, payload.city_name, !!isStaticLocation);
 			} catch (e) {
-				payload.city_name = 'Unknown';
+				payload.city_name = '';
 			}
 			cityDone = true;
 			tryFinish();
