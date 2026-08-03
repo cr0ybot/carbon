@@ -127,6 +127,35 @@ module.exports = [
 					'maxlength': 23,
 				},
 			},
+			{
+				'type': 'toggle',
+				'messageKey': 'SETTING_USE_STATIC_LOCATION',
+				'label': 'Use Static Location',
+				'description': 'Skip GPS and always use fixed coordinates for weather and location name.',
+				'defaultValue': false,
+			},
+			{
+				'type': 'input',
+				'messageKey': 'SETTING_STATIC_LAT',
+				'label': 'Static Latitude',
+				'description': 'Used only when static location is enabled.',
+				'defaultValue': '',
+				'attributes': {
+					'type': 'number',
+					'placeholder': '41.8338',
+				},
+			},
+			{
+				'type': 'input',
+				'messageKey': 'SETTING_STATIC_LON',
+				'label': 'Static Longitude',
+				'description': 'Used only when static location is enabled.',
+				'defaultValue': '',
+				'attributes': {
+					'type': 'number',
+					'placeholder': '-87.8966',
+				},
+			},
 		],
 	},
 	{
