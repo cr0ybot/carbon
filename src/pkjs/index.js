@@ -40,7 +40,7 @@ var eventLog = require('./eventlog');
 
 var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
-var clay = new Clay(clayConfig, require('./config/location'), { autoHandleEvents: false });
+var clay = new Clay(clayConfig, require('./config/custom'), { autoHandleEvents: false });
 clay.registerComponent(require('./config/debug'));
 
 var s_fetchStartedAt = 0;

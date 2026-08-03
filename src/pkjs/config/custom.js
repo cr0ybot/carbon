@@ -1,11 +1,11 @@
 /**
- * Clay custom function: location settings behavior.
+ * Clay custom function.
  *
  * Controls visibility of static coordinate inputs and pre-fills them from
  * userData when static mode is enabled and fields are blank.
  */
 
-module.exports = function() {
+module.exports = function () {
 	var clayConfig = this;
 
 	function normalizeBool(value) {
@@ -43,9 +43,27 @@ module.exports = function() {
 		}
 	}
 
-	clayConfig.on(clayConfig.EVENTS.AFTER_BUILD, function() {
+	function applyGeocodeVisibility() {
+		var geocodeEnabledItem = clayConfig.getItemByMessageKey('SETTING_GEOCODE_ENABLED');
+		var locationOverrideItem = clayConfig.getItemByMessageKey('SETTING_LOCATION_OVERRIDE');
+		if (!geocodeEnabledItem || !locationOverrideItem) return;
+
+		var geocodeEnabled = normalizeBool(geocodeEnabledItem.get());
+		if (geocodeEnabled) {
+			locationOverrideItem.hide();
+			return;
+		}
+
+		locationOverrideItem.show();
+	}
+
+	clayConfig.on(clayConfig.EVENTS.AFTER_BUILD, function () {
+		var geocodeEnabledItem = clayConfig.getItemByMessageKey('SETTING_GEOCODE_ENABLED');
 		var useStaticItem = clayConfig.getItemByMessageKey('SETTING_USE_STATIC_LOCATION');
-		if (!useStaticItem) return;
+		if (!geocodeEnabledItem || !useStaticItem) return;
+
+		applyGeocodeVisibility();
+		geocodeEnabledItem.on('change', applyGeocodeVisibility);
 
 		applyStaticLocationVisibility();
 		useStaticItem.on('change', applyStaticLocationVisibility);
