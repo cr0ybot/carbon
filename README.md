@@ -193,3 +193,13 @@ This will update `src/c/generated/icons.h` with the icon names and codepoints, w
 ## License
 
 [GPL-3.0](LICENSE)
+
+## Attribution
+
+Weather data from [Open-Meteo.com](https://open-meteo.com/)
+
+Reverse geocoding from [BigDataCloud](https://www.bigdatacloud.com/free-api/free-reverse-geocode-to-city-api)
+
+Icons from the [Carbon Design System](https://carbondesignsystem.com/elements/icons/library/) icon set by IBM
+
+Icons assembled with [IcoMoon](https://icomoon.io/)
