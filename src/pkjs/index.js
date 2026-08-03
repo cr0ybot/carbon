@@ -18,6 +18,9 @@ var {
 	WEATHER_BASE_URL,
 	GEOCODE_BASE_URL,
 	CACHE_KEY,
+	GEONAME_CACHE_KEY,
+	GEONAME_TTL_MS,
+	GEONAME_COORD_PRECISION,
 	CACHE_TTL_MARGIN_MS,
 	FORECAST_HOURS,
 	XHR_TIMEOUT_MS,
@@ -37,7 +40,7 @@ var eventLog = require('./eventlog');
 
 var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
-var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
+var clay = new Clay(clayConfig, require('./config/location'), { autoHandleEvents: false });
 clay.registerComponent(require('./config/debug'));
 
 var s_fetchStartedAt = 0;
@@ -252,6 +255,192 @@ function getFetchIntervalMin() {
 }
 
 /**
+ * Read Clay settings from localStorage.
+ *
+ * @returns {Object}
+ */
+function readClaySettings() {
+	try {
+		var raw = localStorage.getItem('clay-settings');
+		return raw ? (JSON.parse(raw) || {}) : {};
+	} catch (e) {
+		return {};
+	}
+}
+
+/**
+ * Unwrap a raw value that may be stored as {value: ...}.
+ *
+ * @param   {*} value
+ * @returns {*}
+ */
+function unwrapSettingValue(value) {
+	if (value !== null && typeof value === 'object' && 'value' in value) {
+		return value.value;
+	}
+	return value;
+}
+
+/**
+ * Parse a boolean setting with a default fallback.
+ *
+ * @param   {Object}  settings
+ * @param   {string}  key
+ * @param   {boolean} defaultValue
+ * @returns {boolean}
+ */
+function getBoolSetting(settings, key, defaultValue) {
+	if (!settings || !(key in settings)) return defaultValue;
+	var value = unwrapSettingValue(settings[key]);
+	if (value === 'false' || value === '0' || value === 0) return false;
+	if (value === 'true' || value === '1' || value === 1) return true;
+	return !!value;
+}
+
+/**
+ * Parse a string setting with a default fallback.
+ *
+ * @param   {Object} settings
+ * @param   {string} key
+ * @param   {string} defaultValue
+ * @returns {string}
+ */
+function getStringSetting(settings, key, defaultValue) {
+	if (!settings || !(key in settings)) return defaultValue;
+	var value = unwrapSettingValue(settings[key]);
+	if (value === null || value === undefined) return defaultValue;
+	return String(value);
+}
+
+/**
+ * Parse a static location from Clay settings.
+ * Returns null when static mode is off or values are invalid.
+ *
+ * @param   {Object=} settings
+ * @returns {{lat:number,lon:number}|null}
+ */
+function getStaticLocation(settings) {
+	var allSettings = settings || readClaySettings();
+	if (!getBoolSetting(allSettings, 'SETTING_USE_STATIC_LOCATION', false)) {
+		return null;
+	}
+
+	var lat = parseFloat(getStringSetting(allSettings, 'SETTING_STATIC_LAT', ''));
+	var lon = parseFloat(getStringSetting(allSettings, 'SETTING_STATIC_LON', ''));
+
+	if (!isFinite(lat) || !isFinite(lon)) return null;
+	if (lat < -90 || lat > 90) return null;
+	if (lon < -180 || lon > 180) return null;
+
+	return { lat: lat, lon: lon };
+}
+
+/**
+ * Round a coordinate for cache matching.
+ *
+ * @param   {number} value
+ * @returns {number}
+ */
+function roundCoord(value) {
+	return parseFloat(Number(value).toFixed(GEONAME_COORD_PRECISION));
+}
+
+/**
+ * Return true when coordinates match at configured precision.
+ *
+ * @param   {number} latA
+ * @param   {number} lonA
+ * @param   {number} latB
+ * @param   {number} lonB
+ * @returns {boolean}
+ */
+function coordsMatchRounded(latA, lonA, latB, lonB) {
+	return roundCoord(latA) === roundCoord(latB) &&
+		roundCoord(lonA) === roundCoord(lonB);
+}
+
+/**
+ * Read geocode name cache.
+ *
+ * @returns {{lat:number,lon:number,name:string,fetchedAt:number,static:boolean}|null}
+ */
+function readGeonameCache() {
+	try {
+		var raw = localStorage.getItem(GEONAME_CACHE_KEY);
+		if (!raw) return null;
+		var obj = JSON.parse(raw);
+		if (!obj || typeof obj.name !== 'string') return null;
+		if (!isFinite(obj.lat) || !isFinite(obj.lon)) return null;
+		if (!isFinite(obj.fetchedAt)) return null;
+		obj.static = !!obj.static;
+		return obj;
+	} catch (e) {
+		return null;
+	}
+}
+
+/**
+ * Persist geocode name cache entry.
+ *
+ * @param {number}  lat
+ * @param {number}  lon
+ * @param {string}  name
+ * @param {boolean} isStatic
+ */
+function writeGeonameCache(lat, lon, name, isStatic) {
+	try {
+		localStorage.setItem(GEONAME_CACHE_KEY, JSON.stringify({
+			lat: lat,
+			lon: lon,
+			name: name,
+			fetchedAt: Date.now(),
+			static: !!isStatic,
+		}));
+	} catch (e) { }
+}
+
+/**
+ * Return cached geocode name when valid for the current mode and coordinates.
+ *
+ * @param   {number}  lat
+ * @param   {number}  lon
+ * @param   {boolean} isStatic
+ * @returns {string|null}
+ */
+function getCachedGeoname(lat, lon, isStatic) {
+	var cache = readGeonameCache();
+	if (!cache) return null;
+
+	if (!coordsMatchRounded(lat, lon, cache.lat, cache.lon)) {
+		return null;
+	}
+
+	if (isStatic && cache.static) {
+		return cache.name;
+	}
+
+	if (Date.now() - cache.fetchedAt <= GEONAME_TTL_MS) {
+		return cache.name;
+	}
+
+	return null;
+}
+
+/**
+ * Extract last-known coordinates from weather cache payload.
+ *
+ * @returns {{lat:number,lon:number}|null}
+ */
+function getLastKnownCoordsFromCache() {
+	var cache = readCache();
+	if (!cache || !cache.payload) return null;
+	var lat = cache.payload.lat;
+	var lon = cache.payload.lon;
+	if (!isFinite(lat) || !isFinite(lon)) return null;
+	return { lat: lat, lon: lon };
+}
+
+/**
  * Maps a WMO weather code to a short condition string (informational only).
  *
  * @param   {number} code  WMO weather interpretation code.
@@ -384,6 +573,9 @@ function sendToWatch(payload) {
 
 	// 0 = celsius, 1 = fahrenheit  (matches settings.c convention)
 	var tempUnitFlag = (payload.temp_unit === 'fahrenheit') ? 1 : 0;
+	var cityName = (payload.city_name === null || payload.city_name === undefined)
+		? 'Unknown'
+		: String(payload.city_name);
 
 	var dict = {
 		'WEATHER_PRECIP_PROB': packUint8Array(precipProb, hourlyCount),
@@ -391,7 +583,7 @@ function sendToWatch(payload) {
 		'WEATHER_APPARENT_TEMP_HOURLY': packInt8Array(apparentHourly, hourlyCount),
 		'WEATHER_CLOUD_COVER': packUint8Array(cloudCover, hourlyCount),
 		'WEATHER_HOURLY_CODE': packUint8Array(hourlyCode, hourlyCount),
-		'CITY_NAME': (payload.city_name || 'Unknown').substring(0, 23),
+		'CITY_NAME': cityName.substring(0, 23),
 		'SETTING_TEMP_UNIT': tempUnitFlag,
 	};
 
@@ -424,11 +616,15 @@ function sendToWatch(payload) {
  * @param {number} lat  Device latitude in decimal degrees.
  * @param {number} lon  Device longitude in decimal degrees.
  */
-function fetchAndSend(lat, lon) {
+function fetchAndSend(lat, lon, isStaticLocation) {
 	var weatherDone = false;
 	var cityDone = false;
 	var weatherOk = false;
 	var payload = {};
+	var settings = readClaySettings();
+	var geocodeEnabled = getBoolSetting(settings, 'SETTING_GEOCODE_ENABLED', true);
+	var locationOverride = getStringSetting(settings, 'SETTING_LOCATION_OVERRIDE', '');
+	var cachedGeoname;
 
 	var tempUnit = getTempUnit();
 	payload.temp_unit = tempUnit;
@@ -528,6 +724,22 @@ function fetchAndSend(lat, lon) {
 		return parsed;
 	});
 
+	if (!geocodeEnabled) {
+		payload.city_name = locationOverride;
+		cityDone = true;
+		tryFinish();
+		return;
+	}
+
+	cachedGeoname = getCachedGeoname(lat, lon, !!isStaticLocation);
+	if (cachedGeoname) {
+		eventLog.log('geo_cache', 'name_hit');
+		payload.city_name = cachedGeoname;
+		cityDone = true;
+		tryFinish();
+		return;
+	}
+
 	// BigDataCloud reverse geocode for city name
 	var geocodeUrl = GEOCODE_BASE_URL +
 		'?latitude=' + lat +
@@ -549,6 +761,7 @@ function fetchAndSend(lat, lon) {
 				payload.city_name =
 					(json && (json.city || json.locality || json.principalSubdivision)) ||
 					'Unknown';
+				writeGeonameCache(lat, lon, payload.city_name, !!isStaticLocation);
 			} catch (e) {
 				payload.city_name = 'Unknown';
 			}
@@ -568,6 +781,8 @@ function getWeather() {
 	}
 	// Timestamp moves only on handled calls so bursts cannot self-starve.
 	s_lastHandledAt = nowMs;
+
+	var settings = readClaySettings();
 
 	// Check cache first
 	var cache = readCache();
@@ -591,12 +806,21 @@ function getWeather() {
 	}
 	s_fetchStartedAt = nowMs;
 
+	var staticLocation = getStaticLocation(settings);
+	if (staticLocation) {
+		eventLog.log('geo_static',
+			'lat=' + staticLocation.lat.toFixed(4) +
+			' lon=' + staticLocation.lon.toFixed(4));
+		fetchAndSend(staticLocation.lat, staticLocation.lon, true);
+		return;
+	}
+
 	navigator.geolocation.getCurrentPosition(
 		function (pos) {
 			eventLog.log('geo_ok',
 				'lat=' + pos.coords.latitude.toFixed(4) +
 				' lon=' + pos.coords.longitude.toFixed(4));
-			fetchAndSend(pos.coords.latitude, pos.coords.longitude);
+			fetchAndSend(pos.coords.latitude, pos.coords.longitude, false);
 		},
 		function (err) {
 			s_fetchStartedAt = 0;
@@ -675,12 +899,25 @@ Pebble.addEventListener('ready', function () {
 });
 
 Pebble.addEventListener('showConfiguration', function () {
-	clay.meta.userData.debugInfo = formatDebugInfo();
+	var userData = clay.meta.userData || {};
+	var lastKnown = getLastKnownCoordsFromCache();
+
+	userData.debugInfo = formatDebugInfo();
+	if (lastKnown) {
+		userData.lastKnownLat = Number(lastKnown.lat.toFixed(4));
+		userData.lastKnownLon = Number(lastKnown.lon.toFixed(4));
+	} else {
+		delete userData.lastKnownLat;
+		delete userData.lastKnownLon;
+	}
+
+	clay.meta.userData = userData;
 	Pebble.openURL(clay.generateUrl());
 });
 
 Pebble.addEventListener('webviewclosed', function (e) {
 	if (!e.response) return;
+	var oldSettings = readClaySettings();
 
 	// Use convert=false to get raw string-keyed settings; Clay's HTML <select>
 	// always returns string values even when the config defines number options,
@@ -719,6 +956,19 @@ Pebble.addEventListener('webviewclosed', function (e) {
 		return v ? 1 : 0;
 	}
 
+	/**
+	 * Extract a string value from a raw Clay setting.
+	 *
+	 * @param   {string|{value:string}} setting
+	 * @returns {string}
+	 */
+	function extractString(setting) {
+		if (setting === null || setting === undefined) return '';
+		var v = (typeof setting === 'object' && 'value' in setting)
+			? setting.value : setting;
+		return String(v);
+	}
+
 	var tempUnit = extractInt(rawSettings['SETTING_TEMP_UNIT']);
 	if (isNaN(tempUnit) || tempUnit < 0) {
 		tempUnit = shouldUseFahrenheit() ? 1 : 0;
@@ -753,6 +1003,32 @@ Pebble.addEventListener('webviewclosed', function (e) {
 		function () { console.log('Carbon: settings sent to watch'); },
 		function (err) { console.log('Carbon: settings send failed: ' + JSON.stringify(err)); }
 	);
+
+	var newSettings = readClaySettings();
+	var geocodeEnabledChanged =
+		getBoolSetting(oldSettings, 'SETTING_GEOCODE_ENABLED', true) !==
+		getBoolSetting(newSettings, 'SETTING_GEOCODE_ENABLED', true);
+	var locationOverrideChanged =
+		getStringSetting(oldSettings, 'SETTING_LOCATION_OVERRIDE', '') !==
+		getStringSetting(newSettings, 'SETTING_LOCATION_OVERRIDE', '');
+	var useStaticChanged =
+		getBoolSetting(oldSettings, 'SETTING_USE_STATIC_LOCATION', false) !==
+		getBoolSetting(newSettings, 'SETTING_USE_STATIC_LOCATION', false);
+	var staticLatChanged =
+		extractString(oldSettings['SETTING_STATIC_LAT']) !==
+		extractString(newSettings['SETTING_STATIC_LAT']);
+	var staticLonChanged =
+		extractString(oldSettings['SETTING_STATIC_LON']) !==
+		extractString(newSettings['SETTING_STATIC_LON']);
+
+	if (geocodeEnabledChanged || locationOverrideChanged || useStaticChanged ||
+		staticLatChanged || staticLonChanged) {
+		localStorage.removeItem(CACHE_KEY);
+	}
+	if (staticLatChanged || staticLonChanged) {
+		localStorage.removeItem(GEONAME_CACHE_KEY);
+	}
+
 	// Refresh weather in case the temperature unit changed
 	if (getWeather() === 'dedupe_req') {
 		eventLog.aggregate('dedupe_req', 'config');
