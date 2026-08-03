@@ -165,6 +165,22 @@ module.exports = [
 		'defaultValue': 'Save Settings',
 	},
 	{
+		'type': 'section',
+		'items': [
+			{
+				'type': 'heading',
+				'defaultValue': 'Developer',
+			},
+			{
+				'type': 'toggle',
+				'messageKey': 'SETTING_CLEAR_CACHE',
+				'label': 'Clear cached data on save',
+				'description': 'Wipes cached weather and location data and refetches. Resets itself after use.',
+				'defaultValue': false,
+			},
+		],
+	},
+	{
 		'type': 'debug-info',
 	},
 ];

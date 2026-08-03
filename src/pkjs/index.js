@@ -1024,6 +1024,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
 
 	var showAmpm = extractBool(rawSettings['SETTING_SHOW_AMPM']);
 	if (showAmpm !== null) dict['SETTING_SHOW_AMPM'] = showAmpm;
+	var clearCacheRequested = extractBool(rawSettings['SETTING_CLEAR_CACHE']) === 1;
 
 	Pebble.sendAppMessage(dict,
 		function () { console.log('Carbon: settings sent to watch'); },
@@ -1031,6 +1032,17 @@ Pebble.addEventListener('webviewclosed', function (e) {
 	);
 
 	var newSettings = readClaySettings();
+	if (clearCacheRequested) {
+		localStorage.removeItem(CACHE_KEY);
+		localStorage.removeItem(GEONAME_CACHE_KEY);
+		eventLog.log('cache_cleared', 'via_settings');
+
+		try {
+			newSettings['SETTING_CLEAR_CACHE'] = false;
+			localStorage.setItem('clay-settings', JSON.stringify(newSettings));
+		} catch (err) { }
+	}
+
 	var geocodeEnabledChanged =
 		getBoolSetting(oldSettings, 'SETTING_GEOCODE_ENABLED', true) !==
 		getBoolSetting(newSettings, 'SETTING_GEOCODE_ENABLED', true);
@@ -1055,7 +1067,13 @@ Pebble.addEventListener('webviewclosed', function (e) {
 		localStorage.removeItem(GEONAME_CACHE_KEY);
 	}
 
-	// Refresh weather in case the temperature unit changed
+	if (clearCacheRequested) {
+		// One-shot clear-cache should force a refresh even in dedupe windows.
+		s_lastHandledAt = 0;
+		s_fetchStartedAt = 0;
+	}
+
+	// Refresh weather in case settings changed.
 	if (getWeather() === 'dedupe_req') {
 		eventLog.aggregate('dedupe_req', 'config');
 	}
