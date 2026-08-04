@@ -3,7 +3,7 @@
 
 # Carbon - Pebble Weather Watchface
 
-A weather-focused, highly readable-at-a-glance Pebble watchface for the day ahead, with live weather via the free [Open-Meteo](https://open-meteo.com) API.
+A weather-focused, highly readable-at-a-glance Pebble watchface for the day ahead, with live weather via the free [Open-Meteo](https://open-meteo.com) API (with an optional [DWD](https://www.dwd.de) source via [Bright Sky](https://brightsky.dev), best for locations in/around Germany).
 
 ![Screenshots of the color version of the watchface showing weather data](./info/screenshots.emery.png)
 ![Screenshots of the monochrome version of the watchface showing weather data](./info/screenshots.flint.png)
@@ -29,6 +29,7 @@ There are several other weather-focused Pebble watchfaces that might look simila
 ## Settings
 
 - Temperature unit: Auto (default), Celsius, or Fahrenheit
+- Weather source: Open-Meteo (default, worldwide coverage) or DWD (Deutscher Wetterdienst, via Bright Sky — best coverage in/around Germany)
 - Date format: "Monday, 1/15" default, several other presets (please open an issue if your preferred date format isn't available)
 - Battery indicator: Icon (default), Percentage, or Off
 - Show Timezone: On (default) or Off
@@ -153,7 +154,9 @@ src/
     ui/         # Custom UI widget implementations (e.g. graph, event layer)
     main.c      # C entrypoint
   pkjs/
-    index.js    # Phone-side weather & location data fetching
+    index.js            # Phone-side location fetch, settings, and AppMessage sending
+    openmeteo-weather.js # Open-Meteo weather source (default)
+    dwd-weather.js       # DWD weather source, via Bright Sky (opt-in)
 ```
 
 ### Debug Info
@@ -196,7 +199,7 @@ This will update `src/c/generated/icons.h` with the icon names and codepoints, w
 
 ## Attribution
 
-Weather data from [Open-Meteo.com](https://open-meteo.com/)
+Weather data from [Open-Meteo.com](https://open-meteo.com/) or [Deutscher Wetterdienst](https://www.dwd.de) (via the [Bright Sky](https://brightsky.dev) API), depending on the configured weather source
 
 Reverse geocoding from [BigDataCloud](https://www.bigdatacloud.com/free-api/free-reverse-geocode-to-city-api)
 
