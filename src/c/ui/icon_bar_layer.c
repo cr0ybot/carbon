@@ -103,7 +103,11 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	// Three equally-spaced icon slots: battery, bluetooth, weather condition
 	graphics_context_set_text_color(ctx, GColorWhite);
 
-	// Slot 0: battery (always shown)
+	// Slot 0: battery (always shown) — rendered in red when critically low.
+	bool battery_low = sl->battery_percent < 15 && !sl->battery_charging;
+	graphics_context_set_text_color(
+	    ctx,
+	    battery_low ? PBL_IF_COLOR_ELSE(GColorRed, GColorWhite) : GColorWhite);
 	if (sl->battery_display == BATTERY_DISPLAY_PERCENT) {
 		char pct_buf[5];
 		snprintf(pct_buf, sizeof(pct_buf), "%d", sl->battery_percent);
@@ -119,6 +123,7 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 		    sl->icon_font, GRect(0, y0, graph_x, icon_size),
 		    GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 	}
+	graphics_context_set_text_color(ctx, GColorWhite);
 
 	// Slot 1: connection status — BT disconnect takes priority; signal-off
 	// shown for both fully-expired and partially-expired weather data.
