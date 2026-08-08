@@ -14,6 +14,11 @@
  *  - Conditions are reported as `icon`/`condition` strings rather than WMO
  *    codes, so they are translated to a representative WMO code understood
  *    by weather_code_to_condition() in the C app (see iconToWmoCode()).
+ *  - Raw DWD/MOSMIX total cloud cover runs noticeably higher than
+ *    Open-Meteo's for the same subjectively "good weather" (e.g. Bright Sky
+ *    still calls 60%+ cloud cover "partly cloudy"), so the cloud graph's
+ *    percentage is also derived from `icon`/`condition` rather than sent
+ *    as-is (see iconToCloudCoverPct()).
  *
  * @author    Cory Hughart <cory@coryhughart.com>
  * @copyright 2026 Cory Hughart
@@ -65,6 +70,50 @@ var CONDITION_TO_WMO_CODE = {
 };
 
 /**
+ * Bright Sky `icon` values mapped to a representative cloud-cover percentage
+ * for the watch's cloud graph (src/c/ui/cloud_layer.c), rather than passing
+ * Bright Sky's raw `cloud_cover` (DWD/MOSMIX total cloud amount) straight
+ * through.
+ *
+ * DWD's raw total cloud cover runs noticeably higher than Open-Meteo's for
+ * the same subjectively "good weather" — e.g. Bright Sky still reports
+ * `partly-cloudy-day` at 60%+ cloud cover, well past the watch's "large
+ * cloud" render threshold (70%), which was tuned against Open-Meteo's scale.
+ * Deriving the value from the already-interpreted `icon` instead keeps the
+ * cloud graph visually consistent with what the icon (and the human eye)
+ * would call "mostly sunny" vs. "overcast", and doubles as a fallback when
+ * a record's raw `cloud_cover` is missing/null. `wind` has no bearing on
+ * cloud amount and is intentionally omitted (falls through to raw value).
+ */
+var ICON_TO_CLOUD_COVER_PCT = {
+	'clear-day': 5,
+	'clear-night': 5,
+	'partly-cloudy-day': 30,
+	'partly-cloudy-night': 30,
+	'cloudy': 90,
+	'fog': 80,
+	'rain': 85,
+	'sleet': 85,
+	'snow': 85,
+	'hail': 85,
+	'thunderstorm': 90,
+};
+
+/**
+ * Fallback mapping when `icon` is unavailable but `condition` is present.
+ * `dry` is intentionally omitted — it covers everything from clear to
+ * overcast and carries no useful cloud-amount signal on its own.
+ */
+var CONDITION_TO_CLOUD_COVER_PCT = {
+	'fog': 80,
+	'rain': 85,
+	'sleet': 85,
+	'snow': 85,
+	'hail': 85,
+	'thunderstorm': 90,
+};
+
+/**
  * Convert Celsius to Fahrenheit.
  *
  * @param   {number} celsius
@@ -106,6 +155,28 @@ function iconToWmoCode(icon, condition, cloudCoverPct) {
 		return CONDITION_TO_WMO_CODE[condition];
 	}
 	return cloudCoverToWmoCode(cloudCoverPct);
+}
+
+/**
+ * Derive the cloud-cover percentage sent to the watch's cloud graph from a
+ * Bright Sky record's `icon`/`condition`, falling back to the raw
+ * `cloud_cover` value only when neither is available. See
+ * ICON_TO_CLOUD_COVER_PCT for why the raw DWD/MOSMIX percentage isn't used
+ * directly.
+ *
+ * @param   {?string} icon           Bright Sky `icon` value.
+ * @param   {?string} condition      Bright Sky `condition` value.
+ * @param   {?number} rawCloudCoverPct  Bright Sky `cloud_cover` value (0-100).
+ * @returns {number}                 Cloud-cover percentage (0-100).
+ */
+function iconToCloudCoverPct(icon, condition, rawCloudCoverPct) {
+	if (icon && Object.prototype.hasOwnProperty.call(ICON_TO_CLOUD_COVER_PCT, icon)) {
+		return ICON_TO_CLOUD_COVER_PCT[icon];
+	}
+	if (condition && Object.prototype.hasOwnProperty.call(CONDITION_TO_CLOUD_COVER_PCT, condition)) {
+		return CONDITION_TO_CLOUD_COVER_PCT[condition];
+	}
+	return typeof rawCloudCoverPct === 'number' ? rawCloudCoverPct : 0;
 }
 
 /**
@@ -254,7 +325,7 @@ function buildPayloadFields(hourly, current, tempUnit, lat, lon) {
 		// Bright Sky has no apparent-temperature field; fall back to actual temp.
 		apparentHourly.push(tempDisplay);
 		precipProb.push(typeof h.precipitation_probability === 'number' ? h.precipitation_probability : 0);
-		cloudCover.push(typeof h.cloud_cover === 'number' ? h.cloud_cover : 0);
+		cloudCover.push(iconToCloudCoverPct(h.icon, h.condition, h.cloud_cover));
 		hourlyCode.push(iconToWmoCode(h.icon, h.condition, h.cloud_cover));
 	}
 
@@ -353,5 +424,6 @@ function fetchDwdWeather(lat, lon, tempUnit, retryXhrFn, callback) {
 module.exports = {
 	fetchDwdWeather: fetchDwdWeather,
 	iconToWmoCode: iconToWmoCode,
+	iconToCloudCoverPct: iconToCloudCoverPct,
 	computeSunHours: computeSunHours,
 };
