@@ -8,7 +8,9 @@
  *    server-side unit conversion, so we convert to Fahrenheit here when
  *    needed.
  *  - There is no daily sunrise/sunset field, so sunrise/sunset hours are
- *    computed locally (see computeSunHours()).
+ *    computed locally (see computeSunHours()), anchored to local noon
+ *    (see localNoon()) to avoid resolving to the wrong calendar day near
+ *    midnight.
  *  - There is no "apparent temperature" field; the actual temperature is
  *    used as a stand-in.
  *  - Conditions are reported as `icon`/`condition` strings rather than WMO
@@ -180,14 +182,41 @@ function iconToCloudCoverPct(icon, condition, rawCloudCoverPct) {
 }
 
 /**
- * Compute local sunrise/sunset hours for today, adapted from the
- * public-domain sunrise/sunset equations used by SunCalc
+ * Anchor a wall-clock date to local noon on the same calendar day. Used to
+ * make computeSunHours() immune to its longitude-based day-selection
+ * heuristic picking the wrong calendar day near local midnight (see
+ * computeSunHours() for why).
+ *
+ * @param   {Date} wallClockDate  Any Date; only its device-local Y/M/D is used.
+ * @returns {Date} Local noon on wallClockDate's calendar day.
+ */
+function localNoon(wallClockDate) {
+	return new Date(
+		wallClockDate.getFullYear(),
+		wallClockDate.getMonth(),
+		wallClockDate.getDate(),
+		12, 0, 0, 0
+	);
+}
+
+/**
+ * Compute local sunrise/sunset hours for the calendar day of `date`, adapted
+ * from the public-domain sunrise/sunset equations used by SunCalc
  * (https://github.com/mourner/suncalc, (c) 2014 Vladimir Agafonkin, MIT).
  * Condensed here to avoid pulling in the full SunCalc dependency.
  *
+ * IMPORTANT: `date` must be anchored to local noon (see localNoon()), not
+ * the exact fetch instant. The underlying Julian-day cycle snaps to the
+ * nearest solar transit based on longitude, not the device's civil
+ * timezone/DST offset — for most real-world locations those two clocks
+ * differ by up to a couple of hours, which is enough that calling this
+ * with "now" between local midnight and ~1-2am can silently resolve to
+ * *yesterday's* sunrise/sunset instead of today's. Noon is always safely
+ * within today's solar day regardless of that offset.
+ *
  * @param   {number} lat  Latitude in decimal degrees.
  * @param   {number} lon  Longitude in decimal degrees.
- * @param   {Date}   date Reference date/time (local "now" is fine).
+ * @param   {Date}   date Local-noon-anchored reference date (see localNoon()).
  * @returns {{sunriseHour: number, sunsetHour: number}}
  */
 function computeSunHours(lat, lon, date) {
@@ -338,7 +367,7 @@ function buildPayloadFields(hourly, current, tempUnit, lat, lon) {
 		if (tempHourly[j] < lowTemp) lowTemp = tempHourly[j];
 	}
 
-	var sun = computeSunHours(lat, lon, new Date());
+	var sun = computeSunHours(lat, lon, localNoon(new Date()));
 
 	return {
 		current_temp: currentTemp,
@@ -426,4 +455,5 @@ module.exports = {
 	iconToWmoCode: iconToWmoCode,
 	iconToCloudCoverPct: iconToCloudCoverPct,
 	computeSunHours: computeSunHours,
+	localNoon: localNoon,
 };
