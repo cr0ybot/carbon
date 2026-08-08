@@ -15,7 +15,6 @@
  */
 
 var {
-	WEATHER_BASE_URL,
 	GEOCODE_BASE_URL,
 	CACHE_KEY,
 	GEONAME_CACHE_KEY,
@@ -24,8 +23,6 @@ var {
 	CACHE_TTL_MARGIN_MS,
 	FORECAST_HOURS,
 	XHR_TIMEOUT_MS,
-	WEATHER_RETRY_ATTEMPTS,
-	WEATHER_RETRY_BASE_DELAY_MS,
 	GEOCODE_RETRY_ATTEMPTS,
 	GEOCODE_RETRY_BASE_DELAY_MS,
 	SEND_RETRY_ATTEMPTS,
@@ -37,6 +34,8 @@ var {
 
 var buildInfo = require('../../.buildinfo.json');
 var eventLog = require('./eventlog');
+var dwdWeather = require('./dwd-weather');
+var openMeteoWeather = require('./openmeteo-weather');
 
 var Clay = require('@rebble/clay');
 var clayConfig = require('./config');
@@ -252,6 +251,24 @@ function getFetchIntervalMin() {
 		}
 	} catch (e) { }
 	return 30;
+}
+
+/**
+ * Returns the configured weather source from Clay settings: 0 = Open-Meteo,
+ * 1 = DWD (via Bright Sky). Falls back to 0 (Open-Meteo) when unset/invalid.
+ *
+ * @returns {number}
+ */
+function getWeatherSource() {
+	try {
+		var raw = localStorage.getItem('clay-settings');
+		if (raw) {
+			var s = JSON.parse(raw);
+			var source = parseInt(unwrapSettingValue(s.SETTING_WEATHER_SOURCE), 10);
+			if (source === 0 || source === 1) return source;
+		}
+	} catch (e) { }
+	return 0;
 }
 
 /**
@@ -516,19 +533,6 @@ function packInt8Array(values, hourlyCount) {
 }
 
 /**
- * Extract the local hour from a Unix timestamp.
- * With timeformat=unixtime, daily.sunrise/sunset are Unix timestamps (seconds).
- *
- * @param   {number} timestamp  Unix timestamp in seconds.
- * @returns {number}            Local hour (0–23).
- */
-function extractHourFromUnix(timestamp) {
-	// timestamp is seconds since epoch; multiply by 1000 for JS Date
-	var d = new Date(timestamp * 1000);
-	return d.getHours();
-}
-
-/**
  * Read the weather cache from localStorage, or null if absent/invalid.
  *
  * @returns {{expiresAt: number, payload: Object}|null}
@@ -680,74 +684,46 @@ function fetchAndSend(lat, lon, isStaticLocation) {
 		sendToWatch(payload);
 	}
 
-	// Open-Meteo weather — forecast_hours=FORECAST_HOURS returns hourly entries
-	// starting from the current hour; timeformat=unixtime for sunrise/sunset
-	var weatherUrl = WEATHER_BASE_URL +
-		'?latitude=' + lat +
-		'&longitude=' + lon +
-		'&current=temperature_2m,weather_code' +
-		'&hourly=precipitation_probability,temperature_2m,apparent_temperature,cloud_cover,weather_code' +
-		'&forecast_hours=' + FORECAST_HOURS +
-		'&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max' +
-		'&forecast_days=1' +
-		'&temperature_unit=' + tempUnit +
-		'&timeformat=unixtime' +
-		'&timezone=auto';
-
-	retryXhr(weatherUrl, WEATHER_RETRY_ATTEMPTS,
-		WEATHER_RETRY_BASE_DELAY_MS, 'weather fetch',
-		function (err, responseText, weatherJson) {
-			if (err) {
-				eventLog.log('wx_fail', 'xhr err=' + err);
-				console.log('Carbon: weather fetch error: ' + err);
-				weatherDone = true;
-				tryFinish();
-				return;
-			}
-			try {
-				var json = weatherJson || JSON.parse(responseText);
-				var cur = json.current;
-				var hrly = json.hourly;
-				var dly = json.daily;
-
-				payload.current_temp = cur.temperature_2m;
-				payload.weather_code = cur.weather_code;
-				payload.high_temp = dly && dly.temperature_2m_max ? dly.temperature_2m_max[0] : cur.temperature_2m;
-				payload.low_temp = dly && dly.temperature_2m_min ? dly.temperature_2m_min[0] : cur.temperature_2m;
-
-				// Sunrise/sunset are Unix timestamps with timeformat=unixtime
-				payload.sunrise_hour = dly && dly.sunrise ? extractHourFromUnix(dly.sunrise[0]) : 6;
-				payload.sunset_hour = dly && dly.sunset ? extractHourFromUnix(dly.sunset[0]) : 20;
-
-				// forecast_hours=FORECAST_HOURS returns entries starting from now
-				if (hrly) {
-					payload.precip_prob = hrly.precipitation_probability || [];
-					payload.temp_hourly = hrly.temperature_2m || [];
-					payload.apparent_temp_hourly = hrly.apparent_temperature || [];
-					payload.cloud_cover = hrly.cloud_cover || [];
-					payload.hourly_weather_code = hrly.weather_code || [];
-				}
-
-				// Record the real origin time so the watch can compute how many
-				// hourly slots are already in the past when serving from cache.
-				payload.fetch_time = Math.floor(Date.now() / 1000);
-				weatherOk = true;
-				eventLog.log('wx_ok', 'parsed');
-			} catch (e) {
-				eventLog.log('wx_fail', 'parse err=' + e);
-				console.log('Carbon: weather parse error: ' + e);
-			}
+	/**
+	 * Apply parsed weather fields to `payload` and finish the weather leg of
+	 * the fetch. Shared by both the Open-Meteo and DWD code paths so either
+	 * source can drive the same downstream send/cache logic.
+	 *
+	 * @param {?string} err     Error message, or null/undefined on success.
+	 * @param {Object=} fields  Parsed weather fields (see openmeteo-weather.js / dwd-weather.js).
+	 */
+	function handleWeatherResult(err, fields) {
+		if (err) {
+			eventLog.log('wx_fail', 'xhr err=' + err);
+			console.log('Carbon: weather fetch error: ' + err);
 			weatherDone = true;
 			tryFinish();
-		}, {
-		retry: 'wx_retry',
-	}, function validateWeatherResponse(responseText) {
-		var parsed = JSON.parse(responseText);
-		if (!parsed || !parsed.current || !parsed.hourly) {
-			return 'invalid weather payload';
+			return;
 		}
-		return parsed;
-	});
+
+		payload.current_temp = fields.current_temp;
+		payload.weather_code = fields.weather_code;
+		payload.high_temp = fields.high_temp;
+		payload.low_temp = fields.low_temp;
+		payload.sunrise_hour = fields.sunrise_hour;
+		payload.sunset_hour = fields.sunset_hour;
+		payload.precip_prob = fields.precip_prob;
+		payload.temp_hourly = fields.temp_hourly;
+		payload.apparent_temp_hourly = fields.apparent_temp_hourly;
+		payload.cloud_cover = fields.cloud_cover;
+		payload.hourly_weather_code = fields.hourly_weather_code;
+		payload.fetch_time = fields.fetch_time;
+		weatherOk = true;
+		eventLog.log('wx_ok', 'parsed');
+		weatherDone = true;
+		tryFinish();
+	}
+
+	if (getWeatherSource() === 1) {
+		dwdWeather.fetchDwdWeather(lat, lon, tempUnit, retryXhr, handleWeatherResult);
+	} else {
+		openMeteoWeather.fetchOpenMeteoWeather(lat, lon, tempUnit, retryXhr, handleWeatherResult);
+	}
 
 	if (!geocodeEnabled) {
 		payload.city_name = locationOverride;
@@ -1059,9 +1035,12 @@ Pebble.addEventListener('webviewclosed', function (e) {
 	var staticLonChanged =
 		extractString(oldSettings['SETTING_STATIC_LON']) !==
 		extractString(newSettings['SETTING_STATIC_LON']);
+	var weatherSourceChanged =
+		extractString(oldSettings['SETTING_WEATHER_SOURCE']) !==
+		extractString(newSettings['SETTING_WEATHER_SOURCE']);
 
 	if (geocodeEnabledChanged || locationOverrideChanged || useStaticChanged ||
-		staticLatChanged || staticLonChanged) {
+		staticLatChanged || staticLonChanged || weatherSourceChanged) {
 		localStorage.removeItem(CACHE_KEY);
 	}
 	if (staticLatChanged || staticLonChanged) {

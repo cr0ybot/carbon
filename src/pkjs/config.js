@@ -27,6 +27,17 @@ module.exports = [
 			},
 			{
 				'type': 'select',
+				'messageKey': 'SETTING_WEATHER_SOURCE',
+				'label': 'Weather Source',
+				'description': 'DWD (via Bright Sky) uses German weather service data — best coverage in and around Germany. Open-Meteo works worldwide.',
+				'defaultValue': 0,
+				'options': [
+					{ 'label': 'Open-Meteo', 'value': 0 },
+					{ 'label': 'DWD (Deutscher Wetterdienst)', 'value': 1 },
+				],
+			},
+			{
+				'type': 'select',
 				'messageKey': 'SETTING_TEMP_UNIT',
 				'label': 'Temperature Unit',
 				'description': '"Auto" detects your locale (US = °F, everywhere else = °C).',

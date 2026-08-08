@@ -8,6 +8,11 @@
 
 module.exports = {
 	WEATHER_BASE_URL: 'https://api.open-meteo.com/v1/forecast',
+	// Bright Sky (https://brightsky.dev) is a free, keyless wrapper around
+	// the Deutscher Wetterdienst (DWD) open data, used as an alternate
+	// weather source (best coverage in/around Germany).
+	DWD_BASE_URL: 'https://api.brightsky.dev',
+	DWD_MAX_DIST_METERS: 50000,
 	GEOCODE_BASE_URL: 'https://api.bigdatacloud.net/data/reverse-geocode-client',
 	CACHE_KEY: 'carbon.weather.v3',
 	GEONAME_CACHE_KEY: 'carbon.geoname.v1',
