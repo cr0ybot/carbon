@@ -15,8 +15,12 @@ typedef struct TempLayer TempLayer;
 TempLayer *temp_layer_create(GRect frame);
 void temp_layer_destroy(TempLayer *layer);
 Layer *temp_layer_get_layer(TempLayer *layer);
-void temp_layer_set_data(TempLayer *layer, int16_t current, int16_t high,
-                         int16_t low, const int8_t hourly[24],
+// The high/low labels drawn to the left of the graph are derived internally
+// from `current` + `hourly` (bounded by `hours_remaining`), i.e. the min/max
+// of the same 24h window plotted in the sparkline — not the day's overall
+// forecast high/low.
+void temp_layer_set_data(TempLayer *layer, int16_t current,
+                         const int8_t hourly[24],
                          const int8_t apparent_hourly[24], uint8_t current_hour,
                          uint8_t hours_remaining);
 // No-op kept for call-site compatibility; unit is baked into values by pkjs.

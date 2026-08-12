@@ -230,9 +230,9 @@ static void prv_push_weather_to_layers(struct tm *now) {
 	                                    data_age_sec >= stale_threshold_sec ||
 	                                    hours_remaining == 0);
 	temp_layer_set_unit(s_temp_layer, settings_get()->temp_unit_celsius);
-	temp_layer_set_data(s_temp_layer, display_temp, s_weather.high_temp,
-	                    s_weather.low_temp, temp_view, appar_view, current_hour,
-	                    hours_remaining);
+	temp_layer_set_data(s_temp_layer, display_temp, temp_view, appar_view,
+	                    current_hour, hours_remaining);
+	icon_bar_layer_set_temp(s_icon_bar_layer, display_temp);
 	time_layer_set_city(s_time_layer, s_weather.city_name);
 }
 

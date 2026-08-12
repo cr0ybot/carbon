@@ -24,6 +24,9 @@ void icon_bar_layer_notify_bt(IconBarLayer *layer, bool connected);
 void icon_bar_layer_set_condition(IconBarLayer *layer,
                                   WeatherCondition condition);
 void icon_bar_layer_set_daytime(IconBarLayer *layer, bool is_day);
+// Current temperature, rendered below the weather condition icon. Only drawn
+// while a condition is set (i.e. weather data has been received).
+void icon_bar_layer_set_temp(IconBarLayer *layer, int16_t temp);
 void icon_bar_layer_set_disconnected(IconBarLayer *layer, bool disconnected);
 void icon_bar_layer_set_pending(IconBarLayer *layer, bool pending);
 void icon_bar_layer_set_battery_display(IconBarLayer *layer,

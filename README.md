@@ -15,8 +15,8 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - The current time, of course, with a large, high-contrast font.
 - The current date and day of week in the system locale's language.
 - The current location and timezone.
-- Current temperature and high/low for the day.
-- 24-hour temperature graph with secondary apparent temperature line.
+- Current temperature, shown below the weather condition icon.
+- 24-hour temperature graph with secondary apparent temperature line, with the min/max for that 24-hour window shown to its left.
 - 24-hour precipitation probability graph with cloud cover.
 - Daylight indicator with sunrise and sunset times.
 - Moon phase on the midnight indicator.
