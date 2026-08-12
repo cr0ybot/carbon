@@ -16,8 +16,6 @@
 struct TempLayer {
 	Layer *layer;
 	int16_t current;
-	int16_t high;
-	int16_t low;
 	int8_t hourly[GRAPH_HOURS];
 	int8_t apparent_hourly[GRAPH_HOURS];
 	uint8_t current_hour;
@@ -33,51 +31,11 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	int graph_w = bounds.size.w - graph_x;
 
 #if PBL_DISPLAY_HEIGHT >= 228
-	GFont font_sm = fonts_get_system_font(FONT_KEY_GOTHIC_18);
 	GFont font_md = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
 #else
-	GFont font_sm = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 	GFont font_md = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 #endif
 	graphics_context_set_text_color(ctx, GColorWhite);
-
-	// Left column: high, current, low — three equal zones matching
-	// icon_bar_layer. Each item is centered in its zone; sm_lead compensates
-	// for GOTHIC_14's internal top leading.
-	static char curr_buf[10], high_buf[8], low_buf[8];
-	snprintf(high_buf, sizeof(high_buf), "%d", (int)tl->high);
-	snprintf(curr_buf, sizeof(curr_buf), "%d", (int)tl->current);
-	snprintf(low_buf, sizeof(low_buf), "%d", (int)tl->low);
-
-#if PBL_DISPLAY_HEIGHT >= 228
-	int sm_h = 20;   // GOTHIC_18 rect height
-	int md_h = 28;   // GOTHIC_24_BOLD rect height
-	int sm_lead = 2; // GOTHIC_18 internal top leading
-	int md_lead = 2; // GOTHIC_24_BOLD internal top leading
-#else
-	int sm_h = 15;   // GOTHIC_14 rect height
-	int md_h = 20;   // GOTHIC_18_BOLD rect height
-	int sm_lead = 1; // GOTHIC_14 internal top leading
-	int md_lead = 2; // GOTHIC_18_BOLD internal top leading
-#endif
-	int zone_h =
-	    (lh - 2) / 3; // 2px bottom padding keeps low label off the edge
-	int label_x = GRAPH_OFFSET_X - 4;
-
-	graphics_draw_text(ctx, high_buf, font_sm,
-	                   GRect(0, (zone_h - sm_h) / 2 - sm_lead, label_x, sm_h),
-	                   GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
-	graphics_draw_text(
-	    ctx, curr_buf, font_md,
-	    GRect(0, zone_h + (zone_h - md_h) / 2 - md_lead, label_x, md_h),
-	    GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
-	graphics_draw_text(ctx, low_buf, font_sm,
-	                   GRect(0, 2 * zone_h + (zone_h - (sm_h - sm_lead)) / 2,
-	                         label_x, sm_h - sm_lead),
-	                   GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
-
-	// Vertical separator
-	graph_draw_separator(ctx, graph_x, lh);
 
 	// Sparkline — 25 points: current temp followed by 24 hourly forecasts.
 	// Point 0 is at the left edge, point 24 at the right edge.
@@ -87,6 +45,50 @@ static void prv_update_proc(Layer *layer, GContext *ctx) {
 	pts[0] = tl->current;
 	for (int i = 0; i < GRAPH_HOURS; i++)
 		pts[i + 1] = tl->hourly[i];
+
+	// Left column: max, min — two equal zones. Values are the min/max of the
+	// actual (non-apparent) temperature across the same 24h window plotted
+	// in the graph (current hour + valid hourly forecasts), not the day's
+	// overall forecast high/low. Both use the larger font since the
+	// mid-column "current" label they replace is no longer shown here (moved
+	// to below the weather icon).
+	int display_count = (int)tl->hours_remaining;
+	if (display_count > GRAPH_HOURS)
+		display_count = GRAPH_HOURS;
+	int16_t win_min = pts[0];
+	int16_t win_max = pts[0];
+	for (int i = 1; i <= display_count; i++) {
+		if (pts[i] < win_min)
+			win_min = pts[i];
+		if (pts[i] > win_max)
+			win_max = pts[i];
+	}
+
+	static char high_buf[8], low_buf[8];
+	snprintf(high_buf, sizeof(high_buf), "%d", (int)win_max);
+	snprintf(low_buf, sizeof(low_buf), "%d", (int)win_min);
+
+#if PBL_DISPLAY_HEIGHT >= 228
+	int md_h = 28;   // GOTHIC_24_BOLD rect height
+	int md_lead = 2; // GOTHIC_24_BOLD internal top leading
+#else
+	int md_h = 20;   // GOTHIC_18_BOLD rect height
+	int md_lead = 2; // GOTHIC_18_BOLD internal top leading
+#endif
+	int zone_h =
+	    (lh - 2) / 2; // 2px bottom padding keeps low label off the edge
+	int label_x = GRAPH_OFFSET_X - 4;
+
+	graphics_draw_text(ctx, high_buf, font_md,
+	                   GRect(0, (zone_h - md_h) / 2 - md_lead, label_x, md_h),
+	                   GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
+	graphics_draw_text(
+	    ctx, low_buf, font_md,
+	    GRect(0, zone_h + (zone_h - md_h) / 2 - md_lead, label_x, md_h),
+	    GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
+
+	// Vertical separator
+	graph_draw_separator(ctx, graph_x, lh);
 
 	int16_t apt[25];
 	apt[0] = tl->apparent_hourly[0]; // no separate "current apparent"; use
@@ -245,8 +247,6 @@ TempLayer *temp_layer_create(GRect frame) {
 	if (!tl)
 		return NULL;
 	tl->current = 0;
-	tl->high = 0;
-	tl->low = 0;
 	tl->current_hour = 0;
 	tl->hours_remaining = GRAPH_HOURS;
 	tl->celsius = false;
@@ -270,15 +270,13 @@ Layer *temp_layer_get_layer(TempLayer *layer) {
 	return layer ? layer->layer : NULL;
 }
 
-void temp_layer_set_data(TempLayer *layer, int16_t current, int16_t high,
-                         int16_t low, const int8_t hourly[24],
+void temp_layer_set_data(TempLayer *layer, int16_t current,
+                         const int8_t hourly[24],
                          const int8_t apparent_hourly[24], uint8_t current_hour,
                          uint8_t hours_remaining) {
 	if (!layer)
 		return;
 	layer->current = current;
-	layer->high = high;
-	layer->low = low;
 	layer->current_hour = current_hour;
 	layer->hours_remaining = hours_remaining;
 	memcpy(layer->hourly, hourly, GRAPH_HOURS);
