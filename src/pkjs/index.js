@@ -1025,6 +1025,9 @@ Pebble.addEventListener('webviewclosed', function (e) {
 	var showAmpm = extractBool(rawSettings['SETTING_SHOW_AMPM']);
 	if (showAmpm !== null) dict['SETTING_SHOW_AMPM'] = showAmpm;
 
+	var bigTime = extractBool(rawSettings['SETTING_BIG_TIME']);
+	if (bigTime !== null) dict['SETTING_BIG_TIME'] = bigTime;
+
 	var clearCacheRequested = extractBool(rawSettings['SETTING_CLEAR_CACHE']) === 1;
 
 	Pebble.sendAppMessage(dict,

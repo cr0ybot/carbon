@@ -23,6 +23,7 @@ typedef struct {
 	bool show_timezone;
 	bool show_ampm;
 	uint8_t fetch_interval_min;
+	bool big_time;
 } Settings;
 
 void settings_init(void);

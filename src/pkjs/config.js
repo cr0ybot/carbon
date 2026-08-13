@@ -88,6 +88,13 @@ module.exports = [
 			},
 			{
 				'type': 'toggle',
+				'messageKey': 'SETTING_BIG_TIME',
+				'label': 'Big Time',
+				'description': 'Fill the width with an oversized clock, hiding the location, date, timezone and AM/PM indicators. The weather graphs and temperatures are unaffected.',
+				'defaultValue': false,
+			},
+			{
+				'type': 'toggle',
 				'messageKey': 'SETTING_SHOW_TIMEZONE',
 				'label': 'Show Timezone',
 				'description': 'Show the timezone abbreviation to the left of the time.',

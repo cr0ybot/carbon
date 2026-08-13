@@ -430,9 +430,10 @@ static void prv_window_load(Window *window) {
 	icon_bar_layer_set_battery_display(s_icon_bar_layer,
 	                                   settings_get()->battery_display);
 
-	// Time block (city + time + date) — vertically centered on the screen
-	int time_y = (bounds.size.h - TL_TIME_BLOCK_H) / 2;
-	s_time_layer = time_layer_create(GRect(0, time_y, w, TL_TIME_BLOCK_H));
+	// Time block — owns the whole band between the graph group and the temp
+	// block so Big Time mode has room.
+	s_time_layer = time_layer_create(
+	    GRect(0, GRAPH_LAYERS_H, w, bounds.size.h - 2 * GRAPH_LAYERS_H));
 	layer_add_child(root, time_layer_get_layer(s_time_layer));
 
 	// Temp info + sparkline — same height as the top graph group, pinned to
