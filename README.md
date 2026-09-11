@@ -1,12 +1,8 @@
-[![Latest Release](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcr0ybot%2Fcarbon%2Frefs%2Fheads%2Fmain%2Fpackage.json&query=%24.version&style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAAAmJLR0QA/4ePzL8AAAC0SURBVDjLldLLCcJAFEbhP4oIE1xYhw1pA4JWYRGCVbhxoTshWIUNaAnBgB4XBiTJ3HncbALznXAZIpnDmHnnmSqAS470p2Fn8wrfNEzS+INX++ZS+J6CRZu4lGWWEgVPT2DsfmfFwbMSjiuxcXn8H5gX6Q+S+ZtRDofT7/uXRF5RSmJEncEliS2fDC5JrCPJjVn/lwglQx5M/NxMbO5NwnyQxHknSeOSxIaac+feo0lhn30BIXaN/u4MXmAAAAAASUVORK5CYII=&label=latest)](https://github.com/cr0ybot/carbon/releases/latest/download/carbon.pbw)
-[![Pebble Store Hearts](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fappstore-api.repebble.com%2Fapi%2Fv1%2Fapps%2Fid%2F48b38a54db6d45cb85be6521&query=%24.data%5B0%5D.hearts&style=flat&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHRpdGxlPmhlYXJ0PC90aXRsZT48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0iTTEyLDIxLjM1TDEwLjU1LDIwLjAzQzUuNCwxNS4zNiAyLDEyLjI3IDIsOC41QzIsNS40MSA0LjQyLDMgNy41LDNDOS4yNCwzIDEwLjkxLDMuODEgMTIsNS4wOEMxMy4wOSwzLjgxIDE0Ljc2LDMgMTYuNSwzQzE5LjU4LDMgMjIsNS40MSAyMiw4LjVDMjIsMTIuMjcgMTguNiwxNS4zNiAxMy40NSwyMC4wM0wxMiwyMS4zNVoiIC8%2BPC9zdmc%2B&label=pebble%20store&color=ff4700)](https://apps.repebble.com/48b38a54db6d45cb85be6521)
+[![Latest Release](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fkaitimmer%2Fdwd-carbon%2Frefs%2Fheads%2Fmain%2Fpackage.json&query=%24.version&style=flat&label=latest)](https://github.com/kaitimmer/dwd-carbon/releases/latest)
 
-# Carbon - Pebble Weather Watchface
+# DWD Carbon - Pebble Weather Watchface
 
-A weather-focused, highly readable-at-a-glance Pebble watchface for the day ahead, with live weather via the free [Open-Meteo](https://open-meteo.com) API (with an optional [DWD](https://www.dwd.de) source via [Bright Sky](https://brightsky.dev), best for locations in/around Germany).
-
-![Screenshots of the color version of the watchface showing weather data](./info/screenshots.emery.png)
-![Screenshots of the monochrome version of the watchface showing weather data](./info/screenshots.flint.png)
+A fork of [Carbon](https://github.com/cr0ybot/carbon) — a weather-focused, highly readable-at-a-glance Pebble watchface for the day ahead. This fork defaults to the [DWD](https://www.dwd.de) (Deutscher Wetterdienst) weather source via [Bright Sky](https://brightsky.dev), best for locations in/around Germany, with the free [Open-Meteo](https://open-meteo.com) API (worldwide coverage) still available as an option.
 
 There are several other weather-focused Pebble watchfaces that might look similar, but I found most of those *too* maximal for my needs (forecast for more than 24 hours, too visually busy, etc.). I wanted something focused just on the things that are most relevant to me over the next 24-hour period that I can grok at a glance.
 
@@ -29,7 +25,7 @@ There are several other weather-focused Pebble watchfaces that might look simila
 ## Settings
 
 - Temperature unit: Auto (default), Celsius, or Fahrenheit
-- Weather source: Open-Meteo (default, worldwide coverage) or DWD (Deutscher Wetterdienst, via Bright Sky — best coverage in/around Germany)
+- Weather source: DWD (default, Deutscher Wetterdienst via Bright Sky — best coverage in/around Germany) or Open-Meteo (worldwide coverage)
 - Date format: "Monday, 1/15" default, several other presets (please open an issue if your preferred date format isn't available)
 - Battery indicator: Icon (default), Percentage, or Off
 - Show Timezone: On (default) or Off
@@ -58,7 +54,7 @@ You may choose to report an issue either through the "contact developer" link in
 If you're experiencing unexpected behavior, the **Debug** section at the bottom of the settings page can help identify the cause and gives us a snapshot of everything the watchface knows at that moment. Ideally, bug reports should include this debug information to assist in troubleshooting.
 
 To access it:
-1. Open the Pebble app and tap the gear icon next to Carbon to open settings.
+1. Open the Pebble app and tap the gear icon next to DWD Carbon to open settings.
 2. Scroll to the bottom of the settings page and expand the **Debug** section.
 3. Review the data inline, or tap **Copy debug info to clipboard** to grab it all as JSON.
 
@@ -179,7 +175,7 @@ To add new fields to the debug output, add keys to the object returned by `forma
 
 ### Icons
 
-This watchfaces uses icons from the [Carbon](https://carbondesignsystem.com/elements/icons/library/) icon set, which has the most exhaustive set of weather icons I could find. The name is a coincidence, I named the watchface Carbon before I found the icon set.
+This watchface uses icons from the [Carbon](https://carbondesignsystem.com/elements/icons/library/) icon set, which has the most exhaustive set of weather icons available. The name is a coincidence — the original watchface (which this is forked from) was named Carbon before the icon set was found.
 
 Icons are included as a custom font generated from [IcoMoon](https://icomoon.io/). The `src/embeddedjs/assets/icons.icomoon.json` file can be imported into IcoMoon to edit the icon set. When icons are added, removed, or rearranged, the font must be re-exported from IcoMoon (with font family set to "IcoMoon"), and both the TTF and the JSON selection file must be replaced.
 
