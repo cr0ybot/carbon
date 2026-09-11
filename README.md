@@ -17,7 +17,7 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - Daylight indicator with sunrise and sunset times.
 - Moon phase on the midnight indicator.
 - Current weather condition icon.
-- Battery level and charging status.
+- Battery level and charging status, shown in red when critically low (below 15%, on color platforms).
 - Bluetooth disconnect indicator.
 - Respects system 12/24-hour time format.
 - Temperature unit detection based on locale (defaults to Celsius, but Fahrenheit if you're in the US).
