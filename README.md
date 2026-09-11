@@ -4,6 +4,9 @@
 
 A fork of [Carbon](https://github.com/cr0ybot/carbon) — a weather-focused, highly readable-at-a-glance Pebble watchface for the day ahead. This fork defaults to the [DWD](https://www.dwd.de) (Deutscher Wetterdienst) weather source via [Bright Sky](https://brightsky.dev), best for locations in/around Germany, with the free [Open-Meteo](https://open-meteo.com) API (worldwide coverage) still available as an option.
 
+![Screenshot of the color version of the watchface showing weather data](./info/screenshots.emery.png)
+![Screenshot of the monochrome version of the watchface showing weather data](./info/screenshots.flint.png)
+
 There are several other weather-focused Pebble watchfaces that might look similar, but I found most of those *too* maximal for my needs (forecast for more than 24 hours, too visually busy, etc.). I wanted something focused just on the things that are most relevant to me over the next 24-hour period that I can grok at a glance.
 
 ## Features
