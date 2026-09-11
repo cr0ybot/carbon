@@ -16,12 +16,12 @@
 
 // Scenario IDs — pass -DDEMO_SCENARIO=N at build time via the DEMO env var.
 //
-//   DEMO=1  Temperate     calm spring day, Chicago CDT
-//   DEMO=2  Stormy        summer thunderstorms, Chicago CDT
-//   DEMO=3  Blizzard      winter storm with wind chill, Chicago CST
-//   DEMO=4  Tornado       severe spring outbreak, Chicago CDT
-//   DEMO=5  Partial       first 12 hours only (simulates fetch error), Chicago
-//   CDT DEMO=6  Disconnected  stale cache fully in the past, no data to show
+//   DEMO=1  Temperate     calm spring day, Berlin CEST
+//   DEMO=2  Stormy        summer thunderstorms, Berlin CEST
+//   DEMO=3  Blizzard      winter storm with wind chill, Berlin CET
+//   DEMO=4  Tornado       severe spring outbreak, Berlin CEST
+//   DEMO=5  Partial       first 12 hours only (simulates fetch error), Berlin
+//   CEST DEMO=6  Disconnected  stale cache fully in the past, no data to show
 //
 // Usage (emulator):
 //   DEMO=2 pebble build && pebble install --emulator basalt
@@ -38,7 +38,7 @@
 
 #if defined(DEMO_SCENARIO)
 // Fills *weather with canned data for the selected scenario and forces
-// Fahrenheit units (Chicago). Call once in init() after settings_init()
+// Celsius units (Berlin). Call once in init() after settings_init()
 // and after memset-zeroing s_weather, before creating the main window.
 void demo_data_load(WeatherData *weather, Settings *settings);
 
