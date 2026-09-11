@@ -34,8 +34,10 @@ src/
     ui/           # Custom UI widgets (graph, time_layer, event layer)
     main.c        # C entrypoint
   pkjs/
-    index.js      # Phone-side weather/location fetch + AppMessage forwarding
-    config.js     # Clay settings page definition
+    index.js              # Phone-side weather/location fetch + AppMessage forwarding
+    config.js             # Clay settings page definition
+    openmeteo-weather.js  # Open-Meteo weather source (default)
+    dwd-weather.js        # DWD weather source, via Bright Sky (opt-in)
 package.json      # Pebble metadata: messageKeys, resources, platforms
 ```
 
@@ -60,10 +62,17 @@ pebble install --cloudpebble  # push to a paired device via the phone app
 
 ## Icons
 
-Icons are a custom font generated from [IcoMoon](https://icomoon.io/). After
-editing the icon set (import `resources/fonts/icons.icomoon.json` into IcoMoon,
-re-export TTF + JSON with font family "IcoMoon", replace the files), regenerate
-the C reference table:
+Icons are a custom font generated from [IcoMoon](https://icomoon.io/), built
+from the [Carbon Design System](https://carbondesignsystem.com/elements/icons/library/)
+icon set (name is a coincidence — the upstream watchface this was forked from
+predates that discovery).
+
+To edit the icon set: import `resources/fonts/icons.icomoon.json` into
+IcoMoon, re-export TTF + JSON with font family "IcoMoon", then replace:
+- `resources/fonts/IcoMoon-Regular.ttf` (the `-Regular` suffix is required)
+- `resources/fonts/icons.icomoon.json`
+
+Then regenerate the C reference table:
 
 ```sh
 npm run gen-icons   # updates src/c/generated/icons.h (ICON_<NAME> constants)

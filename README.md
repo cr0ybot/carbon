@@ -31,20 +31,6 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - Show Timezone: On (default) or Off
 - Show AM/PM / 24h Indicator: On (default) or Off
 
-## To do
-
-- [x] Settings page for customizations
-- [x] Customize date format
-- [ ] Custom date format string
-- [x] Customize battery indicator (e.g. show percentage instead of icon)
-- [x] Customize temperature unit
-- [ ] Customize color scheme (e.g. light mode, accent colors)
-- [x] Localization (system locale)
-- [ ] Custom locale support
-- [ ] Bluetooth disconnect vibration
-- [ ] Quiet time indicator
-- [ ] Support round watches (e.g. Pebble Round 2)
-
 ---
 
 ## Reporting Issues
@@ -70,6 +56,8 @@ The clipboard JSON contains everything displayed in the **Debug** section, inclu
 ---
 
 ## Development
+
+> AI agents working in this repo: see [AGENTS.md](./AGENTS.md) first.
 
 ### Prerequisites
 
@@ -110,50 +98,17 @@ pebble emu-app-config
 
 ### Install on your device
 
-If you want to be able to run the watchface on your device, you'll also want to log in with GitHub after installing the Pebble SDK:
-
-```sh
-pebble login
-```
-
-This will enable the `--cloudpebble` option:
-
-```sh
-pebble install --cloudpebble
-```
+See [AGENTS.md](./AGENTS.md#install-on-a-real-device) for installing on a
+real device via `pebble login` / `--cloudpebble`.
 
 ### Demo Build & Screenshots
 
-Demo builds with different weather conditions can be created with the `DEMO` environment variable. See [src/c/modules/demo.c](./src/c/modules/demo.c) for the available demo scenarios.
-
-```sh
-DEMO=1 pebble build
-```
-
-To take screenshots of a particular demo scenario you can use the Pebble CLI's screenshot command, which saves to `./screenshots`:
-
-```sh
-DEMO=1 pebble build && pebble screenshot --all-platforms
-```
-
-Note: you may need to run `pebble wipe` if the emulator stalls and try again.
+See [AGENTS.md](./AGENTS.md#demo-builds--screenshots) for demo builds and
+screenshot commands.
 
 ### Project Structure
 
-```
-resources/      # Static assets (e.g. icon font)
-scripts/        # Utility scripts (e.g. icon generation)
-src/
-  c/            # C code
-    generated/  # Generated C code (e.g. from generated icons)
-    modules/    # C modules (settings, weather, etc.)
-    ui/         # Custom UI widget implementations (e.g. graph, event layer)
-    main.c      # C entrypoint
-  pkjs/
-    index.js            # Phone-side location fetch, settings, and AppMessage sending
-    openmeteo-weather.js # Open-Meteo weather source (default)
-    dwd-weather.js       # DWD weather source, via Bright Sky (opt-in)
-```
+See [AGENTS.md](./AGENTS.md#repository-layout) for the repository layout.
 
 ### Debug Info
 
@@ -177,15 +132,7 @@ To add new fields to the debug output, add keys to the object returned by `forma
 
 This watchface uses icons from the [Carbon](https://carbondesignsystem.com/elements/icons/library/) icon set, which has the most exhaustive set of weather icons available. The name is a coincidence — the original watchface (which this is forked from) was named Carbon before the icon set was found.
 
-Icons are included as a custom font generated from [IcoMoon](https://icomoon.io/). The `src/embeddedjs/assets/icons.icomoon.json` file can be imported into IcoMoon to edit the icon set. When icons are added, removed, or rearranged, the font must be re-exported from IcoMoon (with font family set to "IcoMoon"), and both the TTF and the JSON selection file must be replaced.
-
-Move the downloaded TTF font file to `resources/fonts/IcoMoon-Regular.ttf` (the `-Regular` suffix is important!) and the JSON selection file to `resources/fonts/icons.icomoon.json`, then regenerate the reference table:
-
-```sh
-npm run gen-icons
-```
-
-This will update `src/c/generated/icons.h` with the icon names and codepoints, which can be used in C code as `ICON_<NAME>` (e.g. `ICON_SUN`).
+See [AGENTS.md](./AGENTS.md#icons) for the icon editing/regeneration workflow.
 
 ---
 
