@@ -30,7 +30,7 @@ module.exports = [
 				'messageKey': 'SETTING_WEATHER_SOURCE',
 				'label': 'Weather Source',
 				'description': 'DWD (via Bright Sky) uses German weather service data — best coverage in and around Germany. Open-Meteo works worldwide.',
-				'defaultValue': 0,
+				'defaultValue': 1,
 				'options': [
 					{ 'label': 'Open-Meteo', 'value': 0 },
 					{ 'label': 'DWD (Deutscher Wetterdienst)', 'value': 1 },

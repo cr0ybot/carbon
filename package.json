@@ -1,6 +1,6 @@
 {
-  "name": "carbon",
-  "description": "24-hour weather graph watchface for Pebble smartwatches",
+  "name": "dwd-carbon",
+  "description": "24-hour weather graph watchface for Pebble smartwatches, defaulting to the DWD weather source",
   "author": {
     "name": "Cory Hughart",
     "url": "https://coryhughart.com"
@@ -11,8 +11,8 @@
   ],
   "private": true,
   "pebble": {
-    "displayName": "Carbon",
-    "uuid": "4a34b9c0-93b3-43ff-b1ba-a19d00cbcc60",
+    "displayName": "DWD Carbon",
+    "uuid": "ce1f6e97-7229-41bb-97c6-69a2e786361a",
     "sdkVersion": "3",
     "enableMultiJS": true,
     "targetPlatforms": [

@@ -255,7 +255,7 @@ function getFetchIntervalMin() {
 
 /**
  * Returns the configured weather source from Clay settings: 0 = Open-Meteo,
- * 1 = DWD (via Bright Sky). Falls back to 0 (Open-Meteo) when unset/invalid.
+ * 1 = DWD (via Bright Sky). Falls back to 1 (DWD) when unset/invalid.
  *
  * @returns {number}
  */
@@ -268,7 +268,7 @@ function getWeatherSource() {
 			if (source === 0 || source === 1) return source;
 		}
 	} catch (e) { }
-	return 0;
+	return 1;
 }
 
 /**
