@@ -34,6 +34,10 @@ There are several other weather-focused Pebble watchfaces that might look simila
 - Show Timezone: On (default) or Off
 - Show AM/PM / 24h Indicator: On (default) or Off
 
+| 24h indicator off | Timezone off | Battery critically low |
+| --- | --- | --- |
+| ![24h/AM-PM indicator disabled](./info/screenshots.settings-24h-off.emery.png) | ![Timezone indicator disabled](./info/screenshots.settings-timezone-off.emery.png) | ![Battery icon shown in red below 15%](./info/screenshots.settings-battery-low.emery.png) |
+
 ---
 
 ## Reporting Issues
