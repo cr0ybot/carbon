@@ -2,8 +2,8 @@
   "name": "dwd-carbon",
   "description": "24-hour weather graph watchface for Pebble smartwatches, defaulting to the DWD weather source",
   "author": {
-    "name": "Cory Hughart",
-    "url": "https://coryhughart.com"
+    "name": "Kai Timmer",
+    "url": "https://github.com/kaitimmer/dwd-carbon"
   },
   "version": "1.5.0",
   "keywords": [

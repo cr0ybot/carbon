@@ -1,8 +1,8 @@
 /**
  * Shared constants for Carbon PebbleKit JS scripts.
  *
- * @author    Cory Hughart <cory@coryhughart.com>
- * @copyright 2026 Cory Hughart
+ * @author    Kai Timmer
+ * @copyright 2026 Kai Timmer
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
  */
 

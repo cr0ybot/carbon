@@ -5,8 +5,8 @@
  * Content is injected at showConfiguration time via clay.meta.userData so
  * it always reflects the most recent cache snapshot.
  *
- * @author    Cory Hughart <cory@coryhughart.com>
- * @copyright 2026 Cory Hughart
+ * @author    Kai Timmer
+ * @copyright 2026 Kai Timmer
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
  */
 
